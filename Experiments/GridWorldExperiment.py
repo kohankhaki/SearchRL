@@ -187,20 +187,20 @@ class RunExperiment():
                         mean = np.mean(self.num_steps_run_list[0], axis=0)
                         plt.plot(mean[0:e])
                         plt.show()
-                    if agent.name != 'BaseDynaAgent' and agent.name != 'BaseMCTSAgent' and agent.name != 'DQNMCTSAgent':
-                        model_type = list(agent.model.keys())[0]
-                        # agent_model_error = experiment.calculateModelErrorError(agent.model[model_type],
-                        #                                     test,
-                        #                                     type=str(model_type),
-                        #                                     true_transition_function=env.transitionFunction)[0]
-
-                        model_error = experiment.calculateModelErrorWithData(agent.model[model_type],
-                                                                         test,
-                                                                         type=str(model_type),
-                                                                         true_transition_function=env.transitionFunction)
-                        self.model_error_list[i, r, e] = model_error
-                        # self.agent_model_error_list[agent_counter, r, e] = agent_model_error
-                        self.model_error_samples[i, r, e] = experiment.num_samples
+                    # if agent.name != 'BaseDynaAgent' and agent.name != 'BaseMCTSAgent' and agent.name != 'DQNMCTSAgent':
+                    #     model_type = list(agent.model.keys())[0]
+                    #     # agent_model_error = experiment.calculateModelErrorError(agent.model[model_type],
+                    #     #                                     test,
+                    #     #                                     type=str(model_type),
+                    #     #                                     true_transition_function=env.transitionFunction)[0]
+                    #
+                    #     model_error = experiment.calculateModelErrorWithData(agent.model[model_type],
+                    #                                                      test,
+                    #                                                      type=str(model_type),
+                    #                                                      true_transition_function=env.transitionFunction)
+                    #     self.model_error_list[i, r, e] = model_error
+                    #     # self.agent_model_error_list[agent_counter, r, e] = agent_model_error
+                    #     self.model_error_samples[i, r, e] = experiment.num_samples
 
 
                 # *********

@@ -8,13 +8,18 @@ from Experiments.GridWorldExperiment import RunExperiment as GridWorld_RunExperi
 from Environments.GridWorldRooms import GridWorldRooms
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.MCTSAgent import MCTSAgent
-from Agents.DQNMCTSAgent import DQNMCTSAgent
+from Agents.DQNMCTSAgent import *
+
+
 
 if __name__ == '__main__':
 
-    agent_class_list = [BaseDynaAgent]
-    # agent_class_list = [DQNMCTSAgent]
+    # agent_class_list = [BaseDynaAgent]
+    # agent_class_list = [DQNMCTSAgent_InitialValue]
+    # agent_class_list = [DQNMCTSAgent_Bootstrap]
     # agent_class_list = [MCTSAgent]
+    agent_class_list = [DQNMCTSAgent_UseTree]
+
 
 
     show_pre_trained_error_grid = [False, False],

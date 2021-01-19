@@ -312,8 +312,6 @@ class BaseDynaAgent(BaseAgent):
         :param gradient: boolean
         :return: torch including batch -> [1, state_shape]
         '''
-        self.operation_count += 5
-
         if gradient:
             self._sr['batch_counter'] += 1
         observation = torch.tensor([observation], device=self.device)

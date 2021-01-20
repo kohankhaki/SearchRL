@@ -14,7 +14,7 @@ class DQNMCTSAgent_InitialValue(MCTSAgent, BaseDynaAgent):
     def __init__(self, params={}):
         BaseDynaAgent.__init__(self, params)
         MCTSAgent.__init__(self, params)
-        self.episode_counter = 0
+        self.episode_counter = -1
 
     def start(self, observation):
         self.episode_counter += 1
@@ -34,7 +34,6 @@ class DQNMCTSAgent_InitialValue(MCTSAgent, BaseDynaAgent):
 
     def end(self, reward):
         BaseDynaAgent.end(self, reward)
-        self.episode_counter += 1
 
     def get_initial_value(self, state):
         state_representation = self.getStateRepresentation(state)
@@ -49,7 +48,7 @@ class DQNMCTSAgent_Bootstrap(MCTSAgent, BaseDynaAgent):
     def __init__(self, params={}):
         BaseDynaAgent.__init__(self, params)
         MCTSAgent.__init__(self, params)
-        self.episode_counter = 0
+        self.episode_counter = -1
 
     def start(self, observation):
         self.episode_counter += 1
@@ -69,7 +68,6 @@ class DQNMCTSAgent_Bootstrap(MCTSAgent, BaseDynaAgent):
 
     def end(self, reward):
         BaseDynaAgent.end(self, reward)
-        self.episode_counter += 1
 
     def rollout(self, node):
         sum_returns = 0
@@ -192,21 +190,20 @@ class DQNMCTSAgent_UseTree(MCTSAgent, BaseDynaAgent):
                 if selected_node.parent.is_terminal:
                     buffer_state = None
                     buffer_action = None
-                    print('hi')
                 self.updateTransitionBuffer(utils.transition(buffer_prev_state,
                                                          buffer_prev_action,
                                                          buffer_reward,
                                                          buffer_state,
                                                          buffer_action, selected_node.parent.is_terminal, self.time_step, 0))
-
-
+                # print('--------------Transition---------------')
+                # print(buffer_prev_state)
+                # print(buffer_prev_action)
+                # print(buffer_reward)
+                # print(buffer_state)
+                # print(buffer_action)
+                # print(selected_node.parent.is_terminal)
             buffer_prev_state = buffer_state
             buffer_prev_action = buffer_action
             buffer_reward = torch.tensor([reward], device=self.device)
-
-
-
-
-
 
         return selected_node

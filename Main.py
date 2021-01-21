@@ -18,7 +18,7 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_InitialValue]
     # agent_class_list = [DQNMCTSAgent_Bootstrap]
     # agent_class_list = [MCTSAgent]
-    agent_class_list = [DQNMCTSAgent_UseTree]
+    agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
 
 
 

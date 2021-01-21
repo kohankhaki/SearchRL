@@ -72,14 +72,15 @@ class BaseDynaAgent(BaseAgent):
         if params['goal'] is not None:
             self.goal = torch.from_numpy(params['goal']).float().to(self.device)
 
-    def start(self, observation):
-        self.operation_count = 0
+        self.num_steps = 0
+        self.num_terminal_steps = 0
 
+    def start(self, observation):
         '''
         :param observation: numpy array -> (observation shape)
         :return: action : numpy array
         '''
-        self.operation_count += 12
+        print(self.num_terminal_steps, ' - ', self.num_steps)
 
         if self._sr['network'] is None:
             self.init_s_representation_network(observation)
@@ -100,7 +101,6 @@ class BaseDynaAgent(BaseAgent):
     def step(self, reward, observation):
         self.time_step += 1
 
-        self.operation_count += 25
 
         self.state = self.getStateRepresentation(observation)
 
@@ -140,8 +140,6 @@ class BaseDynaAgent(BaseAgent):
         return self.action_list[self.prev_action.item()]
 
     def end(self, reward):
-        self.operation_count += 15
-
         reward = torch.tensor([reward], device=self.device)
 
         self.updateTransitionBuffer(utils.transition(self.prev_state,
@@ -167,7 +165,6 @@ class BaseDynaAgent(BaseAgent):
         :param state: torch -> (1, state_shape)
         :return: action: index torch
         '''
-        self.operation_count += 10
 
         if random.random() < self.epsilon:
             ind = torch.tensor([[random.randrange(self.num_actions)]],
@@ -187,7 +184,6 @@ class BaseDynaAgent(BaseAgent):
         :param state: torch -> (1, state)
         :return: None
         '''
-        self.operation_count += 5
 
         nn_state_shape = state.shape
         self._vf['q']['network'] = StateActionVFNN(nn_state_shape, self.num_actions,
@@ -202,7 +198,6 @@ class BaseDynaAgent(BaseAgent):
         :param state: torch -> (1, state)
         :return: None
         '''
-        self.operation_count += 5
 
         nn_state_shape = state.shape
         self._vf['s']['network'] = []
@@ -216,7 +211,6 @@ class BaseDynaAgent(BaseAgent):
         :param observation: numpy array
         :return: None
         '''
-        self.operation_count += 3
 
         nn_state_shape = observation.shape
         self._sr['network'] = StateRepresentation(nn_state_shape,
@@ -225,7 +219,6 @@ class BaseDynaAgent(BaseAgent):
 
     # ***
     def updateValueFunction(self, transition_batch, vf_type):
-        self.operation_count += 25
 
         batch = utils.transition(*zip(*transition_batch))
 
@@ -259,7 +252,6 @@ class BaseDynaAgent(BaseAgent):
         :param gradient: boolean
         :return: value: int
         '''
-        self.operation_count += 40
 
         if action is not None:
             action_index = self.getActionIndex(action)
@@ -323,7 +315,6 @@ class BaseDynaAgent(BaseAgent):
         return rep
 
     def updateStateRepresentation(self):
-        self.operation_count += 5
 
         if len(self._sr['layers_type']) == 0:
             return None
@@ -333,7 +324,6 @@ class BaseDynaAgent(BaseAgent):
 
     # ***
     def setTargetValueFunction(self, vf, type):
-        self.operation_count += 10
 
         if self._target_vf['network'] is None:
             nn_state_shape = self.prev_state.shape
@@ -357,7 +347,6 @@ class BaseDynaAgent(BaseAgent):
         :param action: numpy array
         :return value: int
         '''
-        self.operation_count += 15
 
         with torch.no_grad():
             if action is not None:
@@ -400,7 +389,6 @@ class BaseDynaAgent(BaseAgent):
 
     # ***
     def getTransitionFromBuffer(self, n):
-        self.operation_count += 3
 
         # both model and value function are using this buffer
         if len(self.transition_buffer) < n:
@@ -408,20 +396,21 @@ class BaseDynaAgent(BaseAgent):
         return random.sample(self.transition_buffer, k=n)
 
     def updateTransitionBuffer(self, transition):
-        self.operation_count += 3
-
+        self.num_steps += 1
+        if transition.is_terminal:
+            self.num_terminal_steps += 1
         self.transition_buffer.append(transition)
         if len(self.transition_buffer) > self.transition_buffer_size:
             self.removeFromTransitionBuffer()
 
     def removeFromTransitionBuffer(self):
-        self.operation_count += 1
-
-        self.transition_buffer.pop(0)
+        self.num_steps -= 1
+        transition = self.transition_buffer.pop(0)
+        if transition.is_terminal:
+            self.num_terminal_steps -= 1
 
     # ***
     def getActionIndex(self, action):
-        self.operation_count += 5
 
         for i, a in enumerate(self.action_list):
             if np.array_equal(a, action):
@@ -429,7 +418,6 @@ class BaseDynaAgent(BaseAgent):
         raise ValueError("action is not defined")
 
     def getActionOnehot(self, action):
-        self.operation_count += 3
 
         res = np.zeros([len(self.action_list)])
         res[self.getActionIndex(action)] = 1

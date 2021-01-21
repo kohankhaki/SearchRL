@@ -27,7 +27,7 @@ if __name__ == '__main__':
     show_values_grid = [False, False],
     show_model_error_grid = [False, False]
 
-    s_vf_list = [0.001]
+    s_vf_list = [2 ** -7]
     s_md_list = [2 ** -9]
 
     c_list = [2**0.5]

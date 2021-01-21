@@ -117,7 +117,7 @@ class RunExperiment():
         # Assuming that we are on a CUDA machine, this should print a CUDA device:
         print(self.device)
 
-    def run_experiment(self, experiment_object_list):
+    def run_experiment(self, experiment_object_list, result_file_name):
         num_runs = config.num_runs
         num_episode = config.num_episode
         max_step_each_episode = config.max_step_each_episode
@@ -183,10 +183,11 @@ class RunExperiment():
                         self.simulation_steps_run_list[i, r, e] = self.simulate_dqn(agent.policy, agent.true_model,
                                                                                     env.start(), env.getAllActions())
                         self.consistency[i, r, e] = agent.action_consistency / experiment.num_steps
-                    if e % 100 == 0:
-                        mean = np.mean(self.num_steps_run_list[0], axis=0)
-                        plt.plot(mean[0:e])
-                        plt.show()
+                    # if e % 100 == 0:
+                    #     mean = np.mean(self.num_steps_run_list[0], axis=0)
+                    #     plt.plot(mean[0:e])
+                    #     plt.show()
+
                     # if agent.name != 'BaseDynaAgent' and agent.name != 'BaseMCTSAgent' and agent.name != 'DQNMCTSAgent':
                     #     model_type = list(agent.model.keys())[0]
                     #     # agent_model_error = experiment.calculateModelErrorError(agent.model[model_type],
@@ -214,15 +215,15 @@ class RunExperiment():
                 #                 obstacles_pos=env.get_obstacles_pos())
                 # *********
 
-        self.show_model_error_plot()
+        # self.show_model_error_plot()
         # self.show_agent_model_error_plot()
         # with open('sim_num_steps_run_list.npy', 'wb') as f:
         #     np.save(f, self.simulation_steps_run_list)
-        with open('num_steps_run_list_random.npy', 'wb') as f:
+        with open(result_file_name+'num_steps_run_list.npy', 'wb') as f:
             np.save(f, self.num_steps_run_list)
-        with open('model_error_run4.npy', 'wb') as f:
-            np.save(f, self.model_error_list)
-            np.save(f, self.model_error_samples)
+        # with open('model_error_run.npy', 'wb') as f:
+        #     np.save(f, self.model_error_list)
+        #     np.save(f, self.model_error_samples)
         self.show_num_steps_plot()
 
     def calculate_model_error(self, agent, env):

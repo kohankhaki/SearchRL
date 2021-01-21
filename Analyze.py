@@ -37,3 +37,31 @@ for stepsize_index in range(mean_DQNnum_steps_run_list.shape[0]):
 axs_DQN.legend()
 fig.show()
 
+with open('Results/MCTS2num_steps_run_list.npy', 'rb') as f:
+    MCTSnum_steps_run_list = np.load(f)
+
+print(MCTSnum_steps_run_list.shape)
+mean_MCTSnum_steps_run_list = np.mean(MCTSnum_steps_run_list, axis=1)
+std_MCTSnum_steps_run_list = np.std(MCTSnum_steps_run_list, axis=1)
+x_MCTSnum_steps_run_list = np.arange(MCTSnum_steps_run_list.shape[2])
+
+mean_MCTSnum_steps_run_list = np.mean(mean_MCTSnum_steps_run_list, axis=1)
+std_MCTSnum_steps_run_list = np.std(std_MCTSnum_steps_run_list, axis=1)
+
+fig2, axs_MCTS = plt.subplots(1, 1, constrained_layout=False)
+for stepsize_index in range(mean_MCTSnum_steps_run_list.shape[0]):
+    r = random.randint(0, 255)
+    g = random.randint(0, 255)
+    b = random.randint(0, 255)
+    c = (r, g, b)
+    hex_c = '#%02x%02x%02x' % c
+    axs_MCTS.axhline(mean_MCTSnum_steps_run_list[stepsize_index], color = hex_c, label=str(stepsize_index))
+    # drawPlotUncertainty(x_MCTSnum_steps_run_list,
+    #                     mean_MCTSnum_steps_run_list[stepsize_index],
+    #                     std_MCTSnum_steps_run_list[stepsize_index],
+    #                     label="mcts"+str(stepsize_index),
+    #                     color=hex_c,
+    #                     axis=axs_MCTS)
+
+axs_MCTS.legend()
+fig2.show()

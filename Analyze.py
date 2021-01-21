@@ -49,13 +49,15 @@ mean_MCTSnum_steps_run_list = np.mean(mean_MCTSnum_steps_run_list, axis=1)
 std_MCTSnum_steps_run_list = np.std(std_MCTSnum_steps_run_list, axis=1)
 
 fig2, axs_MCTS = plt.subplots(1, 1, constrained_layout=False)
+print(np.argmin(mean_MCTSnum_steps_run_list))
 for stepsize_index in range(mean_MCTSnum_steps_run_list.shape[0]):
     r = random.randint(0, 255)
     g = random.randint(0, 255)
     b = random.randint(0, 255)
     c = (r, g, b)
     hex_c = '#%02x%02x%02x' % c
-    axs_MCTS.axhline(mean_MCTSnum_steps_run_list[stepsize_index], color = hex_c, label=str(stepsize_index))
+    axs_MCTS.axhline(mean_MCTSnum_steps_run_list[2], color = hex_c, label=str(stepsize_index))
+
     # drawPlotUncertainty(x_MCTSnum_steps_run_list,
     #                     mean_MCTSnum_steps_run_list[stepsize_index],
     #                     std_MCTSnum_steps_run_list[stepsize_index],

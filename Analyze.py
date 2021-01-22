@@ -67,3 +67,13 @@ for stepsize_index in range(mean_MCTSnum_steps_run_list.shape[0]):
 
 axs_MCTS.legend()
 fig2.show()
+
+with open('Results/DQNnum_steps_run_list.npy', 'rb') as f:
+    DQNMCTSnum_steps_run_list = np.load(f)
+
+num_step = DQNMCTSnum_steps_run_list.shape[2] // 2
+# num_step = 4
+odd_ind = list(range(1, num_step * 2, 2))
+even_ind = list(range(0, num_step * 2, 2))
+dqn_step_list = np.delete(DQNMCTSnum_steps_run_list, odd_ind, 2)
+mcts_step_list = np.delete(DQNMCTSnum_steps_run_list, even_ind, 2)

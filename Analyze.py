@@ -49,7 +49,7 @@ mean_MCTSnum_steps_run_list = np.mean(mean_MCTSnum_steps_run_list, axis=1)
 std_MCTSnum_steps_run_list = np.std(std_MCTSnum_steps_run_list, axis=1)
 
 fig2, axs_MCTS = plt.subplots(1, 1, constrained_layout=False)
-print(np.argmin(mean_MCTSnum_steps_run_list))
+best_par = np.argmin(mean_MCTSnum_steps_run_list)
 for stepsize_index in range(mean_MCTSnum_steps_run_list.shape[0]):
     r = random.randint(0, 255)
     g = random.randint(0, 255)
@@ -58,17 +58,11 @@ for stepsize_index in range(mean_MCTSnum_steps_run_list.shape[0]):
     hex_c = '#%02x%02x%02x' % c
     axs_MCTS.axhline(mean_MCTSnum_steps_run_list[2], color = hex_c, label=str(stepsize_index))
 
-    # drawPlotUncertainty(x_MCTSnum_steps_run_list,
-    #                     mean_MCTSnum_steps_run_list[stepsize_index],
-    #                     std_MCTSnum_steps_run_list[stepsize_index],
-    #                     label="mcts"+str(stepsize_index),
-    #                     color=hex_c,
-    #                     axis=axs_MCTS)
-
 axs_MCTS.legend()
 fig2.show()
 
-with open('Results/DQNnum_steps_run_list.npy', 'rb') as f:
+
+with open('Results/DQNMCTSAgent_UseTreeSelectionnum_steps_run_list.npy', 'rb') as f:
     DQNMCTSnum_steps_run_list = np.load(f)
 
 num_step = DQNMCTSnum_steps_run_list.shape[2] // 2
@@ -77,3 +71,34 @@ odd_ind = list(range(1, num_step * 2, 2))
 even_ind = list(range(0, num_step * 2, 2))
 dqn_step_list = np.delete(DQNMCTSnum_steps_run_list, odd_ind, 2)
 mcts_step_list = np.delete(DQNMCTSnum_steps_run_list, even_ind, 2)
+
+mean_dqnnum_steps_run_list = np.mean(dqn_step_list, axis=1)
+std_dqnnum_steps_run_list = np.std(dqn_step_list, axis=1)
+x_dqnnum_steps_run_list = np.arange(dqn_step_list.shape[2])
+
+mean_mctsnum_steps_run_list = np.mean(mcts_step_list, axis=1)
+std_mctsnum_steps_run_list = np.std(mcts_step_list, axis=1)
+x_mctsnum_steps_run_list = np.arange(mcts_step_list.shape[2])
+fig, axs_DQNMCTS = plt.subplots(1, 1, constrained_layout=False)
+
+
+drawPlotUncertainty(x_dqnnum_steps_run_list,
+                    mean_dqnnum_steps_run_list[0],
+                    std_dqnnum_steps_run_list[0],
+                    label="dqn",
+                    color="blue",
+                    axis=axs_DQNMCTS)
+
+drawPlotUncertainty(x_mctsnum_steps_run_list,
+                    mean_mctsnum_steps_run_list[0],
+                    std_mctsnum_steps_run_list[0],
+                    label="mcts",
+                    color="red",
+                    axis=axs_DQNMCTS)
+# totalmean_mcts = np.mean(mean_mctsnum_steps_run_list, axis=1)
+# print(totalmean_mcts, mean_MCTSnum_steps_run_list[best_par])
+axs_DQNMCTS.axhline(mean_MCTSnum_steps_run_list[best_par], color = "green", label="normal mcts")
+# axs_DQNMCTS.axhline(totalmean_mcts, color = "black", label="mean mcts")
+axs_DQNMCTS.legend()
+axs_DQNMCTS.title.set_text("DQNMCTSAgent_UseTreeSelectionnum")
+fig.show()

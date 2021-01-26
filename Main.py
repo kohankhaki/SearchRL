@@ -17,8 +17,8 @@ if __name__ == '__main__':
     # agent_class_list = [BaseDynaAgent]
     # agent_class_list = [DQNMCTSAgent_InitialValue]
     # agent_class_list = [DQNMCTSAgent_Bootstrap]
-    # agent_class_list = [MCTSAgent]
-    agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
+    agent_class_list = [MCTSAgent]
+    # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
     # agent_class_list = [DQNMCTSAgent_UseTree]
 
 
@@ -31,7 +31,8 @@ if __name__ == '__main__':
     s_md_list = [2 ** -9]
 
     c_list = [2]
-    num_iteration_list = [50]
+    # num_iteration_list = [50]
+    num_iteration_list = [i for i in range(2, 300, 10)]
     simulation_depth_list = [25]
     num_simulation_list = [1]
 
@@ -65,4 +66,4 @@ if __name__ == '__main__':
                                     obj = ExperimentObject(agent_class, params)
                                     experiment_object_list.append(obj)
 
-    experiment.run_experiment(experiment_object_list, result_file_name="DQN")
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTSAgent_UseTreeExpansion")

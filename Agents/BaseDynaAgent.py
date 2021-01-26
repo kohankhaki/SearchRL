@@ -80,7 +80,7 @@ class BaseDynaAgent(BaseAgent):
         :param observation: numpy array -> (observation shape)
         :return: action : numpy array
         '''
-        print(self.num_terminal_steps, ' - ', self.num_steps)
+        # print(self.num_terminal_steps, ' - ', self.num_steps)
 
         if self._sr['network'] is None:
             self.init_s_representation_network(observation)

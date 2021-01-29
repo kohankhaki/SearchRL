@@ -160,7 +160,7 @@ class DQNMCTSAgent_UseTreeSelection(MCTSAgent, BaseDynaAgent):
         self.updateStateRepresentation()
 
     def selection(self):
-        selected_node = self.root_node
+        selected_node = self.subtree_node
         buffer_prev_state = None
         buffer_prev_action = None
         buffer_reward = None

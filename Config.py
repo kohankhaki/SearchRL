@@ -1,6 +1,6 @@
 # # experiment
-num_runs = 100
-num_episode = 1
+num_runs = 5
+num_episode = 600
 max_step_each_episode = 50
 
 # # environment

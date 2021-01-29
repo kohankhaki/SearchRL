@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import gc
 from torch.utils.tensorboard import SummaryWriter
 from ete3 import Tree, TreeStyle, TextFace, add_face_to_node
 
@@ -11,6 +12,7 @@ class MCTSAgent(BaseAgent):
     name = "MCTSAgent"
 
     def __init__(self, params={}):
+
         self.time_step = 0
         self.writer = SummaryWriter()
 
@@ -32,29 +34,38 @@ class MCTSAgent(BaseAgent):
         self.num_iterations = params['num_iteration']
         self.num_rollouts = params['num_simulation']
         self.rollout_depth = params['simulation_depth']
+        self.keep_subtree = True
         self.keep_tree = True
+        self.root = None
 
     def start(self, observation):
-        self.root_node = Node(None, observation)
-        self.expansion(self.root_node)
+        if self.keep_tree and self.root is None:
+            self.root = Node(None, observation)
+        if self.keep_tree:
+            self.subtree_node = self.root
+        else:
+            self.subtree_node = Node(None, observation)
 
+        self.expansion(self.subtree_node)
+
+        action, sub_tree = None, None
         for i in range(self.num_iterations):
-            a, sub_tree = self.MCTS_iteration()
+            action, sub_tree = self.MCTS_iteration()
         # self.render_tree()
-        self.root_node = sub_tree
-        return a
+        self.subtree_node = sub_tree
+        return action
 
     def step(self, reward, observation):
+        if not self.keep_subtree:
+            self.subtree_node = Node(None, observation)
+            self.expansion(self.subtree_node)
 
-        if not self.keep_tree:
-            self.root_node = Node(None, observation)
-            self.expansion(self.root_node)
-
+        action, sub_tree = None, None
         for i in range(self.num_iterations):
-            a, sub_tree = self.MCTS_iteration()
+            action, sub_tree = self.MCTS_iteration()
         # self.render_tree()
-        self.root_node = sub_tree
-        return a
+        self.subtree_node = sub_tree
+        return action
 
     def end(self, reward):
         pass
@@ -78,7 +89,7 @@ class MCTSAgent(BaseAgent):
         max_visit = -np.inf
         max_action = None
         max_child = None
-        for child in self.root_node.get_childs():
+        for child in self.subtree_node.get_childs():
             if child.get_avg_value() > max_visit:
                 max_visit = child.get_avg_value()
                 max_action = child.get_action_from_par()
@@ -86,7 +97,7 @@ class MCTSAgent(BaseAgent):
         return max_action, max_child
 
     def selection(self):
-        selected_node = self.root_node
+        selected_node = self.subtree_node
         while len(selected_node.get_childs()) > 0:
             max_uct_value = -np.inf
             child_values = list(map(lambda n: n.get_avg_value(), selected_node.get_childs()))
@@ -143,7 +154,7 @@ class MCTSAgent(BaseAgent):
             node = node.parent
 
     def show(self):
-        queue = [self.root_node, "*"]
+        queue = [self.subtree_node, "*"]
         while queue:
             node = queue.pop(0)
             if node == "*":
@@ -163,7 +174,7 @@ class MCTSAgent(BaseAgent):
         t = Tree()
         ts = TreeStyle()
         ts.show_leaf_name = False
-        queue = [(self.root_node, None)]
+        queue = [(self.subtree_node, None)]
         while queue:
             node, parent = queue.pop(0)
             node_face = str(node.get_state()) + "," + str(node.num_visits) + "," + str(node.get_avg_value())

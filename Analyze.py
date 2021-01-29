@@ -102,3 +102,22 @@ axs_DQNMCTS.axhline(mean_MCTSnum_steps_run_list[best_par], color = "green", labe
 axs_DQNMCTS.legend()
 axs_DQNMCTS.title.set_text("DQNMCTSAgent_UseTreeSelectionnum")
 fig.show()
+
+
+with open('Results/MCTSAgent_different_iterations.npy', 'rb') as f:
+    MCTSnum_steps_run_list = np.load(f)
+
+print(MCTSnum_steps_run_list.shape)
+mean_MCTSnum_steps_run_list = np.mean(MCTSnum_steps_run_list, axis=1)
+std_MCTSnum_steps_run_list = np.std(MCTSnum_steps_run_list, axis=1)
+x_MCTSnum_steps_run_list = np.arange(mean_MCTSnum_steps_run_list.shape[0])
+fig, axs_MCTS = plt.subplots(1, 1, constrained_layout=False)
+drawPlotUncertainty(x_MCTSnum_steps_run_list,
+                    mean_MCTSnum_steps_run_list[:,0],
+                    std_MCTSnum_steps_run_list[:,0],
+                    label="MCTS",
+                    color="blue",
+                    axis=axs_MCTS)
+
+axs_MCTS.title.set_text("MCTSAgent")
+fig.show()

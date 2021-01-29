@@ -41,13 +41,15 @@ class MCTSAgent(BaseAgent):
     def start(self, observation):
         if self.keep_tree and self.root is None:
             self.root = Node(None, observation)
+            self.expansion(self.root)
+
         if self.keep_tree:
             self.subtree_node = self.root
         else:
             self.subtree_node = Node(None, observation)
             self.expansion(self.subtree_node)
 
-        self.render_tree()
+        # self.render_tree()
 
         action, sub_tree = None, None
         for i in range(self.num_iterations):
@@ -83,9 +85,13 @@ class MCTSAgent(BaseAgent):
             self.backpropagate(selected_node, rollout_value)
 
         else:  # expand then roll_out
-            self.expansion(selected_node)
-            rollout_value = self.rollout(selected_node.get_childs()[0])
-            self.backpropagate(selected_node.get_childs()[0], rollout_value)
+            if not selected_node.is_terminal:
+                self.expansion(selected_node)
+                rollout_value = self.rollout(selected_node.get_childs()[0])
+                self.backpropagate(selected_node.get_childs()[0], rollout_value)
+            else:
+                rollout_value = self.rollout(selected_node)
+                self.backpropagate(selected_node, rollout_value)
 
         max_visit = -np.inf
         max_action = None
@@ -131,6 +137,8 @@ class MCTSAgent(BaseAgent):
             node.add_child(child)
 
     def rollout(self, node):
+        if node.is_terminal:
+            return 0
         sum_returns = 0
         for i in range(self.num_rollouts):
             depth = 0
@@ -178,7 +186,8 @@ class MCTSAgent(BaseAgent):
         queue = [(self.subtree_node, None)]
         while queue:
             node, parent = queue.pop(0)
-            node_face = str(node.get_state()) + "," + str(node.num_visits) + "," + str(node.get_avg_value())
+            node_face = str(node.get_state()) + "," + str(node.num_visits) + "," + str(node.get_avg_value()) \
+                        + "," + str(node.is_terminal)
             if parent is None:
                 p = t.add_child(name=node_face)
             else:

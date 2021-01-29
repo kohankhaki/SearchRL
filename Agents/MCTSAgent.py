@@ -45,8 +45,9 @@ class MCTSAgent(BaseAgent):
             self.subtree_node = self.root
         else:
             self.subtree_node = Node(None, observation)
+            self.expansion(self.subtree_node)
 
-        self.expansion(self.subtree_node)
+        self.render_tree()
 
         action, sub_tree = None, None
         for i in range(self.num_iterations):

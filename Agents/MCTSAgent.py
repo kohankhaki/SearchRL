@@ -90,8 +90,7 @@ class MCTSAgent(BaseAgent):
                 rollout_value = self.rollout(selected_node.get_childs()[0])
                 self.backpropagate(selected_node.get_childs()[0], rollout_value)
             else:
-                rollout_value = self.rollout(selected_node)
-                self.backpropagate(selected_node, rollout_value)
+                self.backpropagate(selected_node, 0)
 
         max_visit = -np.inf
         max_action = None
@@ -137,8 +136,6 @@ class MCTSAgent(BaseAgent):
             node.add_child(child)
 
     def rollout(self, node):
-        if node.is_terminal:
-            return 0
         sum_returns = 0
         for i in range(self.num_rollouts):
             depth = 0

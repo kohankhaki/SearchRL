@@ -30,10 +30,10 @@ if __name__ == '__main__':
     s_vf_list = [2 ** -7]
     s_md_list = [2 ** -9]
 
-    c_list = [2]
-    num_iteration_list = [50]
-    # num_iteration_list = [i for i in range(2, 300, 10)]
-    simulation_depth_list = [25]
+    c_list = [2**-1, 1, 2**0.5, 2]
+    # num_iteration_list = [50]
+    num_iteration_list = [i for i in range(2, 103, 10)]
+    simulation_depth_list = [5, 10, 25]
     num_simulation_list = [1]
 
 

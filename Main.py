@@ -63,4 +63,4 @@ if __name__ == '__main__':
                                     obj = ExperimentObject(agent_class, params)
                                     experiment_object_list.append(obj)
 
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTSAgent_UseTreeExpansion")
+    experiment.run_experiment(experiment_object_list, result_file_name="MCTS")

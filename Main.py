@@ -21,8 +21,6 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
     # agent_class_list = [DQNMCTSAgent_UseTree]
 
-
-
     show_pre_trained_error_grid = [False, False],
     show_values_grid = [False, False],
     show_model_error_grid = [False, False]
@@ -33,9 +31,8 @@ if __name__ == '__main__':
     c_list = [2**-1, 1, 2**0.5, 2]
     # num_iteration_list = [50]
     num_iteration_list = [i for i in range(2, 103, 10)]
-    simulation_depth_list = [5, 10, 25]
+    simulation_depth_list = [5, 10, 25, 50]
     num_simulation_list = [1]
-
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
     #               {'type': 'forward', 'num_networks': 2, 'layers_type': ['fc'], 'layers_features': [64]},

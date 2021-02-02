@@ -128,8 +128,8 @@ class MCTSAgent(BaseAgent):
         for a in self.action_list:
             next_state, is_terminal, reward = self.true_model(node.get_state(),
                                                               a)  # with the assumption of deterministic model
-            if np.array_equal(next_state, node.get_state()):
-                continue
+            # if np.array_equal(next_state, node.get_state()):
+            #     continue
             value = self.get_initial_value(next_state)
             child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
                          value=value)

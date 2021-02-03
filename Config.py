@@ -1,7 +1,9 @@
 # # experiment
-num_runs = 50
-num_episode = 1
+num_runs = 30
+num_episode = 600
 max_step_each_episode = 50
+
+num_thread = 4
 
 # # environment
 # empty room parameters

@@ -3,13 +3,17 @@ train a DQN with MCTS
 See if DQN agrees with DQN (saving the best path)
 At what step DQN starts to work with MCTS
 '''
+
+import threading
+
+import Utils as utils, Config as config
+
 from Experiments.ExperimentObject import ExperimentObject
 from Experiments.GridWorldExperiment import RunExperiment as GridWorld_RunExperiment
 from Environments.GridWorldRooms import GridWorldRooms
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.MCTSAgent import MCTSAgent
 from Agents.DQNMCTSAgent import *
-
 
 
 if __name__ == '__main__':
@@ -29,7 +33,6 @@ if __name__ == '__main__':
     s_md_list = [2 ** -9]
 
     c_list = [2**-1, 1, 2**0.5, 2]
-    # num_iteration_list = [50]
     num_iteration_list = [i for i in range(2, 103, 10)]
     simulation_depth_list = [5, 10, 25, 50]
     num_simulation_list = [1]
@@ -63,4 +66,4 @@ if __name__ == '__main__':
                                     obj = ExperimentObject(agent_class, params)
                                     experiment_object_list.append(obj)
 
-    experiment.run_experiment(experiment_object_list, result_file_name="MCTS")
+    experiment.run_experiment(experiment_object_list, result_file_name="f")

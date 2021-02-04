@@ -10,7 +10,7 @@ import time
 import Utils as utils, Config as config
 
 from Experiments.ExperimentObject import ExperimentObject
-from Experiments.GridWorldExperiment_Thread import RunExperiment as GridWorld_RunExperiment
+from Experiments.GridWorldExperiment import RunExperiment as GridWorld_RunExperiment
 from Environments.GridWorldRooms import GridWorldRooms
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.MCTSAgent import MCTSAgent
@@ -33,18 +33,11 @@ if __name__ == '__main__':
     s_vf_list = [2 ** -7]
     s_md_list = [2 ** -9]
 
-    c_list = [1]
-    # c_list = [1, 2**0.5, 2]
+    c_list = [2 ** 0, 2**0.5, 2 ** 1]
 
-    # num_iteration_list = [i for i in range(2, 103, 20)]
-    num_iteration_list = [10]
+    num_iteration_list = [i for i in range(30, 40, 10)]
 
-    simulation_depth_list = [10]
-    # simulation_depth_list = [5, 10, 25]
-
-
-
-
+    simulation_depth_list = [5, 10, 25]
 
     num_simulation_list = [1]
 

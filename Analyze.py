@@ -11,7 +11,7 @@ def drawPlotUncertainty(x, y, y_err, label, color, axis):
                       facecolor=color, alpha=.4, edgecolor='none')
 
 
-# with open('Results/DQNnum_steps_run_list.npy', 'rb') as f:
+# with open('Results/DQN_num_steps_list.npy', 'rb') as f:
 #     DQNnum_steps_run_list = np.load(f)
 #
 # print(DQNnum_steps_run_list.shape)
@@ -36,7 +36,7 @@ def drawPlotUncertainty(x, y, y_err, label, color, axis):
 # axs_DQN.legend()
 # fig.show()
 #
-# with open('Results/MCTS2num_steps_run_list.npy', 'rb') as f:
+# with open('Results/MCTS_num_steps_list.npy', 'rb') as f:
 #     MCTSnum_steps_run_list = np.load(f)
 #
 # print(MCTSnum_steps_run_list.shape)
@@ -49,6 +49,7 @@ def drawPlotUncertainty(x, y, y_err, label, color, axis):
 #
 # fig2, axs_MCTS = plt.subplots(1, 1, constrained_layout=False)
 # best_par = np.argmin(mean_MCTSnum_steps_run_list)
+# print("best parameter case: ", mean_MCTSnum_steps_run_list[best_par])
 # for stepsize_index in range(mean_MCTSnum_steps_run_list.shape[0]):
 #     r = random.randint(0, 255)
 #     g = random.randint(0, 255)
@@ -102,40 +103,40 @@ def drawPlotUncertainty(x, y, y_err, label, color, axis):
 #
 #
 
-# with open('Results/MCTSAgent_KeepTreeEpisode_steps_run_list.npy', 'rb') as f:
-#     DQNnum_steps_run_list = np.load(f)
-#
-# print(DQNnum_steps_run_list.shape)
-# mean_DQNnum_steps_run_list = np.mean(DQNnum_steps_run_list, axis=1)
-# std_DQNnum_steps_run_list = np.std(DQNnum_steps_run_list, axis=1)
-# x_DQNnum_steps_run_list = np.arange(DQNnum_steps_run_list.shape[2])
-#
-# fig, axs_DQN = plt.subplots(1, 1, constrained_layout=False)
-# for stepsize_index in range(mean_DQNnum_steps_run_list.shape[0]):
-#     r = random.randint(0, 255)
-#     g = random.randint(0, 255)
-#     b = random.randint(0, 255)
-#     c = (r, g, b)
-#     hex_c = '#%02x%02x%02x' % c
-#     drawPlotUncertainty(x_DQNnum_steps_run_list,
-#                         mean_DQNnum_steps_run_list[stepsize_index],
-#                         std_DQNnum_steps_run_list[stepsize_index],
-#                         label="mcts-keeptreeepisode" + str(stepsize_index),
-#                         color=hex_c,
-#                         axis=axs_DQN)
-#
-# axs_DQN.legend()
-# fig.show()
+with open('Results/MCTS_keeptree_num_steps_list.npy', 'rb') as f:
+    DQNnum_steps_run_list = np.load(f)
 
+print(DQNnum_steps_run_list.shape)
+mean_DQNnum_steps_run_list = np.mean(DQNnum_steps_run_list, axis=1)
+std_DQNnum_steps_run_list = np.std(DQNnum_steps_run_list, axis=1)
+x_DQNnum_steps_run_list = np.arange(DQNnum_steps_run_list.shape[2])
 
-with open('Results/MCTSAgent_Iterationsnum_steps_run_list.npy', 'rb') as f:
-    MCTSnum_steps_run_list = np.load(f)
-mean_MCTSnum_steps_run_list = np.mean(MCTSnum_steps_run_list, axis=1)
-std_MCTSnum_steps_run_list = np.std(MCTSnum_steps_run_list, axis=1)
-print(MCTSnum_steps_run_list.shape)
-mean_MCTSnum_steps_run_list = mean_MCTSnum_steps_run_list.reshape([4, 11, 3, -1])
-std_MCTSnum_steps_run_list = std_MCTSnum_steps_run_list.reshape([4, 11, 3, -1])
-print(mean_MCTSnum_steps_run_list.shape)
+fig, axs_DQN = plt.subplots(1, 1, constrained_layout=False)
+for stepsize_index in range(mean_DQNnum_steps_run_list.shape[0]):
+    r = random.randint(0, 255)
+    g = random.randint(0, 255)
+    b = random.randint(0, 255)
+    c = (r, g, b)
+    hex_c = '#%02x%02x%02x' % c
+    drawPlotUncertainty(x_DQNnum_steps_run_list,
+                        mean_DQNnum_steps_run_list[stepsize_index],
+                        std_DQNnum_steps_run_list[stepsize_index],
+                        label="mcts-keeptreeepisode" + str(stepsize_index),
+                        color=hex_c,
+                        axis=axs_DQN)
+
+axs_DQN.legend()
+fig.show()
+
+#
+# with open('Results/MCTSAgent_Iterationsnum_steps_run_list.npy', 'rb') as f:
+#     MCTSnum_steps_run_list = np.load(f)
+# mean_MCTSnum_steps_run_list = np.mean(MCTSnum_steps_run_list, axis=1)
+# std_MCTSnum_steps_run_list = np.std(MCTSnum_steps_run_list, axis=1)
+# print(MCTSnum_steps_run_list.shape)
+# mean_MCTSnum_steps_run_list = mean_MCTSnum_steps_run_list.reshape([4, 11, 3, -1])
+# std_MCTSnum_steps_run_list = std_MCTSnum_steps_run_list.reshape([4, 11, 3, -1])
+# print(mean_MCTSnum_steps_run_list.shape)
 
 # with open('Results/MCTSAgent_different_iterations.npy', 'rb') as f:
 #     MCTSnum_steps_run_list = np.load(f)
@@ -152,7 +153,7 @@ print(mean_MCTSnum_steps_run_list.shape)
 #                     axis=axs_MCTS)
 # axs_MCTS.title.set_text("MCTSAgent")
 #
-# with open('Results/DQNnum_steps_run_list.npy', 'rb') as f:
+# with open('Results/DQN_num_steps_list.npy', 'rb') as f:
 #     DQNnum_steps_run_list = np.load(f)
 #
 # mean_dqnnum_steps_run_list = np.mean(DQNnum_steps_run_list, axis=1)[1]

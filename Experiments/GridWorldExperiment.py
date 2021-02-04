@@ -13,6 +13,7 @@ from Datasets.TransitionDataGrid import data_store
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
+debug = False
 
 class GridWorldExperiment(BaseExperiment):
     def __init__(self, agent, env, device, params=None):
@@ -53,7 +54,7 @@ class GridWorldExperiment(BaseExperiment):
         self.recordTrajectory(roat[1], roat[2], roat[0], roat[3])
         return roat
 
-    def runEpisode(self, max_steps=0, print_steps=True):
+    def runEpisode(self, max_steps=0):
         is_terminal = False
         self.start()
 
@@ -69,7 +70,7 @@ class GridWorldExperiment(BaseExperiment):
 
         self.num_episodes += 1
         self.num_steps_to_goal_list.append(self.num_steps)
-        if print_steps:
+        if debug:
             print("num steps: ", self.num_steps)
         return is_terminal
 
@@ -131,6 +132,8 @@ class RunExperiment():
         self.model_error_samples = np.zeros([len(experiment_object_list), num_runs, num_episode], dtype=np.int)
 
         for i, obj in tqdm(enumerate(experiment_object_list)):
+            print("---------------------")
+            print("This is the case: ", i)
             pre_trained_plot_y_run_list = []
             pre_trained_plot_x_run_list = []
             for r in range(num_runs):
@@ -174,7 +177,8 @@ class RunExperiment():
                 experiment = GridWorldExperiment(agent, env, self.device)
 
                 for e in range(num_episode):
-                    print("starting episode ", e + 1)
+                    if debug:
+                        print("starting episode ", e + 1)
                     experiment.runEpisode(max_step_each_episode)
                     self.num_steps_run_list[i, r, e] = experiment.num_steps
 

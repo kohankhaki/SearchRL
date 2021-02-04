@@ -5,11 +5,12 @@ At what step DQN starts to work with MCTS
 '''
 
 import threading
+import time
 
 import Utils as utils, Config as config
 
 from Experiments.ExperimentObject import ExperimentObject
-from Experiments.GridWorldExperiment import RunExperiment as GridWorld_RunExperiment
+from Experiments.GridWorldExperiment_Thread import RunExperiment as GridWorld_RunExperiment
 from Environments.GridWorldRooms import GridWorldRooms
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.MCTSAgent import MCTSAgent
@@ -32,9 +33,19 @@ if __name__ == '__main__':
     s_vf_list = [2 ** -7]
     s_md_list = [2 ** -9]
 
-    c_list = [2**-1, 1, 2**0.5, 2]
-    num_iteration_list = [i for i in range(2, 103, 10)]
-    simulation_depth_list = [5, 10, 25, 50]
+    c_list = [1]
+    # c_list = [1, 2**0.5, 2]
+
+    # num_iteration_list = [i for i in range(2, 103, 20)]
+    num_iteration_list = [10]
+
+    simulation_depth_list = [10]
+    # simulation_depth_list = [5, 10, 25]
+
+
+
+
+
     num_simulation_list = [1]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
@@ -65,5 +76,6 @@ if __name__ == '__main__':
                                               'num_simulation': num_simulation}
                                     obj = ExperimentObject(agent_class, params)
                                     experiment_object_list.append(obj)
-
+    x = time.time()
     experiment.run_experiment(experiment_object_list, result_file_name="f")
+    print(time.time() - x)

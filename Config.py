@@ -1,6 +1,6 @@
 # # experiment
 num_runs = 30
-num_episode = 600
+num_episode = 50
 max_step_each_episode = 50
 
 num_thread = 4

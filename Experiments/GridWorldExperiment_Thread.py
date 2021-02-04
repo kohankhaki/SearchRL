@@ -13,6 +13,7 @@ from Networks.ModelNN.StateTransitionModel import preTrainBackward, preTrainForw
 from Datasets.TransitionDataGrid import data_store
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
+debug = False
 
 
 class GridWorldExperiment(BaseExperiment):
@@ -54,7 +55,7 @@ class GridWorldExperiment(BaseExperiment):
         self.recordTrajectory(roat[1], roat[2], roat[0], roat[3])
         return roat
 
-    def runEpisode(self, max_steps=0, print_steps=True):
+    def runEpisode(self, max_steps=0):
         is_terminal = False
         self.start()
 
@@ -70,7 +71,7 @@ class GridWorldExperiment(BaseExperiment):
 
         self.num_episodes += 1
         self.num_steps_to_goal_list.append(self.num_steps)
-        if print_steps:
+        if debug:
             print("num steps: ", self.num_steps)
         return is_terminal
 
@@ -164,7 +165,8 @@ class RunExperiment():
             experiment = GridWorldExperiment(agent, env, self.device)
 
             for e in range(num_episode):
-                print("starting episode ", e + 1)
+                if debug:
+                    print("starting episode ", e + 1)
                 experiment.runEpisode(max_step_each_episode)
                 run_ind = int(threading.current_thread().name) * t_buck + r
                 # run_ind = 0
@@ -222,6 +224,8 @@ class RunExperiment():
         for i, obj in tqdm(enumerate(experiment_object_list)):
             # pre_trained_plot_y_run_list = []
             # pre_trained_plot_x_run_list = []
+            print("---------------------")
+            print("This is the case: ", i)
             thread_list = []
             buck_list = []
             t_buck = num_runs // num_thread
@@ -245,7 +249,7 @@ class RunExperiment():
         # self.show_agent_model_error_plot()
         # with open('sim_num_steps_run_list.npy', 'wb') as f:
         #     np.save(f, self.simulation_steps_run_list)
-        with open(result_file_name+'_num_steps_list.npy', 'wb') as f:
+        with open("Results/" + result_file_name + '_num_steps_list.npy', 'wb') as f:
             np.save(f, self.num_steps_run_list)
         # with open('model_error_run.npy', 'wb') as f:
         #     np.save(f, self.model_error_list)

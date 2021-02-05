@@ -20,8 +20,8 @@ from Agents.DQNMCTSAgent import *
 if __name__ == '__main__':
 
     # agent_class_list = [BaseDynaAgent]
-    # agent_class_list = [DQNMCTSAgent_InitialValue]
-    agent_class_list = [DQNMCTSAgent_Bootstrap]
+    agent_class_list = [DQNMCTSAgent_InitialValue]
+    # agent_class_list = [DQNMCTSAgent_Bootstrap]
     # agent_class_list = [MCTSAgent]
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
     # agent_class_list = [DQNMCTSAgent_UseTreeSelection]
@@ -67,5 +67,5 @@ if __name__ == '__main__':
                                     obj = ExperimentObject(agent_class, params)
                                     experiment_object_list.append(obj)
     x = time.time()
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTSAgent_Bootstrap")
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTSAgent_InitialValue")
     print(time.time() - x)

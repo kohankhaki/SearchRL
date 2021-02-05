@@ -182,11 +182,31 @@ class DQNMCTSAgent_UseTreeSelection(MCTSAgent, BaseDynaAgent):
                 if max_uct_value < uct_value:
                     max_uct_value = uct_value
                     selected_node = child
+
+
+            if selected_node.is_terminal:
+                buffer_prev_state = self.getStateRepresentation(selected_node.parent.state)
+                prev_action_index = self.getActionIndex(selected_node.action_from_par)
+                buffer_prev_action = torch.tensor([prev_action_index], device=self.device).view(1, 1)
+                buffer_reward = torch.tensor([selected_node.reward_from_par], device=self.device)
+                buffer_state = None
+                buffer_action = None
+                is_terminal = True
+                self.updateTransitionBuffer(utils.transition(buffer_prev_state,
+                                                         buffer_prev_action,
+                                                         buffer_reward,
+                                                         buffer_state,
+                                                         buffer_action, is_terminal, self.time_step, 0))
+
+
+
             buffer_state = self.getStateRepresentation(selected_node.parent.state)
             action_index = self.getActionIndex(selected_node.action_from_par)
             buffer_action = torch.tensor([action_index], device=self.device).view(1, 1)
             reward = selected_node.reward_from_par
             # store the new transition in buffer
+
+
             if buffer_prev_state is not None:
                 if selected_node.parent.is_terminal:
                     buffer_state = None
@@ -202,7 +222,8 @@ class DQNMCTSAgent_UseTreeSelection(MCTSAgent, BaseDynaAgent):
                 # print(buffer_reward)
                 # print(buffer_state)
                 # print(buffer_action)
-                # print(selected_node.parent.is_terminal)
+                if selected_node.parent.is_terminal:
+                    print(selected_node.parent.is_terminal)
             buffer_prev_state = buffer_state
             buffer_prev_action = buffer_action
             buffer_reward = torch.tensor([reward], device=self.device)
@@ -281,8 +302,8 @@ class DQNMCTSAgent_UseTreeExpansion(MCTSAgent, BaseDynaAgent):
         for a in self.action_list:
             next_state, is_terminal, reward = self.true_model(node.get_state(),
                                                               a)  # with the assumption of deterministic model
-            if np.array_equal(next_state, node.get_state()):
-                continue
+            # if np.array_equal(next_state, node.get_state()):
+            #     continue
             value = self.get_initial_value(next_state)
             child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
                          value=value)
@@ -303,3 +324,4 @@ class DQNMCTSAgent_UseTreeExpansion(MCTSAgent, BaseDynaAgent):
                                                          buffer_state,
                                                          buffer_action, is_terminal,
                                                          self.time_step, 0))
+

@@ -61,7 +61,7 @@ def drawPlotUncertainty(x, y, y_err, label, color, axis):
 # axs_MCTS.legend()
 # fig2.show()
 #
-with open('Results/DQNMCTS_UseTreeExpansion_num_steps_list.npy', 'rb') as f:
+with open('Results/DQNMCTS_UseTreeSelection_num_steps_list.npy', 'rb') as f:
     DQNMCTSnum_steps_run_list = np.load(f)
 
 num_step = DQNMCTSnum_steps_run_list.shape[2] // 2
@@ -97,7 +97,7 @@ drawPlotUncertainty(x_mctsnum_steps_run_list,
 # axs_DQNMCTS.axhline(mean_MCTSnum_steps_run_list[best_par], color="green", label="normal mcts")
 # axs_DQNMCTS.axhline(totalmean_mcts, color = "black", label="mean mcts")
 axs_DQNMCTS.legend()
-axs_DQNMCTS.title.set_text("DQNMCTSAgent_UseTreeSelectionnum")
+axs_DQNMCTS.title.set_text("DQNMCTSAgent_UseTreeSelection")
 fig.show()
 #
 #

@@ -39,7 +39,7 @@ class BaseDynaAgent(BaseAgent):
 
         self._vf = {'q': dict(network=None,
                               layers_type=['fc', 'fc'],
-                              layers_features=[64, 64],
+                              layers_features=[16, 8],
                               action_layer_num=3,
                               # if one more than layer numbers => we will have num of actions output
                               batch_size=32,

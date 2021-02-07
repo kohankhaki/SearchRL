@@ -128,14 +128,14 @@ def drawPlotUncertainty(x, y, y_err, label, color, axis):
 # fig.show()
 
 
-with open('Results/MCTSAgent_Iterationsnum_steps_run_list.npy', 'rb') as f:
-    MCTSnum_steps_run_list = np.load(f)
-mean_MCTSnum_steps_run_list = np.mean(MCTSnum_steps_run_list, axis=1)
-std_MCTSnum_steps_run_list = np.std(MCTSnum_steps_run_list, axis=1)
-print(MCTSnum_steps_run_list.shape)
-mean_MCTSnum_steps_run_list = mean_MCTSnum_steps_run_list.reshape([4, 11, 3, -1])
-std_MCTSnum_steps_run_list = std_MCTSnum_steps_run_list.reshape([4, 11, 3, -1])
-print(mean_MCTSnum_steps_run_list.shape)
+# with open('Results/MCTSAgent_Iterationsnum_steps_run_list.npy', 'rb') as f:
+#     MCTSnum_steps_run_list = np.load(f)
+# mean_MCTSnum_steps_run_list = np.mean(MCTSnum_steps_run_list, axis=1)
+# std_MCTSnum_steps_run_list = np.std(MCTSnum_steps_run_list, axis=1)
+# print(MCTSnum_steps_run_list.shape)
+# mean_MCTSnum_steps_run_list = mean_MCTSnum_steps_run_list.reshape([4, 11, 3, -1])
+# std_MCTSnum_steps_run_list = std_MCTSnum_steps_run_list.reshape([4, 11, 3, -1])
+# print(mean_MCTSnum_steps_run_list.shape)
 
 # with open('Results/MCTSAgent_different_iterations.npy', 'rb') as f:
 #     MCTSnum_steps_run_list = np.load(f)
@@ -163,3 +163,30 @@ print(mean_MCTSnum_steps_run_list.shape)
 # axs_MCTS.legend()
 # axs_MCTS.title.set_text("DQN Best - MCTS Iteration")
 # fig.show()
+
+# fig, axs_MCTS = plt.subplots(1, 1, constrained_layout=False)
+# with open('Results/MCTS_num_steps_list.npy', 'rb') as f:
+#     MCTSnum_steps_run_list = np.load(f)
+# mean_MCTSnum_steps_run_list = np.mean(MCTSnum_steps_run_list, axis=1)
+# std_MCTSnum_steps_run_list = np.std(MCTSnum_steps_run_list, axis=1)
+#
+# mean_MCTSnum_steps_run_list = mean_MCTSnum_steps_run_list.reshape([4, 11, 4, -1])
+# std_MCTSnum_steps_run_list = std_MCTSnum_steps_run_list.reshape([4, 11, 4, -1])
+#
+# print(np.unravel_index(mean_MCTSnum_steps_run_list.argmin(), mean_MCTSnum_steps_run_list.shape))
+# fig.show()
+
+import os
+res = os.listdir("DQN_Different_Nets")
+
+for file_name in res:
+    with open('DQN_Different_Nets/'+file_name, 'rb') as f:
+        data = np.load(f)
+    mean = np.mean(data[0], axis=0)
+    label = file_name.split("_")[1]
+    plt.plot(mean, label=label)
+    plt.legend()
+    plt.savefig(label + ".png")
+    plt.show()
+# plt.legend()
+# plt.show()

@@ -14,7 +14,7 @@ class MCTSAgent(BaseAgent):
     def __init__(self, params={}):
 
         self.time_step = 0
-        self.writer = SummaryWriter()
+        # self.writer = SummaryWriter()
 
         self.prev_state = None
         self.state = None
@@ -35,7 +35,7 @@ class MCTSAgent(BaseAgent):
         self.num_rollouts = params['num_simulation']
         self.rollout_depth = params['simulation_depth']
         self.keep_subtree = True
-        self.keep_tree = False
+        self.keep_tree = True
         self.root = None
 
     def start(self, observation):

@@ -36,7 +36,7 @@ if __name__ == '__main__':
     s_md_list = [2 ** -9]
 
     c_list = [2]#[2 ** -1, 2 ** 0, 2**0.5, 2 ** 1]
-    num_iteration_list = [10]#[i for i in range(30, 40, 10)]
+    num_iteration_list = [50]#[i for i in range(30, 40, 10)]
     simulation_depth_list = [25]
     num_simulation_list = [1]
 

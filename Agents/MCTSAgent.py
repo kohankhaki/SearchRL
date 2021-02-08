@@ -35,7 +35,7 @@ class MCTSAgent(BaseAgent):
         self.num_rollouts = params['num_simulation']
         self.rollout_depth = params['simulation_depth']
         self.keep_subtree = True
-        self.keep_tree = True
+        self.keep_tree = False
         self.root = None
 
     def start(self, observation):

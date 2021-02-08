@@ -165,7 +165,8 @@ class RunExperiment():
                                        'c': obj.c,
                                        'num_iteration': obj.num_iteration,
                                        'simulation_depth': obj.simulation_depth,
-                                       'num_simulation': obj.num_simulation,})
+                                       'num_simulation': obj.num_simulation,
+                                       'vf': obj.vf_network})
 
                 model_type = obj.model['type']
                 if model_type is not None:

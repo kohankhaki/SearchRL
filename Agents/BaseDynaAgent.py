@@ -96,7 +96,6 @@ class BaseDynaAgent(BaseAgent):
         self.setTargetValueFunction(self._vf['q'], 'q')
         self.prev_action = self.policy(self.prev_state)
         self.initModel(self.prev_state)
-
         return self.action_list[self.prev_action.item()]
 
     def step(self, reward, observation):

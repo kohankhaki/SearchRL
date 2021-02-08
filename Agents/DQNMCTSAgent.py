@@ -325,3 +325,50 @@ class DQNMCTSAgent_UseTreeExpansion(MCTSAgent, BaseDynaAgent):
                                                          buffer_action, is_terminal,
                                                          self.time_step, 0))
 
+# DQN uses MCTS as the policy
+class DQNMCTSAgent_MCTSPolicy(MCTSAgent, BaseDynaAgent):
+    name = "DQNMCTSAgent_MCTSPolicy"
+    def __init__(self, params={}):
+        BaseDynaAgent.__init__(self, params)
+        MCTSAgent.__init__(self, params)
+
+    def start(self, observation):
+        if self.keep_tree and self.root is None:
+            self.root = Node(None, observation)
+            self.expansion(self.root)
+
+        if self.keep_tree:
+            self.subtree_node = self.root
+        else:
+            self.subtree_node = Node(None, observation)
+            self.expansion(self.subtree_node)
+
+        action = BaseDynaAgent.start(self, observation)
+        return action
+
+    def step(self, reward, observation):
+        if not self.keep_subtree:
+            self.subtree_node = Node(None, observation)
+            self.expansion(self.subtree_node)
+        action = BaseDynaAgent.step(self, reward, observation)
+        return action
+
+    def end(self, reward):
+        BaseDynaAgent.end(self, reward)
+
+    def policy(self, state):
+        action, sub_tree = None, None
+        for i in range(self.num_iterations):
+            action, sub_tree = self.MCTS_iteration()
+        # self.render_tree()
+        self.subtree_node = sub_tree
+        action = torch.from_numpy(np.array([self.getActionIndex(action)])).unsqueeze(0).to(self.device)
+        return action
+
+    def rollout(self, node):
+        state = node.get_state()
+        t_state = torch.from_numpy(state).unsqueeze(0).to(self.device)
+        value = self.getStateActionValue(t_state)
+        return value
+
+

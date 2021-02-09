@@ -1,5 +1,5 @@
 # # experiment
-num_runs = 6
+num_runs = 10
 num_episode = 600
 max_step_each_episode = 50
 
@@ -23,7 +23,7 @@ empty_room_params = \
 
 n_room_params = \
     {'init_state': 'random' , 'state_mode': 'coord', #init_state (_n-1, 0)
-    'house_shape': (2,2), 'rooms_shape': (5,5),
+    'house_shape': (2,2), 'rooms_shape': (4,4),
     'obstacles_pos': [],
     'rewards_value': [1],
     'termination_probs': [1],

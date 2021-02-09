@@ -14,7 +14,7 @@ class GridWorldRooms(GridWorld):
         params['rewards_pos'] = [(0, self.grid_size[1]-1)] # can change later
         params['terminals_pos'] = params['rewards_pos']
         params['init_state'] = (self.grid_size[0]-1, 0) # corner (can change later)
-        params['init_state'] = (self.grid_size[0]-2, 1) # corner (can change later)
+        # params['init_state'] = (self.grid_size[0]-2, 1) # corner (can change later)
         GridWorld.__init__(self, params)
 
     def calculateWallsPos(self):

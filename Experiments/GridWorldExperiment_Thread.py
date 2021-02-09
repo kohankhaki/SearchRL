@@ -13,7 +13,7 @@ from Networks.ModelNN.StateTransitionModel import preTrainBackward, preTrainForw
 from Datasets.TransitionDataGrid import data_store
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-debug = False
+debug = True
 
 
 class GridWorldExperiment(BaseExperiment):

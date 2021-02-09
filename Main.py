@@ -10,7 +10,7 @@ import time
 import Utils as utils, Config as config
 
 from Experiments.ExperimentObject import ExperimentObject
-from Experiments.GridWorldExperiment import RunExperiment as GridWorld_RunExperiment
+from Experiments.GridWorldExperiment_Thread import RunExperiment as GridWorld_RunExperiment
 from Environments.GridWorldRooms import GridWorldRooms
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.MCTSAgent import MCTSAgent

@@ -22,9 +22,9 @@ if __name__ == '__main__':
 
     # agent_class_list = [BaseDynaAgent]
     # agent_class_list = [DQNMCTSAgent_MCTSPolicy]
-    # agent_class_list = [DQNMCTSAgent_InitialValue]
+    agent_class_list = [DQNMCTSAgent_InitialValue]
     # agent_class_list = [DQNMCTSAgent_Bootstrap]
-    agent_class_list = [MCTSAgent]
+    # agent_class_list = [MCTSAgent]
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
     # agent_class_list = [DQNMCTSAgent_UseTree]
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     show_values_grid = [False, False],
     show_model_error_grid = [False, False]
 
-    s_vf_list = [2 ** -5, 2 ** -7, 2 ** -9, 2 ** -11]
+    s_vf_list = [2 ** -7]
     s_md_list = [2 ** -9]
 
     c_list = [2**0.5]#[2 ** -1, 2 ** 0, 2**0.5, 2 ** 1]
@@ -79,5 +79,5 @@ if __name__ == '__main__':
                                         obj = ExperimentObject(agent_class, params)
                                         experiment_object_list.append(obj)
     # x = time.time()
-    experiment.run_experiment(experiment_object_list, result_file_name="f")
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_InitialValue_4by4")
     # print(time.time() - x)

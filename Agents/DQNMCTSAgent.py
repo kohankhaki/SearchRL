@@ -372,3 +372,56 @@ class DQNMCTSAgent_MCTSPolicy(MCTSAgent, BaseDynaAgent):
         return value
 
 
+# MCTS uses DQN values for bootstrap nodes initialization
+class DQNMCTSAgent_BootstrapInitial(MCTSAgent, BaseDynaAgent):
+    name = "DQNMCTSAgent_BootstrapInitial"
+
+    def __init__(self, params={}):
+        BaseDynaAgent.__init__(self, params)
+        MCTSAgent.__init__(self, params)
+        self.episode_counter = -1
+
+    def start(self, observation):
+        self.episode_counter += 1
+        if self.episode_counter % 2 == 0:
+            action = BaseDynaAgent.start(self, observation)
+        else:
+            action = MCTSAgent.start(self, observation)
+        return action
+
+    def step(self, reward, observation):
+        if self.episode_counter % 2 == 0:
+            action = BaseDynaAgent.step(self, reward, observation)
+        else:
+            action = MCTSAgent.step(self, reward, observation)
+
+        return action
+
+    def end(self, reward):
+        BaseDynaAgent.end(self, reward)
+
+    def rollout(self, node):
+        sum_returns = 0
+        for i in range(self.num_rollouts):
+            depth = 0
+            single_return = 0
+            is_terminal = False
+            state = node.get_state()
+            while not is_terminal and depth < self.rollout_depth:
+                a = random.choice(self.action_list)
+                next_state, is_terminal, reward = self.true_model(state, a)
+                single_return += reward
+                depth += 1
+                state = next_state
+            if not is_terminal:
+                state_representation = self.getStateRepresentation(state)
+                bootstrap_value = self.getStateActionValue(state_representation)
+                single_return += bootstrap_value.item()
+            sum_returns += single_return
+
+        return sum_returns / self.num_rollouts
+
+    def get_initial_value(self, state):
+        state_representation = self.getStateRepresentation(state)
+        value = self.getStateActionValue(state_representation)
+        return value.item()

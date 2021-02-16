@@ -255,9 +255,7 @@ class BaseDynaAgent(BaseAgent):
 
         if action is not None:
             action_index = self.getActionIndex(action)
-            #to_device
-            action_onehot = torch.from_numpy(self.getActionOnehot(action)).float().unsqueeze(0)
-            # action_onehot = torch.from_numpy(self.getActionOnehot(action)).float().unsqueeze(0).to(self.device)
+            action_onehot = torch.from_numpy(self.getActionOnehot(action)).float().unsqueeze(0).to(self.device)
 
             if vf_type == 'q':
                 if len(self._vf['q']['layers_type']) + 1 == self._vf['q']['action_layer_num']:
@@ -281,9 +279,7 @@ class BaseDynaAgent(BaseAgent):
             sum = 0
             for action in self.action_list:
                 action_index = self.getActionIndex(action)
-                #to_device
-                # action_onehot = torch.from_numpy(self.getActionOnehot(action)).float().unsqueeze(0).to(self.device)
-                action_onehot = torch.from_numpy(self.getActionOnehot(action)).float().unsqueeze(0)
+                action_onehot = torch.from_numpy(self.getActionOnehot(action)).float().unsqueeze(0).to(self.device)
 
                 if vf_type == 'q':
                     if len(self._vf['q']['layers_type']) + 1 == self._vf['q']['action_layer_num']:

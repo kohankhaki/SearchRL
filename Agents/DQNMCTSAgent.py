@@ -48,7 +48,7 @@ class DQNMCTSAgent_InitialValue_offline(MCTSAgent, BaseDynaAgent):
     def __init__(self, params={}):
         BaseDynaAgent.__init__(self, params)
         MCTSAgent.__init__(self, params)
-        with open("dqn.p",'rb') as file:
+        with open("dqn_vf_4by4.p",'rb') as file:
             self._vf = pickle.load(file)
         self.episode_counter = -1
 

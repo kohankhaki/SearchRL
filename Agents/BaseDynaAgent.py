@@ -11,7 +11,7 @@ from Agents.BaseAgent import BaseAgent
 from Networks.ValueFunctionNN.StateActionValueFunction import StateActionVFNN
 from Networks.ValueFunctionNN.StateValueFunction import StateVFNN
 from Networks.RepresentationNN.StateRepresentation import StateRepresentation
-
+import pickle
 
 #this is an DQN agent.
 class BaseDynaAgent(BaseAgent):
@@ -422,6 +422,10 @@ class BaseDynaAgent(BaseAgent):
         res = np.zeros([len(self.action_list)])
         res[self.getActionIndex(action)] = 1
         return res
+
+    def saveValueFunction(self, name):
+        with open(name, "wb") as file:
+            pickle.dump(self._vf, file)
 
     # ***
     @abstractmethod

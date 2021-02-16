@@ -208,6 +208,8 @@ class RunExperiment():
                     #     # self.agent_model_error_list[agent_counter, r, e] = agent_model_error
                     #     self.model_error_samples[i, r, e] = experiment.num_samples
 
+                agent.saveValueFunction("dqn_vf_4by4.p")
+
 
                 # *********
                 # model_type = list(agent.model.keys())[0]

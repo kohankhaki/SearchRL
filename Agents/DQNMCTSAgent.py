@@ -1,6 +1,7 @@
 import random
 import torch
 import numpy as np
+import pickle
 
 from Agents.MCTSAgent import MCTSAgent
 from Agents.BaseDynaAgent import BaseDynaAgent
@@ -35,6 +36,35 @@ class DQNMCTSAgent_InitialValue(MCTSAgent, BaseDynaAgent):
 
     def end(self, reward):
         BaseDynaAgent.end(self, reward)
+
+    def get_initial_value(self, state):
+        state_representation = self.getStateRepresentation(state)
+        value = self.getStateActionValue(state_representation)
+        return value.item()
+
+class DQNMCTSAgent_InitialValue_offline(MCTSAgent, BaseDynaAgent):
+    name = "DQNMCTSAgent_InitialValue"
+
+    def __init__(self, params={}):
+        BaseDynaAgent.__init__(self, params)
+        MCTSAgent.__init__(self, params)
+        with open("dqn.p",'rb') as file:
+            self._vf = pickle.load(file)
+        self.episode_counter = -1
+
+    def start(self, observation):
+        self.episode_counter += 1
+        if self._sr['network'] is None:
+            self.init_s_representation_network(observation)
+        action = MCTSAgent.start(self, observation)
+        return action
+
+    def step(self, reward, observation):
+        action = MCTSAgent.step(self, reward, observation)
+        return action
+
+    def end(self, reward):
+        pass
 
     def get_initial_value(self, state):
         state_representation = self.getStateRepresentation(state)

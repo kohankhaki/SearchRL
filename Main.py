@@ -23,13 +23,15 @@ from Agents.DQNMCTSAgent import *
 if __name__ == '__main__':
 
     # agent_class_list = [BaseDynaAgent]
-    agent_class_list = [DQNMCTSAgent_MCTSPolicy]
+    # agent_class_list = [DQNMCTSAgent_MCTSPolicy]
     # agent_class_list = [DQNMCTSAgent_InitialValue]
     # agent_class_list = [DQNMCTSAgent_BootstrapInitial]
     # agent_class_list = [DQNMCTSAgent_Bootstrap]
     # agent_class_list = [MCTSAgent]
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
     # agent_class_list = [DQNMCTSAgent_UseTree]
+
+    agent_class_list = [DQNMCTSAgent_InitialValue_offline]
 
     show_pre_trained_error_grid = [False, False],
     show_values_grid = [False, False],
@@ -38,10 +40,9 @@ if __name__ == '__main__':
     s_vf_list = [2 ** -7]
     s_md_list = [2 ** -9]
 
-
     c_list = [2**0.5]#[2 ** -1, 2 ** 0, 2**0.5, 2 ** 1]
-    num_iteration_list = [25, 50]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [25, 50]
+    num_iteration_list = [30]#[i for i in range(30, 40, 10)]
+    simulation_depth_list = [75]
     num_simulation_list = [1]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
@@ -51,8 +52,8 @@ if __name__ == '__main__':
 
     model_list = [{'type': None, 'num_networks': 1, 'layers_type': ['fc'], 'layers_features': [128]}]
     vf_list = [
-        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
-        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 32], 'action_layer_num': 3},
+        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
+        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 32], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 16], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 8], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [8, 8], 'action_layer_num': 3},
@@ -83,5 +84,5 @@ if __name__ == '__main__':
                                         obj = ExperimentObject(agent_class, params)
                                         experiment_object_list.append(obj)
     # x = time.time()
-    experiment.run_experiment(experiment_object_list, result_file_name="DQN_MCTSPolicy_3232_3by3")
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_InitialValue_4by4_Offline_6464")
     # print(time.time() - x)

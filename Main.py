@@ -35,7 +35,7 @@ if __name__ == '__main__':
     show_values_grid = [False, False],
     show_model_error_grid = [False, False]
 
-    s_vf_list = [2 ** -5, 2 ** -7, 2 ** -9, 2** -11]
+    s_vf_list = [2 ** -5, 2 ** -7, 2 ** -9, 2 ** -11]
     s_md_list = [2 ** -9]
 
     c_list = [2**0.5]#[2 ** -1, 2 ** 0, 2**0.5, 2 ** 1]

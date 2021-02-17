@@ -66,7 +66,7 @@ class MCTSAgent(BaseAgent):
         action, sub_tree = None, None
         for i in range(self.num_iterations):
             action, sub_tree = self.MCTS_iteration()
-        self.render_tree()
+        # self.render_tree()
         self.subtree_node = sub_tree
         return action
 
@@ -80,25 +80,24 @@ class MCTSAgent(BaseAgent):
         # self.render_tree()
         selected_node = self.selection()
         # now we decide to expand the leaf or rollout
-        if selected_node.num_visits == 0:  # don't expand just roll-out
+
+        if selected_node.is_terminal:
+            self.backpropagate(selected_node, 0)
+        elif selected_node.num_visits == 0:  # don't expand just roll-out
             rollout_value = self.rollout(selected_node)
             self.backpropagate(selected_node, rollout_value)
-
         else:  # expand then roll_out
-            if not selected_node.is_terminal:
-                self.expansion(selected_node)
-                rollout_value = self.rollout(selected_node.get_childs()[0])
-                self.backpropagate(selected_node.get_childs()[0], rollout_value)
-            else:
-                rollout_value = 0
-                self.backpropagate(selected_node, 0)
+            self.expansion(selected_node)
+            rollout_value = self.rollout(selected_node.get_childs()[0])
+            self.backpropagate(selected_node.get_childs()[0], rollout_value)
+
 
         max_visit = -np.inf
         max_action = None
         max_child = None
         for child in self.subtree_node.get_childs():
-            if child.get_avg_value() > max_visit:
-                max_visit = child.get_avg_value()
+            if child.num_visits > max_visit:
+                max_visit = child.num_visits
                 max_action = child.get_action_from_par()
                 max_child = child
         return max_action, max_child

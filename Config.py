@@ -7,11 +7,11 @@ num_thread = 2
 
 # # environment
 # empty room parameters
-_n = 2
+_n = 4
 empty_room_params = \
     {'size': (_n, _n), 'init_state':(_n-1, 0), 'state_mode': 'coord', #init_state (_n-1, 0)
     'obstacles_pos': [],
-    'rewards_pos': [(0, _n-1)], 'rewards_value': [1000],
+    'rewards_pos': [(0, _n-1)], 'rewards_value': [1],
     'terminals_pos': [(0, _n-1)], 'termination_probs': [1],
     'actions': [(0, -1), (-1, 0), (0, 1) , (1, 0)], # L, U, R, D
     'neighbour_distance': 0,

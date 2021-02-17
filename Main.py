@@ -40,6 +40,7 @@ if __name__ == '__main__':
     s_vf_list = [2 ** -7]
     s_md_list = [2 ** -9]
 
+
     c_list = [2**0.5]#[2 ** -1, 2 ** 0, 2**0.5, 2 ** 1]
     num_iteration_list = [50]#[i for i in range(30, 40, 10)]
     simulation_depth_list = [50]

@@ -25,12 +25,12 @@ class Node:
         self.sum_values += value
 
     def get_avg_value(self):
-        return self.sum_values / (self.num_visits + 1)
+        # return self.sum_values / (self.num_visits + 1)
 
         if self.num_visits > 0:
-            return self.sum_values / (self.num_visits + 1)
+            return self.sum_values / self.num_visits
         else:
-            return np.inf
+            return self.sum_values
 
     def inc_visits(self):
         self.num_visits += 1

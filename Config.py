@@ -1,13 +1,13 @@
 # # experiment
-num_runs = 200
-num_episode = 1
+num_runs = 1
+num_episode = 200
 max_step_each_episode = 50
 
 num_thread = 2
 
 # # environment
 # empty room parameters
-_n = 4
+_n = 2
 empty_room_params = \
     {'size': (_n, _n), 'init_state':(_n-1, 0), 'state_mode': 'coord', #init_state (_n-1, 0)
     'obstacles_pos': [],
@@ -23,7 +23,7 @@ empty_room_params = \
 
 n_room_params = \
     {'init_state': 'random' , 'state_mode': 'coord', #init_state (_n-1, 0)
-    'house_shape': (2,2), 'rooms_shape': (4,4),
+    'house_shape': (2,2), 'rooms_shape': (3,3),
     'obstacles_pos': [],
     'rewards_value': [1],
     'termination_probs': [1],

@@ -27,11 +27,11 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_InitialValue]
     # agent_class_list = [DQNMCTSAgent_BootstrapInitial]
     # agent_class_list = [DQNMCTSAgent_Bootstrap]
-    # agent_class_list = [MCTSAgent]
+    agent_class_list = [MCTSAgent]
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
-    # agent_class_list = [DQNMCTSAgent_UseTree]
+    # agent_class_list = [DQNMCTSAgent_UseTreeSelection]
 
-    agent_class_list = [DQNMCTSAgent_InitialValue_offline]
+    # agent_class_list = [DQNMCTSAgent_InitialValue_offline]
 
     show_pre_trained_error_grid = [False, False],
     show_values_grid = [False, False],
@@ -41,8 +41,8 @@ if __name__ == '__main__':
     s_md_list = [2 ** -9]
 
     c_list = [2**0.5]#[2 ** -1, 2 ** 0, 2**0.5, 2 ** 1]
-    num_iteration_list = [30]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [75]
+    num_iteration_list = [50]#[i for i in range(30, 40, 10)]
+    simulation_depth_list = [50]
     num_simulation_list = [1]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
@@ -84,5 +84,5 @@ if __name__ == '__main__':
                                         obj = ExperimentObject(agent_class, params)
                                         experiment_object_list.append(obj)
     # x = time.time()
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_InitialValue_4by4_Offline_6464")
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_Test")
     # print(time.time() - x)

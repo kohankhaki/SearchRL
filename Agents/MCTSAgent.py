@@ -66,7 +66,7 @@ class MCTSAgent(BaseAgent):
         action, sub_tree = None, None
         for i in range(self.num_iterations):
             action, sub_tree = self.MCTS_iteration()
-        # self.render_tree()
+        self.render_tree()
         self.subtree_node = sub_tree
         return action
 
@@ -90,6 +90,7 @@ class MCTSAgent(BaseAgent):
                 rollout_value = self.rollout(selected_node.get_childs()[0])
                 self.backpropagate(selected_node.get_childs()[0], rollout_value)
             else:
+                rollout_value = 0
                 self.backpropagate(selected_node, 0)
 
         max_visit = -np.inf
@@ -106,7 +107,7 @@ class MCTSAgent(BaseAgent):
         selected_node = self.subtree_node
         while len(selected_node.get_childs()) > 0:
             max_uct_value = -np.inf
-            child_values = list(map(lambda n: n.get_avg_value(), selected_node.get_childs()))
+            child_values = list(map(lambda n: n.get_avg_value()+n.reward_from_par, selected_node.get_childs()))
             max_child_value = max(child_values)
             min_child_value = min(child_values)
             for ind, child in enumerate(selected_node.get_childs()):
@@ -118,7 +119,7 @@ class MCTSAgent(BaseAgent):
                     if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
                         child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
                     uct_value = child_value + \
-                                self.C * ((selected_node.num_visits / child.num_visits) ** 0.5)
+                                self.C * ((child.parent.num_visits / child.num_visits) ** 0.5)
                 if max_uct_value < uct_value:
                     max_uct_value = uct_value
                     selected_node = child

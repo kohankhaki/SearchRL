@@ -109,7 +109,7 @@ class RunExperiment():
     def __init__(self):
         gpu_counts = torch.cuda.device_count()
         # self.device = torch.device("cuda:"+str(random.randint(0, gpu_counts-1)) if torch.cuda.is_available() else "cpu")
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
         # self.show_pre_trained_error_grid = config.show_pre_trained_error_grid
         # self.show_values_grid = config.show_values_grid

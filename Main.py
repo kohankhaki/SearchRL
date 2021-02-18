@@ -41,8 +41,8 @@ if __name__ == '__main__':
     s_md_list = [2 ** -9]
 
 
-    c_list = [2**0.5]#[2 ** -1, 2 ** 0, 2**0.5, 2 ** 1]
-    num_iteration_list = [50]#[i for i in range(30, 40, 10)]
+    c_list = [2 ** -1, 2 ** 0, 2**0.5, 2 ** 1]
+    num_iteration_list = [100]#[i for i in range(30, 40, 10)]
     simulation_depth_list = [50]
     num_simulation_list = [1]
 
@@ -85,5 +85,5 @@ if __name__ == '__main__':
                                         obj = ExperimentObject(agent_class, params)
                                         experiment_object_list.append(obj)
     # x = time.time()
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_Test")
+    experiment.run_experiment(experiment_object_list, result_file_name="MCTS_ParameterStudy")
     # print(time.time() - x)

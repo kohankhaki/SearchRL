@@ -138,8 +138,8 @@ class RunExperiment():
             pre_trained_plot_x_run_list = []
             for r in range(num_runs):
                 print("starting runtime ", r+1)
-                env = GridWorld(params=config.empty_room_params)
-                # env = GridWorldRooms(params=config.n_room_params)
+                # env = GridWorld(params=config.empty_room_params)
+                env = GridWorldRooms(params=config.n_room_params)
 
                 train, test = data_store(env)
                 reward_function = env.rewardFunction

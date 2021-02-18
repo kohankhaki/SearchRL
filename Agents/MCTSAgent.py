@@ -45,6 +45,7 @@ class MCTSAgent(BaseAgent):
 
         if self.keep_tree:
             self.subtree_node = self.root
+            print(self.subtree_node.get_avg_value())
         else:
             self.subtree_node = Node(None, observation)
             self.expansion(self.subtree_node)

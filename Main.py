@@ -24,10 +24,10 @@ if __name__ == '__main__':
 
     # agent_class_list = [BaseDynaAgent]
     # agent_class_list = [DQNMCTSAgent_MCTSPolicy]
-    # agent_class_list = [DQNMCTSAgent_InitialValue]
+    agent_class_list = [DQNMCTSAgent_InitialValue]
     # agent_class_list = [DQNMCTSAgent_BootstrapInitial]
     # agent_class_list = [DQNMCTSAgent_Bootstrap]
-    agent_class_list = [MCTSAgent]
+    # agent_class_list = [MCTSAgent]
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
     # agent_class_list = [DQNMCTSAgent_UseTreeSelection]
 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     s_md_list = [2 ** -9]
 
 
-    c_list = [2 ** -1, 2 ** 0, 2**0.5, 2 ** 1]
+    c_list = [2 ** 0]
     num_iteration_list = [100]#[i for i in range(30, 40, 10)]
     simulation_depth_list = [50]
     num_simulation_list = [1]

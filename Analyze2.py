@@ -39,11 +39,8 @@ def plot_simple_agent(file_name, label_name, axs):
                             axis=axs)
 
 
-def plot_simple_agent_single_episode(file_name, label_name, axs):
-    with open(file_name, 'rb') as f:
-        steps_run_list = np.load(f)
+def plot_simple_agent_single_episode(steps_run_list, label_name, axs):
 
-    print(steps_run_list.shape)
     mean_steps_run_list = np.mean(steps_run_list, axis=1)
     std_steps_run_list = np.std(steps_run_list, axis=1)
     x_steps_run_list = np.arange(steps_run_list.shape[2])
@@ -55,7 +52,7 @@ def plot_simple_agent_single_episode(file_name, label_name, axs):
     # print(best_par)
     print("best parameter case: ", mean_steps_run_list[best_par])
     for stepsize_index in range(mean_steps_run_list.shape[0]):
-        axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name)
+        axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name+str(stepsize_index))
 
 
 
@@ -95,15 +92,16 @@ if __name__ == "__main__":
     file_name = 'Results/MCTS_ParameterStudy.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
-    print(res.keys())
-    print(res['num_steps'][0].shape)
-    print(res['experiment_objs'][0].num_iteration)
+    # print(res.keys())
+    # print(res['num_steps'][0].shape)
+    # print(res['experiment_objs'][0].num_iteration)
 
-    # fig, axs = plt.subplots(1, 1, constrained_layout=False)
-    #
-    # file_name = 'Results/MCTS_4by4_i30d75_num_steps_list.npy'
-    # label_name = 'MCTS'
-    # plot_simple_agent_single_episode(file_name, label_name, axs)
+    fig, axs = plt.subplots(1, 1, constrained_layout=False)
+
+    print(res['num_steps'])
+    steps_run_list = res['num_steps']
+    label_name = 'MCTS'
+    plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 
     # file_name = 'Results/DQNMCTS_InitialValue_4by4_num_steps_list.npy'
     # label_name1 = '-'
@@ -125,6 +123,6 @@ if __name__ == "__main__":
     # label_name = 'Offline MCTS'
     # plot_simple_agent_single_episode(file_name, label_name, axs)
     #
-    # axs.title.set_text("NOT Keep Tree Version")
-    # axs.legend()
-    # fig.show()
+    axs.title.set_text("MCTS Parameter Study")
+    axs.legend()
+    fig.show()

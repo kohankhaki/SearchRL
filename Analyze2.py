@@ -1,7 +1,7 @@
 import numpy as np
 import random
 from matplotlib import pyplot as plt
-
+import pickle
 
 def generate_hex_color():
     r = random.randint(0, 255)
@@ -91,33 +91,40 @@ def plot_alternate_agents(file_name, label_name1, label_name2, axs):
                         color=generate_hex_color(),
                         axis=axs)
 
+if __name__ == "__main__":
+    file_name = 'Results/MCTS_ParameterStudy.p'
+    with open(file_name, "rb") as f:
+        res = pickle.load(f)
+    print(res.keys())
+    print(res['num_steps'][0].shape)
+    print(res['experiment_objs'][0].num_iteration)
 
-fig, axs = plt.subplots(1, 1, constrained_layout=False)
+    # fig, axs = plt.subplots(1, 1, constrained_layout=False)
+    #
+    # file_name = 'Results/MCTS_4by4_i30d75_num_steps_list.npy'
+    # label_name = 'MCTS'
+    # plot_simple_agent_single_episode(file_name, label_name, axs)
 
-file_name = 'Results/MCTS_4by4_i30d75_num_steps_list.npy'
-label_name = 'MCTS'
-plot_simple_agent_single_episode(file_name, label_name, axs)
-
-# file_name = 'Results/DQNMCTS_InitialValue_4by4_num_steps_list.npy'
-# label_name1 = '-'
-# label_name2 = 'Initial Value'
-# plot_alternate_agents(file_name, label_name1, label_name2, axs)
-#
-# file_name = 'Results/DQNMCTS_Bootstrap_4by4_num_steps_list.npy'
-# label_name1 = '-'
-# label_name2 = 'Bootstrap'
-# plot_alternate_agents(file_name, label_name1, label_name2, axs)
-#
-# file_name = 'Results/DQNMCTS_BootstrapInitial_4by4_i30d75_keeptree_num_steps_list.npy'
-# label_name1 = '-'
-# label_name2 = 'Initial Value + Bootstrap'
-# plot_alternate_agents(file_name, label_name1, label_name2, axs)
+    # file_name = 'Results/DQNMCTS_InitialValue_4by4_num_steps_list.npy'
+    # label_name1 = '-'
+    # label_name2 = 'Initial Value'
+    # plot_alternate_agents(file_name, label_name1, label_name2, axs)
+    #
+    # file_name = 'Results/DQNMCTS_Bootstrap_4by4_num_steps_list.npy'
+    # label_name1 = '-'
+    # label_name2 = 'Bootstrap'
+    # plot_alternate_agents(file_name, label_name1, label_name2, axs)
+    #
+    # file_name = 'Results/DQNMCTS_BootstrapInitial_4by4_i30d75_keeptree_num_steps_list.npy'
+    # label_name1 = '-'
+    # label_name2 = 'Initial Value + Bootstrap'
+    # plot_alternate_agents(file_name, label_name1, label_name2, axs)
 
 
-file_name = 'Results/DQNMCTS_InitialValue_4by4_Offline_6464_num_steps_list.npy'
-label_name = 'Offline MCTS'
-plot_simple_agent_single_episode(file_name, label_name, axs)
-
-axs.title.set_text("NOT Keep Tree Version")
-axs.legend()
-fig.show()
+    # file_name = 'Results/DQNMCTS_InitialValue_4by4_Offline_6464_num_steps_list.npy'
+    # label_name = 'Offline MCTS'
+    # plot_simple_agent_single_episode(file_name, label_name, axs)
+    #
+    # axs.title.set_text("NOT Keep Tree Version")
+    # axs.legend()
+    # fig.show()

@@ -361,6 +361,7 @@ class DQNMCTSAgent_MCTSPolicy(MCTSAgent, BaseDynaAgent):
     def __init__(self, params={}):
         BaseDynaAgent.__init__(self, params)
         MCTSAgent.__init__(self, params)
+        self.episode_counter = 0
 
     def start(self, observation):
         if self.keep_tree and self.root is None:
@@ -385,14 +386,19 @@ class DQNMCTSAgent_MCTSPolicy(MCTSAgent, BaseDynaAgent):
 
     def end(self, reward):
         BaseDynaAgent.end(self, reward)
+        self.episode_counter += 1
+
 
     def policy(self, state):
-        action, sub_tree = None, None
-        for i in range(self.num_iterations):
-            action, sub_tree = self.MCTS_iteration()
-        # self.render_tree()
-        self.subtree_node = sub_tree
-        action = torch.from_numpy(np.array([self.getActionIndex(action)])).unsqueeze(0).to(self.device)
+        if self.episode_counter > 100:
+            action, sub_tree = None, None
+            for i in range(self.num_iterations):
+                action, sub_tree = self.MCTS_iteration()
+            # self.render_tree()
+            self.subtree_node = sub_tree
+            action = torch.from_numpy(np.array([self.getActionIndex(action)])).unsqueeze(0).to(self.device)
+        else:
+            action = BaseDynaAgent.policy(self, state)
         return action
 
     def rollout(self, node):

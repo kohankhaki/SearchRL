@@ -4,6 +4,7 @@ import os
 import Utils as utils, Config as config
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import pickle
 
 from Experiments.BaseExperiment import BaseExperiment
 from Environments.GridWorldBase import GridWorld
@@ -118,7 +119,7 @@ class RunExperiment():
         # Assuming that we are on a CUDA machine, this should print a CUDA device:
         print(self.device)
 
-    def run_experiment(self, experiment_object_list, result_file_name):
+    def run_experiment(self, experiment_object_list, result_file_name, detail=None):
         num_runs = config.num_runs
         num_episode = config.num_episode
         max_step_each_episode = config.max_step_each_episode
@@ -226,8 +227,12 @@ class RunExperiment():
         # self.show_agent_model_error_plot()
         # with open('sim_num_steps_run_list.npy', 'wb') as f:
         #     np.save(f, self.simulation_steps_run_list)
-        with open("Results/" + result_file_name + '_num_steps_list.npy', 'wb') as f:
-            np.save(f, self.num_steps_run_list)
+        with open("Results/" + result_file_name + '.p', 'wb') as f:
+            result = {'num_steps': self.num_steps_run_list,
+                      'experiment_objs': experiment_object_list,
+                      'detail': detail}
+            pickle.dump(result, f)
+            # np.save(f, self.num_steps_run_list)
         # with open('model_error_run.npy', 'wb') as f:
         #     np.save(f, self.model_error_list)
         #     np.save(f, self.model_error_samples)

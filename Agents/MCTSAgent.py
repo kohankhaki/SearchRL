@@ -184,8 +184,24 @@ class MCTSAgent(BaseAgent):
         queue = [(self.subtree_node, None)]
         while queue:
             node, parent = queue.pop(0)
+            uct_value = 0
+            if node.parent is not None:
+                child_values = list(map(lambda n: n.get_avg_value() + n.reward_from_par, node.parent.get_childs()))
+                max_child_value = max(child_values)
+                min_child_value = min(child_values)
+                child_value = node.get_avg_value()
+                if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
+                    child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
+                if node.num_visits == 0:
+                    uct_value = np.inf
+                else:
+                    uct_value = child_value + \
+                                self.C * ((node.parent.num_visits / node.num_visits) ** 0.5)
+
+
+
             node_face = str(node.get_state()) + "," + str(node.num_visits) + "," + str(node.get_avg_value()) \
-                        + "," + str(node.is_terminal)
+                        + "," + str(node.is_terminal) + "," + str(uct_value)
             if parent is None:
                 p = t.add_child(name=node_face)
             else:

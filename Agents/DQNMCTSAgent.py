@@ -441,18 +441,27 @@ class DQNMCTSAgent_BootstrapInitial(MCTSAgent, BaseDynaAgent):
 
     def start(self, observation):
         self.episode_counter += 1
-        if self.episode_counter % 2 == 0:
+        if self.episode_counter < episodes_only_dqn:
             action = BaseDynaAgent.start(self, observation)
-        else:
+        elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
             action = MCTSAgent.start(self, observation)
+        else:
+            if self.episode_counter % 2 == 0:
+                action = BaseDynaAgent.start(self, observation)
+            else:
+                action = MCTSAgent.start(self, observation)
         return action
 
     def step(self, reward, observation):
-        if self.episode_counter % 2 == 0:
+        if self.episode_counter < episodes_only_dqn:
             action = BaseDynaAgent.step(self, reward, observation)
-        else:
+        elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
             action = MCTSAgent.step(self, reward, observation)
-
+        else:
+            if self.episode_counter % 2 == 0:
+                action = BaseDynaAgent.step(self, reward, observation)
+            else:
+                action = MCTSAgent.step(self, reward, observation)
         return action
 
     def end(self, reward):

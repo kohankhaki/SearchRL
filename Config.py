@@ -1,7 +1,11 @@
 # # experiment
-num_runs = 1
-num_episode = 200
+num_runs = 5
+num_episode = 1200
 max_step_each_episode = 50
+
+episodes_only_dqn = 1000
+episodes_only_mcts = 200
+
 
 num_thread = 2
 

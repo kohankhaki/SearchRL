@@ -33,8 +33,8 @@ def plot_simple_agent(steps_run_list, label_name, axs):
         drawPlotUncertainty(x_steps_run_list,
                             mean_steps_run_list[stepsize_index],
                             std_steps_run_list[stepsize_index],
-                            # label="MCTS(Baseline)" + str(stepsize_index),
-                            label=label_name,
+                            label=label_name + str(stepsize_index),
+                            # label=label_name,
                             color=generate_hex_color(),
                             axis=axs)
 

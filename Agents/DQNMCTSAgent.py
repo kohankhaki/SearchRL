@@ -7,6 +7,10 @@ from Agents.MCTSAgent import MCTSAgent
 from Agents.BaseDynaAgent import BaseDynaAgent
 from DataStructures.Node import Node
 import Utils as utils
+import Config as config
+
+episodes_only_dqn = config.episodes_only_dqn
+episodes_only_mcts = config.episodes_only_mcts
 
 
 # MCTS uses DQN values for nodes initialization
@@ -20,18 +24,27 @@ class DQNMCTSAgent_InitialValue(MCTSAgent, BaseDynaAgent):
 
     def start(self, observation):
         self.episode_counter += 1
-        if self.episode_counter % 2 == 0:
+        if self.episode_counter < episodes_only_dqn:
             action = BaseDynaAgent.start(self, observation)
-        else:
+        elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
             action = MCTSAgent.start(self, observation)
+        else:
+            if self.episode_counter % 2 == 0:
+                action = BaseDynaAgent.start(self, observation)
+            else:
+                action = MCTSAgent.start(self, observation)
         return action
 
     def step(self, reward, observation):
-        if self.episode_counter % 2 == 0:
-            action = BaseDynaAgent.step(self, reward, observation)
+        if self.episode_counter < episodes_only_dqn:
+            action = BaseDynaAgent.start(self, observation)
+        elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
+            action = MCTSAgent.start(self, observation)
         else:
-            action = MCTSAgent.step(self, reward, observation)
-
+            if self.episode_counter % 2 == 0:
+                action = BaseDynaAgent.start(self, observation)
+            else:
+                action = MCTSAgent.start(self, observation)
         return action
 
     def end(self, reward):

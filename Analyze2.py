@@ -20,9 +20,9 @@ def drawPlotUncertainty(x, y, y_err, label, color, axis):
                       facecolor=color, alpha=.4, edgecolor='none')
 
 
-def plot_simple_agent(file_name, label_name, axs):
-    with open(file_name, 'rb') as f:
-        steps_run_list = np.load(f)
+def plot_simple_agent(steps_run_list, label_name, axs):
+    # with open(file_name, 'rb') as f:
+    #     steps_run_list = np.load(f)
 
     print(steps_run_list.shape)
     mean_steps_run_list = np.mean(steps_run_list, axis=1)
@@ -89,7 +89,7 @@ def plot_alternate_agents(file_name, label_name1, label_name2, axs):
                         axis=axs)
 
 if __name__ == "__main__":
-    file_name = 'Results/MCTS_ParameterStudy.p'
+    file_name = 'Results/DQN_ParameterStudy.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
     # print(res.keys())
@@ -100,9 +100,9 @@ if __name__ == "__main__":
 
     print(res['num_steps'])
     steps_run_list = res['num_steps']
-    label_name = 'MCTS'
-    plot_simple_agent_single_episode(steps_run_list, label_name, axs)
-
+    label_name = 'DQN'
+    # plot_simple_agent_single_episode(steps_run_list, label_name, axs)
+    plot_simple_agent(steps_run_list, label_name, axs)
     # file_name = 'Results/DQNMCTS_InitialValue_4by4_num_steps_list.npy'
     # label_name1 = '-'
     # label_name2 = 'Initial Value'
@@ -123,6 +123,7 @@ if __name__ == "__main__":
     # label_name = 'Offline MCTS'
     # plot_simple_agent_single_episode(file_name, label_name, axs)
     #
-    axs.title.set_text("MCTS Parameter Study")
+    axs.title.set_text("DQN Parameter Study")
     axs.legend()
+    fig.savefig("Results/Plots/DQN_ParameterStudy.png")
     fig.show()

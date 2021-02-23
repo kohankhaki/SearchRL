@@ -216,6 +216,7 @@ class DQNMCTSAgent_UseTreeSelection(MCTSAgent, BaseDynaAgent):
         buffer_prev_state = None
         buffer_prev_action = None
         buffer_reward = None
+        reward = 0
         while len(selected_node.get_childs()) > 0:
             max_uct_value = -np.inf
             child_values = list(map(lambda n: n.get_avg_value(), selected_node.get_childs()))
@@ -230,52 +231,38 @@ class DQNMCTSAgent_UseTreeSelection(MCTSAgent, BaseDynaAgent):
                     if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
                         child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
                     uct_value = child_value + \
-                                self.C * ((selected_node.num_visits / child.num_visits) ** 0.5)
+                                self.C * ((child.parent.num_visits / child.num_visits) ** 0.5)
                 if max_uct_value < uct_value:
                     max_uct_value = uct_value
                     selected_node = child
 
-
             if selected_node.is_terminal:
-                buffer_prev_state = self.getStateRepresentation(selected_node.parent.state)
-                prev_action_index = self.getActionIndex(selected_node.action_from_par)
-                buffer_prev_action = torch.tensor([prev_action_index], device=self.device).view(1, 1)
-                buffer_reward = torch.tensor([selected_node.reward_from_par], device=self.device)
-                buffer_state = None
-                buffer_action = None
-                is_terminal = True
-                self.updateTransitionBuffer(utils.transition(buffer_prev_state,
-                                                         buffer_prev_action,
-                                                         buffer_reward,
-                                                         buffer_state,
-                                                         buffer_action, is_terminal, self.time_step, 0))
-
-
+                buffer_prev_state_t = self.getStateRepresentation(selected_node.parent.state)
+                prev_action_index_t = self.getActionIndex(selected_node.action_from_par)
+                buffer_prev_action_t = torch.tensor([prev_action_index_t], device=self.device).view(1, 1)
+                buffer_reward_t = torch.tensor([selected_node.reward_from_par], device=self.device)
+                buffer_state_t = None
+                buffer_action_t = None
+                is_terminal_t = True
+                self.updateTransitionBuffer(utils.transition(buffer_prev_state_t,
+                                                         buffer_prev_action_t,
+                                                         buffer_reward_t,
+                                                         buffer_state_t,
+                                                         buffer_action_t, is_terminal_t, self.time_step, 0))
 
             buffer_state = self.getStateRepresentation(selected_node.parent.state)
             action_index = self.getActionIndex(selected_node.action_from_par)
             buffer_action = torch.tensor([action_index], device=self.device).view(1, 1)
-            reward = selected_node.reward_from_par
-            # store the new transition in buffer
-
 
             if buffer_prev_state is not None:
+                reward = selected_node.parent.reward_from_par
                 if selected_node.parent.is_terminal:
-                    buffer_state = None
-                    buffer_action = None
+                    raise ValueError("ridididididididididirididiridiririri")
                 self.updateTransitionBuffer(utils.transition(buffer_prev_state,
                                                          buffer_prev_action,
                                                          buffer_reward,
                                                          buffer_state,
                                                          buffer_action, selected_node.parent.is_terminal, self.time_step, 0))
-                # print('--------------Transition---------------')
-                # print(buffer_prev_state)
-                # print(buffer_prev_action)
-                # print(buffer_reward)
-                # print(buffer_state)
-                # print(buffer_action)
-                if selected_node.parent.is_terminal:
-                    print(selected_node.parent.is_terminal)
             buffer_prev_state = buffer_state
             buffer_prev_action = buffer_action
             buffer_reward = torch.tensor([reward], device=self.device)

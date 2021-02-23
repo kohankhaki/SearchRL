@@ -85,6 +85,6 @@ if __name__ == '__main__':
                                         obj = ExperimentObject(agent_class, params)
                                         experiment_object_list.append(obj)
     # x = time.time()
-    detail = "Env = 4room - 4x4"
-    experiment.run_experiment(experiment_object_list, result_file_name="fffff", detail=detail)
+    detail = "Env = 4room - 4x4 --- Buffer Size = 10 ^ 6 --- Batch Size = 128"
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_UseTreeSelection", detail=detail)
     # print(time.time() - x)

@@ -22,14 +22,14 @@ from Agents.DQNMCTSAgent import *
 
 if __name__ == '__main__':
 
-    # agent_class_list = [BaseDynaAgent]
+    agent_class_list = [BaseDynaAgent]
     # agent_class_list = [DQNMCTSAgent_MCTSPolicy]
     # agent_class_list = [DQNMCTSAgent_InitialValue]
     # agent_class_list = [DQNMCTSAgent_BootstrapInitial]
     # agent_class_list = [DQNMCTSAgent_Bootstrap]
     # agent_class_list = [MCTSAgent]
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
-    agent_class_list = [DQNMCTSAgent_UseTreeSelection]
+    # agent_class_list = [DQNMCTSAgent_UseTreeSelection]
     # agent_class_list = [DQNMCTSAgent_MCTSSelectedAction]
 
     # agent_class_list = [DQNMCTSAgent_InitialValue_offline]
@@ -87,5 +87,5 @@ if __name__ == '__main__':
                                         experiment_object_list.append(obj)
     # x = time.time()
     detail = "Env = 4room - 4x4 --- Buffer Size = 10 ^ 6 --- Batch Size = 128"
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_UseTreeSelection1", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="ffff", detail=detail)
     # print(time.time() - x)

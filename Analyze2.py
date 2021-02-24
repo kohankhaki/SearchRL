@@ -122,7 +122,7 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
 if __name__ == "__main__":
     fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
-    file_name = 'Results/DQNMCTS_UseTreeSelection.p'
+    file_name = 'Results/DQNMCTS_UseTreeSelection1.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
     print(res['num_steps'])
@@ -142,5 +142,5 @@ if __name__ == "__main__":
 
     axs.title.set_text("DQNMCTS UseTreeSelection")
     axs.legend()
-    fig.savefig("Results/Plots/DQNMCTS_UseTreeSelection.png")
+    fig.savefig("Results/Plots/DQNMCTS_UseTreeSelection1.png")
     fig.show()

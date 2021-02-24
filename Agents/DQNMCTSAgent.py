@@ -84,7 +84,6 @@ class DQNMCTSAgent_InitialValue_offline(MCTSAgent, BaseDynaAgent):
         value = self.getStateActionValue(state_representation)
         return value.item()
 
-
 # MCTS uses DQN values for bootstrap
 class DQNMCTSAgent_Bootstrap(MCTSAgent, BaseDynaAgent):
     name = "DQNMCTSAgent_Bootstrap"
@@ -142,7 +141,6 @@ class DQNMCTSAgent_Bootstrap(MCTSAgent, BaseDynaAgent):
             sum_returns += single_return
 
         return sum_returns / self.num_rollouts
-
 
 # DQN uses Tree made by MCTS selection tree
 class DQNMCTSAgent_UseTreeSelection(MCTSAgent, BaseDynaAgent):

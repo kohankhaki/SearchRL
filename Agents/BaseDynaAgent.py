@@ -33,7 +33,7 @@ class BaseDynaAgent(BaseAgent):
         self.epsilon = params['epsilon']
 
         self.transition_buffer = []
-        self.transition_buffer_size = 10 ** 6
+        self.transition_buffer_size = 4096
 
         self.policy_values = 'q'  # 'q' or 's' or 'qs'
         self.policy_values = params['vf']['type']  # 'q' or 's' or 'qs'
@@ -43,7 +43,7 @@ class BaseDynaAgent(BaseAgent):
                               layers_features=params['vf']['layers_features'],
                               action_layer_num=params['vf']['action_layer_num'],
                               # if one more than layer numbers => we will have num of actions output
-                              batch_size=128,
+                              batch_size=32,
                               step_size=params['max_stepsize'],
                               training=True),
                     's': dict(network=None,
@@ -231,9 +231,21 @@ class BaseDynaAgent(BaseAgent):
         prev_action_batch = torch.cat(batch.prev_action)
         reward_batch = torch.cat(batch.reward)
 
+        # state_action_values = self._vf['q']['network'](prev_state_batch).gather(1, prev_action_batch)
+        # next_state_values = torch.zeros(self._vf['q']['batch_size'], device=self.device)
+        # next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).max(1)[0].detach()
+
+        #BEGIN SARSA
+        non_final_next_actions = torch.cat([a for a in batch.action
+                                           if a is not None])
+
         state_action_values = self._vf['q']['network'](prev_state_batch).gather(1, prev_action_batch)
         next_state_values = torch.zeros(self._vf['q']['batch_size'], device=self.device)
-        next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).max(1)[0].detach()
+        print(non_final_next_actions.shape)
+        print(self._target_vf['network'](non_final_next_states).shape)
+        next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states)[batch.action[non_final_mask]].detach()
+        print(next_state_values[non_final_mask].shape)
+        #END SARSA
 
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
         loss = F.mse_loss(state_action_values,

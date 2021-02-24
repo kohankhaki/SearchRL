@@ -22,14 +22,15 @@ from Agents.DQNMCTSAgent import *
 
 if __name__ == '__main__':
 
-    # agent_class_list = [BaseDynaAgent]
+    agent_class_list = [BaseDynaAgent]
     # agent_class_list = [DQNMCTSAgent_MCTSPolicy]
     # agent_class_list = [DQNMCTSAgent_InitialValue]
     # agent_class_list = [DQNMCTSAgent_BootstrapInitial]
     # agent_class_list = [DQNMCTSAgent_Bootstrap]
     # agent_class_list = [MCTSAgent]
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
-    agent_class_list = [DQNMCTSAgent_UseTreeSelection]
+    # agent_class_list = [DQNMCTSAgent_UseTreeSelection]
+    # agent_class_list = [DQNMCTSAgent_MCTSSelectedAction]
 
     # agent_class_list = [DQNMCTSAgent_InitialValue_offline]
 
@@ -43,7 +44,7 @@ if __name__ == '__main__':
 
     c_list = [2 ** 0]
     num_iteration_list = [100]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [50]
+    simulation_depth_list = [75]
     num_simulation_list = [1]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
@@ -85,6 +86,6 @@ if __name__ == '__main__':
                                         obj = ExperimentObject(agent_class, params)
                                         experiment_object_list.append(obj)
     # x = time.time()
-    detail = "Env = 4room - 4x4"
-    experiment.run_experiment(experiment_object_list, result_file_name="fffff", detail=detail)
+    detail = "Env = 4room - 4x4 --- Buffer Size = 10 ^ 6 --- Batch Size = 128"
+    experiment.run_experiment(experiment_object_list, result_file_name="ffff", detail=detail)
     # print(time.time() - x)

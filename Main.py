@@ -87,5 +87,5 @@ if __name__ == '__main__':
                                         experiment_object_list.append(obj)
     # x = time.time()
     detail = "Env = 4room - 4x4 --- Buffer Size = 10 ^ 6 --- Batch Size = 128"
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_UseTreeSelection", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_UseTreeSelection1", detail=detail)
     # print(time.time() - x)

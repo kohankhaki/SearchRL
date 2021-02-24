@@ -122,25 +122,25 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
 if __name__ == "__main__":
     fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
-    file_name = 'Results/DQNMCTS_BootstrapInitial.p'
+    file_name = 'Results/DQNMCTS_UseTreeSelection.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
     print(res['num_steps'])
     steps_run_list = res['num_steps']
-    label_name1 = 'DQN'
-    label_name2 = 'MCTS(BootstrapInitial)'
+    label_name1 = 'DQN(UseTreeSelection)'
+    label_name2 = 'MCTS'
     plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs)
 
-    file_name = 'Results/MCTS_ParameterStudy.p'
-    with open(file_name, "rb") as f:
-        res = pickle.load(f)
-    print(res['num_steps'])
-    steps_run_list = res['num_steps']
-    label_name = 'MCTS'
-    plot_simple_agent_single_episode(steps_run_list, label_name, axs)
+    # file_name = 'Results/MCTS_ParameterStudy.p'
+    # with open(file_name, "rb") as f:
+    #     res = pickle.load(f)
+    # print(res['num_steps'])
+    # steps_run_list = res['num_steps']
+    # label_name = 'MCTS'
+    # plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 
 
-    axs.title.set_text("DQNMCTS BootstrapInitial")
+    axs.title.set_text("DQNMCTS UseTreeSelection")
     axs.legend()
-    fig.savefig("Results/Plots/DQNMCTS_BootstrapInitial.png")
+    fig.savefig("Results/Plots/DQNMCTS_UseTreeSelection.png")
     fig.show()

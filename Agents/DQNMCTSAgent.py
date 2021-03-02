@@ -588,3 +588,71 @@ class DQNMCTSAgent_BootstrapInitial(MCTSAgent, BaseDynaAgent):
         state_representation = self.getStateRepresentation(state)
         value = self.getStateActionValue(state_representation)
         return value.item()
+
+
+# MCTS uses DQN values for bootstrap nodes initialization
+class DQNMCTSAgent_Rollout(MCTSAgent, BaseDynaAgent):
+    name = "DQNMCTSAgent_Rollout"
+
+    def __init__(self, params={}):
+        BaseDynaAgent.__init__(self, params)
+        MCTSAgent.__init__(self, params)
+        self.episode_counter = -1
+
+    def start(self, observation):
+        self.episode_counter += 1
+        if self.episode_counter < episodes_only_dqn:
+            action = BaseDynaAgent.start(self, observation)
+        elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
+            action = MCTSAgent.start(self, observation)
+        else:
+            if self.episode_counter % 2 == 0:
+                action = BaseDynaAgent.start(self, observation)
+            else:
+                action = MCTSAgent.start(self, observation)
+        return action
+
+    def step(self, reward, observation):
+        if self.episode_counter < episodes_only_dqn:
+            action = BaseDynaAgent.step(self, reward, observation)
+        elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
+            action = MCTSAgent.step(self, reward, observation)
+        else:
+            if self.episode_counter % 2 == 0:
+                action = BaseDynaAgent.step(self, reward, observation)
+            else:
+                action = MCTSAgent.step(self, reward, observation)
+        return action
+
+    def end(self, reward):
+        BaseDynaAgent.end(self, reward)
+
+    def rollout(self, node):
+        sum_returns = 0
+        for i in range(self.num_rollouts):
+            depth = 0
+            single_return = 0
+            is_terminal = False
+            state = node.get_state()
+            while not is_terminal and depth < self.rollout_depth:
+                a = self.rollout_policy(state)
+                next_state, is_terminal, reward = self.true_model(state, a)
+                single_return += reward
+                depth += 1
+                state = next_state
+            sum_returns += single_return
+        return sum_returns / self.num_rollouts
+
+    def rollout_policy(self, state):
+        # random policy
+        # action = random.choice(self.action_list)
+
+        # DQNs policy
+        state = self.getStateRepresentation(state)
+
+
+        action_ind = BaseDynaAgent.policy(self, state)
+        action = self.action_list[action_ind.item()]
+
+
+        return action

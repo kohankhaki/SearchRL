@@ -232,17 +232,17 @@ class BaseDynaAgent(BaseAgent):
         reward_batch = torch.cat(batch.reward)
 
         #BEGIN DQN
-        # state_action_values = self._vf['q']['network'](prev_state_batch).gather(1, prev_action_batch)
-        # next_state_values = torch.zeros(self._vf['q']['batch_size'], device=self.device)
-        # next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).max(1)[0].detach()
+        state_action_values = self._vf['q']['network'](prev_state_batch).gather(1, prev_action_batch)
+        next_state_values = torch.zeros(self._vf['q']['batch_size'], device=self.device)
+        next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).max(1)[0].detach()
         #END DQN
 
         #BEGIN SARSA
-        non_final_next_actions = torch.cat([a for a in batch.action
-                                           if a is not None])
-        state_action_values = self._vf['q']['network'](prev_state_batch).gather(1, prev_action_batch)
-        next_state_values = torch.zeros(self._vf['q']['batch_size'], device=self.device)
-        next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).gather(1, non_final_next_actions).detach()[:, 0]
+        # non_final_next_actions = torch.cat([a for a in batch.action
+        #                                    if a is not None])
+        # state_action_values = self._vf['q']['network'](prev_state_batch).gather(1, prev_action_batch)
+        # next_state_values = torch.zeros(self._vf['q']['batch_size'], device=self.device)
+        # next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).gather(1, non_final_next_actions).detach()[:, 0]
         #END SARSA
 
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch

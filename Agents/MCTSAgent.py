@@ -7,6 +7,7 @@ from ete3 import Tree, TreeStyle, TextFace, add_face_to_node
 from Agents.BaseAgent import BaseAgent
 from DataStructures.Node import Node
 
+from profilehooks import timecall
 
 class MCTSAgent(BaseAgent):
     name = "MCTSAgent"
@@ -77,6 +78,7 @@ class MCTSAgent(BaseAgent):
     def get_initial_value(self, state):
         return 0
 
+    @timecall(immediate=True)
     def MCTS_iteration(self):
         # self.render_tree()
         selected_node = self.selection()

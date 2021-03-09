@@ -6,6 +6,7 @@ from ete3 import Tree, TreeStyle, TextFace, add_face_to_node
 
 from Agents.BaseAgent import BaseAgent
 from DataStructures.Node import Node
+from profilehooks import timecall, profile, coverage
 
 is_gridWorld = True
 class MCTSAgent(BaseAgent):
@@ -55,10 +56,9 @@ class MCTSAgent(BaseAgent):
 
         # self.render_tree()
 
-        action, sub_tree = None, None
         for i in range(self.num_iterations):
-            action, sub_tree = self.MCTS_iteration()
-        # self.render_tree()
+            self.MCTS_iteration()
+        action, sub_tree = self.policy()
         self.subtree_node = sub_tree
         return action
 
@@ -67,10 +67,9 @@ class MCTSAgent(BaseAgent):
             self.subtree_node = Node(None, observation)
             self.expansion(self.subtree_node)
 
-        action, sub_tree = None, None
         for i in range(self.num_iterations):
-            action, sub_tree = self.MCTS_iteration()
-        # self.render_tree()
+            self.MCTS_iteration()
+        action, sub_tree = self.policy()
         self.subtree_node = sub_tree
         return action
 
@@ -80,21 +79,7 @@ class MCTSAgent(BaseAgent):
     def get_initial_value(self, state):
         return 0
 
-    def MCTS_iteration(self):
-        # self.render_tree()
-        selected_node = self.selection()
-        # now we decide to expand the leaf or rollout
-
-        if selected_node.is_terminal:
-            self.backpropagate(selected_node, 0)
-        elif selected_node.num_visits == 0:  # don't expand just roll-out
-            rollout_value = self.rollout(selected_node)
-            self.backpropagate(selected_node, rollout_value)
-        else:  # expand then roll_out
-            self.expansion(selected_node)
-            rollout_value = self.rollout(selected_node.get_childs()[0])
-            self.backpropagate(selected_node.get_childs()[0], rollout_value)
-
+    def policy(self):
         max_visit = -np.inf
         max_action = None
         max_child = None
@@ -105,6 +90,23 @@ class MCTSAgent(BaseAgent):
                 max_child = child
         return max_action, max_child
 
+    @timecall(immediate=False)
+    def MCTS_iteration(self):
+        # self.render_tree()
+        selected_node = self.selection()
+        # now we decide to expand the leaf or rollout
+        if selected_node.is_terminal:
+            self.backpropagate(selected_node, 0)
+        elif selected_node.num_visits == 0:  # don't expand just roll-out
+            rollout_value = self.rollout(selected_node)
+            self.backpropagate(selected_node, rollout_value)
+        else:  # expand then roll_out
+            self.expansion(selected_node)
+            rollout_value = self.rollout(selected_node.get_childs()[0])
+            self.backpropagate(selected_node.get_childs()[0], rollout_value)
+
+
+    @timecall(immediate=False)
     def selection(self):
         selected_node = self.subtree_node
         while len(selected_node.get_childs()) > 0:
@@ -127,6 +129,7 @@ class MCTSAgent(BaseAgent):
                     selected_node = child
         return selected_node
 
+    @timecall(immediate=False)
     def expansion(self, node):
         for a in self.action_list:
             next_state, is_terminal, reward = self.true_model(node.get_state(),
@@ -138,6 +141,7 @@ class MCTSAgent(BaseAgent):
                          value=value)
             node.add_child(child)
 
+    @timecall(immediate=False)
     def rollout(self, node):
         sum_returns = 0
         for i in range(self.num_rollouts):
@@ -154,6 +158,7 @@ class MCTSAgent(BaseAgent):
             sum_returns += single_return
         return sum_returns / self.num_rollouts
 
+    @timecall(immediate=False)
     def backpropagate(self, node, value):
         while node is not None:
             node.add_to_values(value)

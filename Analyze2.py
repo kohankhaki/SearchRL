@@ -140,7 +140,7 @@ if __name__ == "__main__":
     plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 
 
-    axs.title.set_text("SARSAMCTS UseTreeSelection")
+    axs.title.set_text("DQNMCTS Rollout")
     axs.legend()
-    fig.savefig("Results/Plots/SARSAMCTS_UseTreeSelection.png")
+    fig.savefig("Results/Plots/DQNMCTS_Rollout.png")
     fig.show()

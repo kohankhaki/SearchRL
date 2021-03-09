@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import pygame
+from profilehooks import timecall
 
 class GridWorld():
     def __init__(self, params=None):
@@ -67,6 +68,7 @@ class GridWorld():
         self.addObstacles(params['obstacles_pos'], self._grid)
         self.__createOnehotMap()
         self.screen = None # for visualization
+        self.__create_transition_dynamics()
 
     def start(self):
         """
@@ -303,14 +305,41 @@ class GridWorld():
         next_state = self.posToState(pos, state_type)
         return next_state
 
+    @timecall(immediate=False)
     def fullTransitionFunction(self, state, action, state_type='coord'):
-
         pos = self.stateToPos(state, state_type)
         pos = self.__transitionFunction(pos, action)
         is_terminal = self.__terminalFunction(pos)
         reward = self.__rewardFunction(pos)
         next_state = self.posToState(pos, state_type)
         return next_state, is_terminal, reward
+
+    @timecall(immediate=False)
+    def coordTransitionFunction(self, state, action):
+        action_index = self.getActionIndex(action)
+        transition = self.transition_dynamics[int(state[0]), int(state[1]), action_index]
+        next_state, is_terminal, reward = transition[0:2], transition[2], transition[3]
+        return next_state, is_terminal, reward
+
+    def getActionIndex(self, action):
+        for i, a in enumerate(self.getAllActions()):
+            if np.array_equal(a, action):
+                return i
+        raise ValueError("action is not defined")
+
+    def __create_transition_dynamics(self):
+        all_states = self.getAllStates(state_type="coord")
+        all_actions = self.getAllActions()
+        num_actions = len(all_actions)
+        self.transition_dynamics = np.zeros([self._grid_shape[0], self._grid_shape[1], num_actions, 4]) #x, y, is_terminal, reward
+        for state in all_states:
+            for action in all_actions:
+                next_state, is_terminal, reward = self.fullTransitionFunction(state, action, state_type="coord")
+                action_index = self.getActionIndex(action)
+                self.transition_dynamics[state[0], state[1], action_index, 0] = next_state[0]
+                self.transition_dynamics[state[0], state[1], action_index, 1] = next_state[1]
+                self.transition_dynamics[state[0], state[1], action_index, 2] = is_terminal
+                self.transition_dynamics[state[0], state[1], action_index, 3] = reward
 
     def transitionFunctionBackward(self, state, prev_action, state_type='coord', type='sample'):
         if type == 'expectation':
@@ -365,7 +394,6 @@ class GridWorld():
 
         else:
             raise NotImplementedError("backward transition function other expectation hasn't been implemented")
-
 
     def get_obstacles_pos(self):
         return self._obstacles_pos

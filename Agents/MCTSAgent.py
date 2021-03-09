@@ -28,8 +28,8 @@ class MCTSAgent(BaseAgent):
         self.epsilon = params['epsilon']
 
         self.device = params['device']
-        self.true_model = params['true_fw_model']
-
+        # self.true_model = params['true_fw_model']
+        self.transition_dynamics = params['transition_dynamics']
         # MCTS parameters
         self.C = params['c']
         self.num_iterations = params['num_iteration']
@@ -78,7 +78,6 @@ class MCTSAgent(BaseAgent):
     def get_initial_value(self, state):
         return 0
 
-    @timecall(immediate=True)
     def MCTS_iteration(self):
         # self.render_tree()
         selected_node = self.selection()
@@ -93,7 +92,6 @@ class MCTSAgent(BaseAgent):
             self.expansion(selected_node)
             rollout_value = self.rollout(selected_node.get_childs()[0])
             self.backpropagate(selected_node.get_childs()[0], rollout_value)
-
 
         max_visit = -np.inf
         max_action = None
@@ -138,6 +136,7 @@ class MCTSAgent(BaseAgent):
                          value=value)
             node.add_child(child)
 
+    @timecall(immediate=False)
     def rollout(self, node):
         sum_returns = 0
         for i in range(self.num_rollouts):
@@ -161,6 +160,13 @@ class MCTSAgent(BaseAgent):
             value *= self.gamma
             value += node.reward_from_par
             node = node.parent
+
+    @timecall(immediate=False)
+    def true_model(self, state, action):
+        action_index = self.getActionIndex(action)
+        transition = self.transition_dynamics[int(state[0]), int(state[1]), action_index]
+        next_state, is_terminal, reward = transition[0:2], transition[2], transition[3]
+        return next_state, is_terminal, reward
 
     def show(self):
         queue = [self.subtree_node, "*"]
@@ -215,3 +221,19 @@ class MCTSAgent(BaseAgent):
         # t.render('t.png', tree_style=ts)
         # print(t.get_ascii(show_internal=Tree))
         t.show(tree_style=ts)
+
+    def getActionIndex(self, action):
+        if action[0] == 0:
+            if action[1] == 1:
+                return 2
+            else:
+                return 0
+        elif action[0] == 1:
+            return 3
+        else:
+            return 1
+
+        # for i, a in enumerate(self.action_list):
+        #     if np.array_equal(a, action):
+        #         return i
+        # raise ValueError("action is not defined")

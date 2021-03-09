@@ -1,6 +1,6 @@
 # # experiment
-num_runs = 3
-num_episode = 1200
+num_runs = 1
+num_episode = 10
 max_step_each_episode = 50
 
 episodes_only_dqn = 1000

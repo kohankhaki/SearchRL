@@ -210,7 +210,7 @@ class RunExperiment():
                     #     # self.agent_model_error_list[agent_counter, r, e] = agent_model_error
                     #     self.model_error_samples[i, r, e] = experiment.num_samples
 
-                # agent.saveValueFunction("Results/DQNVF/dqn_vf_" + str(r) + ".p")
+                agent.saveValueFunction("Results/DQNVF/dqn_vf_" + str(r) + ".p")
 
 
                 # *********

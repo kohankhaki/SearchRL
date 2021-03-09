@@ -41,17 +41,16 @@ def plot_simple_agent(steps_run_list, label_name, axs):
 
 def plot_simple_agent_each_run(steps_run_list, label_name, axs):
 
-    print(steps_run_list.shape)
-    mean_steps_run_list = np.mean(steps_run_list, axis=1)
-    std_steps_run_list = np.std(steps_run_list, axis=1)
+    # print(steps_run_list.shape)
+    # mean_steps_run_list = np.mean(steps_run_list, axis=1)
+    # std_steps_run_list = np.std(steps_run_list, axis=1)
     x_steps_run_list = np.arange(steps_run_list.shape[2])
 
-    for stepsize_index in range(mean_steps_run_list.shape[0]):
+    for run_index in range(5, 6):
         drawPlotUncertainty(x_steps_run_list,
-                            mean_steps_run_list[stepsize_index],
-                            std_steps_run_list[stepsize_index],
-                            label=label_name + str(stepsize_index),
-                            # label=label_name,
+                            steps_run_list[0][run_index],
+                            np.zeros(steps_run_list[0][run_index].shape),
+                            label=label_name + "_" + str(run_index),
                             color=generate_hex_color(),
                             axis=axs)
 
@@ -154,7 +153,7 @@ if __name__ == "__main__":
     # plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 
 
-    file_name = 'Results/DQNVF/DQNVF.p'
+    file_name = 'Results/DQNVF/VF 64-64/DQNVF.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
     print(res['num_steps'].shape)

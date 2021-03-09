@@ -8,7 +8,7 @@ from Agents.BaseAgent import BaseAgent
 from DataStructures.Node import Node
 
 from profilehooks import timecall
-
+is_gridWorld = True
 class MCTSAgent(BaseAgent):
     name = "MCTSAgent"
 
@@ -28,8 +28,11 @@ class MCTSAgent(BaseAgent):
         self.epsilon = params['epsilon']
 
         self.device = params['device']
-        # self.true_model = params['true_fw_model']
-        self.transition_dynamics = params['transition_dynamics']
+
+        if is_gridWorld:
+            self.transition_dynamics = params['transition_dynamics']
+        else:
+            self.true_model = params['true_fw_model']
         # MCTS parameters
         self.C = params['c']
         self.num_iterations = params['num_iteration']
@@ -223,17 +226,17 @@ class MCTSAgent(BaseAgent):
         t.show(tree_style=ts)
 
     def getActionIndex(self, action):
-        if action[0] == 0:
-            if action[1] == 1:
-                return 2
+        if is_gridWorld:
+            if action[0] == 0:
+                if action[1] == 1:
+                    return 2
+                else:
+                    return 0
+            elif action[0] == 1:
+                return 3
             else:
-                return 0
-        elif action[0] == 1:
-            return 3
-        else:
-            return 1
-
-        # for i, a in enumerate(self.action_list):
-        #     if np.array_equal(a, action):
-        #         return i
-        # raise ValueError("action is not defined")
+                return 1
+        for i, a in enumerate(self.action_list):
+            if np.array_equal(a, action):
+                return i
+        raise ValueError("action is not defined")

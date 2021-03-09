@@ -9,6 +9,8 @@ from DataStructures.Node import Node
 import Utils as utils
 import Config as config
 
+from profilehooks import timecall, profile, coverage
+
 episodes_only_dqn = config.episodes_only_dqn
 episodes_only_mcts = config.episodes_only_mcts
 
@@ -395,23 +397,34 @@ class DQNMCTSAgent_MCTSPolicy(MCTSAgent, BaseDynaAgent):
     def end(self, reward):
         BaseDynaAgent.end(self, reward)
 
+    @timecall(immediate=False)
     def policy(self, state):
-        if self.episode_counter % 2 == 1:
-            action, sub_tree = None, None
+        if self.episode_counter > 0:
+            if random.random() < self.epsilon:
+                if len(self.subtree_node.get_childs()) == 0 :
+                    print(self.subtree_node.get_state())
+                    raise ValueError("subtree node has no childs")
+                random_child = np.random.choice(self.subtree_node.get_childs())
+                random_action = random_child.action_from_par
+                self.subtree_node = random_child
+                action = torch.tensor([self.getActionIndex(random_action)]).unsqueeze(0).to(self.device)
+                return action
+
             for i in range(self.num_iterations):
-                action, sub_tree = self.MCTS_iteration()
-            # self.render_tree()
+                self.MCTS_iteration()
+            action, sub_tree = MCTSAgent.policy(self)
             self.subtree_node = sub_tree
-            action = torch.from_numpy(np.array([self.getActionIndex(action)])).unsqueeze(0).to(self.device)
+            action = torch.tensor([self.getActionIndex(action)]).unsqueeze(0).to(self.device)
         else:
             action = BaseDynaAgent.policy(self, state)
         return action
 
-    # def rollout(self, node):
-    #     state = node.get_state()
-    #     t_state = torch.from_numpy(state).unsqueeze(0).to(self.device)
-    #     value = self.getStateActionValue(t_state)
-    #     return value
+    @timecall(immediate=False)
+    def rollout(self, node):
+        state = node.get_state()
+        t_state = torch.from_numpy(state).unsqueeze(0).to(self.device)
+        value = self.getStateActionValue(t_state)
+        return value
 
 
 # DQN uses MCTS as the policy

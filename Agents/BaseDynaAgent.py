@@ -76,7 +76,6 @@ class BaseDynaAgent(BaseAgent):
         self.num_steps = 0
         self.num_terminal_steps = 0
 
-    @timecall(immediate=False)
     def start(self, observation):
         '''
         :param observation: numpy array -> (observation shape)
@@ -99,7 +98,6 @@ class BaseDynaAgent(BaseAgent):
         self.initModel(self.prev_state)
         return self.action_list[self.prev_action.item()]
 
-    @timecall(immediate=False)
     def step(self, reward, observation):
         self.time_step += 1
 
@@ -141,7 +139,6 @@ class BaseDynaAgent(BaseAgent):
 
         return self.action_list[self.prev_action.item()]
 
-    @timecall(immediate=False)
     def end(self, reward):
         reward = torch.tensor([reward], device=self.device)
 

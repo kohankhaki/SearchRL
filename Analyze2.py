@@ -46,7 +46,7 @@ def plot_simple_agent_each_run(steps_run_list, label_name, axs):
     # std_steps_run_list = np.std(steps_run_list, axis=1)
     x_steps_run_list = np.arange(steps_run_list.shape[2])
 
-    for run_index in range(5, 6):
+    for run_index in range(10, 12):
         drawPlotUncertainty(x_steps_run_list,
                             steps_run_list[0][run_index],
                             np.zeros(steps_run_list[0][run_index].shape),
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     # plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 
 
-    file_name = 'Results/DQNVF/VF 64-64/DQNVF.p'
+    file_name = 'Results/DQNVF/VF 16-8/DQNVF.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
     print(res['num_steps'].shape)

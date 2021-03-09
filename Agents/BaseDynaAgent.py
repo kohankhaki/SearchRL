@@ -13,8 +13,6 @@ from Networks.ValueFunctionNN.StateValueFunction import StateVFNN
 from Networks.RepresentationNN.StateRepresentation import StateRepresentation
 import pickle
 
-from profilehooks import timecall, profile, coverage
-
 #this is an DQN agent.
 class BaseDynaAgent(BaseAgent):
     name = 'BaseDynaAgent'

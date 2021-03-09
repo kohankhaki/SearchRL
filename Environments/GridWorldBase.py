@@ -1,7 +1,6 @@
 import numpy as np
 import random
 import pygame
-from profilehooks import timecall
 
 class GridWorld():
     def __init__(self, params=None):
@@ -305,7 +304,6 @@ class GridWorld():
         next_state = self.posToState(pos, state_type)
         return next_state
 
-    @timecall(immediate=False)
     def fullTransitionFunction(self, state, action, state_type='coord'):
         pos = self.stateToPos(state, state_type)
         pos = self.__transitionFunction(pos, action)
@@ -314,7 +312,6 @@ class GridWorld():
         next_state = self.posToState(pos, state_type)
         return next_state, is_terminal, reward
 
-    @timecall(immediate=False)
     def coordTransitionFunction(self, state, action):
         action_index = self.getActionIndex(action)
         transition = self.transition_dynamics[int(state[0]), int(state[1]), action_index]

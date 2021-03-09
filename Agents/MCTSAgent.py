@@ -7,7 +7,6 @@ from ete3 import Tree, TreeStyle, TextFace, add_face_to_node
 from Agents.BaseAgent import BaseAgent
 from DataStructures.Node import Node
 
-from profilehooks import timecall
 is_gridWorld = True
 class MCTSAgent(BaseAgent):
     name = "MCTSAgent"
@@ -139,7 +138,6 @@ class MCTSAgent(BaseAgent):
                          value=value)
             node.add_child(child)
 
-    @timecall(immediate=False)
     def rollout(self, node):
         sum_returns = 0
         for i in range(self.num_rollouts):
@@ -164,7 +162,6 @@ class MCTSAgent(BaseAgent):
             value += node.reward_from_par
             node = node.parent
 
-    @timecall(immediate=False)
     def true_model(self, state, action):
         action_index = self.getActionIndex(action)
         transition = self.transition_dynamics[int(state[0]), int(state[1]), action_index]

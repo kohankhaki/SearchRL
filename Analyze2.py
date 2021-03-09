@@ -39,6 +39,22 @@ def plot_simple_agent(steps_run_list, label_name, axs):
                             color=generate_hex_color(),
                             axis=axs)
 
+def plot_simple_agent_each_run(steps_run_list, label_name, axs):
+
+    print(steps_run_list.shape)
+    mean_steps_run_list = np.mean(steps_run_list, axis=1)
+    std_steps_run_list = np.std(steps_run_list, axis=1)
+    x_steps_run_list = np.arange(steps_run_list.shape[2])
+
+    for stepsize_index in range(mean_steps_run_list.shape[0]):
+        drawPlotUncertainty(x_steps_run_list,
+                            mean_steps_run_list[stepsize_index],
+                            std_steps_run_list[stepsize_index],
+                            label=label_name + str(stepsize_index),
+                            # label=label_name,
+                            color=generate_hex_color(),
+                            axis=axs)
+
 
 def plot_simple_agent_single_episode(steps_run_list, label_name, axs):
 
@@ -89,9 +105,7 @@ def plot_alternate_agents(file_name, label_name1, label_name2, axs):
                         color=generate_hex_color(),
                         axis=axs)
 
-
 def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs):
-
 
     print(steps_run_list.shape)
     num_step = config.episodes_only_dqn
@@ -122,25 +136,35 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
 if __name__ == "__main__":
     fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
-    file_name = 'Results/DQNMCTS_Rollout.p'
+    # file_name = 'Results/DQNMCTS_Rollout.p'
+    # with open(file_name, "rb") as f:
+    #     res = pickle.load(f)
+    # print(res['num_steps'])
+    # steps_run_list = res['num_steps']
+    # label_name1 = 'DQN'
+    # label_name2 = 'MCTS(Rollout)'
+    # plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs)
+    #
+    # file_name = 'Results/MCTS_ParameterStudy.p'
+    # with open(file_name, "rb") as f:
+    #     res = pickle.load(f)
+    # print(res['num_steps'])
+    # steps_run_list = res['num_steps']
+    # label_name = 'MCTS'
+    # plot_simple_agent_single_episode(steps_run_list, label_name, axs)
+
+
+    file_name = 'Results/DQNVF/DQNVF.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
-    print(res['num_steps'])
+    print(res['num_steps'].shape)
     steps_run_list = res['num_steps']
-    label_name1 = 'DQN'
-    label_name2 = 'MCTS(Rollout)'
-    plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs)
+    label_name = 'DQN'
 
-    file_name = 'Results/MCTS_ParameterStudy.p'
-    with open(file_name, "rb") as f:
-        res = pickle.load(f)
-    print(res['num_steps'])
-    steps_run_list = res['num_steps']
-    label_name = 'MCTS'
-    plot_simple_agent_single_episode(steps_run_list, label_name, axs)
+    plot_simple_agent_each_run(steps_run_list, label_name, axs)
 
 
-    axs.title.set_text("DQNMCTS Rollout")
+    axs.title.set_text("DQN find value function")
     axs.legend()
-    fig.savefig("Results/Plots/DQNMCTS_Rollout.png")
+    fig.savefig("Results/DQNVF/DQNVF.png")
     fig.show()

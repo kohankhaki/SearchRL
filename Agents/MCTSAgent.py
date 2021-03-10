@@ -147,7 +147,7 @@ class MCTSAgent(BaseAgent):
         for i in range(self.num_rollouts):
             depth = 0
             single_return = 0
-            is_terminal = False
+            is_terminal = node.is_terminal
             state = node.get_state()
             while not is_terminal and depth < self.rollout_depth:
                 a = random.choice(self.action_list)

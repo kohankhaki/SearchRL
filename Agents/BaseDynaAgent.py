@@ -76,13 +76,13 @@ class BaseDynaAgent(BaseAgent):
         self.num_steps = 0
         self.num_terminal_steps = 0
 
+
     def start(self, observation):
         '''
         :param observation: numpy array -> (observation shape)
         :return: action : numpy array
         '''
         # print(self.num_terminal_steps, ' - ', self.num_steps)
-
         if self._sr['network'] is None:
             self.init_s_representation_network(observation)
 
@@ -190,7 +190,7 @@ class BaseDynaAgent(BaseAgent):
                                                    self._vf['q']['layers_type'],
                                                    self._vf['q']['layers_features'],
                                                    self._vf['q']['action_layer_num']).to(self.device)
-
+        # self.loadValueFunction("Results/DQNVF/dqn_vf_9.p")
         self.optimizer = optim.Adam(self._vf['q']['network'].parameters(), lr=self._vf['q']['step_size'])
 
     def init_s_value_function_network(self, state):
@@ -436,6 +436,10 @@ class BaseDynaAgent(BaseAgent):
     def saveValueFunction(self, name):
         with open(name, "wb") as file:
             pickle.dump(self._vf, file)
+    
+    def loadValueFunction(self, name):
+        with open(name, "rb") as file:
+            self._vf = pickle.load(file)
 
     # ***
     @abstractmethod

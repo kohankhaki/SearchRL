@@ -42,6 +42,7 @@ class MCTSAgent(BaseAgent):
         self.keep_tree = False
         self.root = None
 
+    
     def start(self, observation):
         if self.keep_tree and self.root is None:
             self.root = Node(None, observation)
@@ -58,7 +59,7 @@ class MCTSAgent(BaseAgent):
 
         for i in range(self.num_iterations):
             self.MCTS_iteration()
-        action, sub_tree = self.policy()
+        action, sub_tree = self.choose_action()
         self.subtree_node = sub_tree
         return action
 
@@ -69,7 +70,7 @@ class MCTSAgent(BaseAgent):
 
         for i in range(self.num_iterations):
             self.MCTS_iteration()
-        action, sub_tree = self.policy()
+        action, sub_tree = self.choose_action()
         self.subtree_node = sub_tree
         return action
 
@@ -79,7 +80,7 @@ class MCTSAgent(BaseAgent):
     def get_initial_value(self, state):
         return 0
 
-    def policy(self):
+    def choose_action(self):
         max_visit = -np.inf
         max_action = None
         max_child = None

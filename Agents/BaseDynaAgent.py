@@ -190,7 +190,7 @@ class BaseDynaAgent(BaseAgent):
                                                    self._vf['q']['layers_type'],
                                                    self._vf['q']['layers_features'],
                                                    self._vf['q']['action_layer_num']).to(self.device)
-        self.loadValueFunction("Results/DQNVF/VF 64-64/dqn_vf_42.p")
+        self.loadValueFunction("Results/DQNVF/VF 64-64/dqn_vf_12.p")
         self.optimizer = optim.Adam(self._vf['q']['network'].parameters(), lr=self._vf['q']['step_size'])
 
     def init_s_value_function_network(self, state):

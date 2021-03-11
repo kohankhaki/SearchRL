@@ -39,20 +39,24 @@ def plot_simple_agent(steps_run_list, label_name, axs):
                             color=generate_hex_color(),
                             axis=axs)
 
-def plot_simple_agent_each_run(steps_run_list, label_name, axs):
+def plot_simple_agent_each_run(steps_run_list, label_name):
 
-    # print(steps_run_list.shape)
-    # mean_steps_run_list = np.mean(steps_run_list, axis=1)
-    # std_steps_run_list = np.std(steps_run_list, axis=1)
     x_steps_run_list = np.arange(steps_run_list.shape[2])
 
-    for run_index in range(10, 12):
+    for run_index in range(steps_run_list.shape[1]):
+        fig, axs = plt.subplots(1, 1, constrained_layout=False)
+
         drawPlotUncertainty(x_steps_run_list,
                             steps_run_list[0][run_index],
                             np.zeros(steps_run_list[0][run_index].shape),
                             label=label_name + "_" + str(run_index),
                             color=generate_hex_color(),
                             axis=axs)
+
+        axs.title.set_text("DQN find value function")
+        axs.legend()
+        fig.savefig("Results/DQNVF/VF 64-64/DQNVF_" + str(run_index) + ".png")
+        fig.show()
 
 
 def plot_simple_agent_single_episode(steps_run_list, label_name, axs):
@@ -133,7 +137,7 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
         axs.axhline(mean_agent2_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name2)
 
 if __name__ == "__main__":
-    fig, axs = plt.subplots(1, 1, constrained_layout=False)
+    # fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
     # file_name = 'Results/DQNMCTS_Rollout.p'
     # with open(file_name, "rb") as f:
@@ -153,17 +157,17 @@ if __name__ == "__main__":
     # plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 
 
-    file_name = 'Results/DQNVF/VF 16-8/DQNVF.p'
+    file_name = 'Results/DQNVF/VF 64-64/DQNVF.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
     print(res['num_steps'].shape)
     steps_run_list = res['num_steps']
     label_name = 'DQN'
 
-    plot_simple_agent_each_run(steps_run_list, label_name, axs)
+    plot_simple_agent_each_run(steps_run_list, label_name)
 
 
-    axs.title.set_text("DQN find value function")
-    axs.legend()
-    fig.savefig("Results/DQNVF/DQNVF.png")
-    fig.show()
+    # axs.title.set_text("DQN find value function")
+    # axs.legend()
+    # fig.savefig("Results/DQNVF/VF 8-8/DQNVF.png")
+    # fig.show()

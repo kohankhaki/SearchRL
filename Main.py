@@ -24,9 +24,9 @@ if __name__ == '__main__':
 
     # agent_class_list = [BaseDynaAgent]
     # agent_class_list = [DQNMCTSAgent_MCTSPolicy]
-    agent_class_list = [DQNMCTSAgent_InitialValue]
+    # agent_class_list = [DQNMCTSAgent_InitialValue]
     # agent_class_list = [DQNMCTSAgent_BootstrapInitial]
-    # agent_class_list = [DQNMCTSAgent_Bootstrap]
+    agent_class_list = [DQNMCTSAgent_Bootstrap]
     # agent_class_list = [MCTSAgent]
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
     # agent_class_list = [DQNMCTSAgent_UseTreeSelection]
@@ -89,5 +89,5 @@ if __name__ == '__main__':
                                         experiment_object_list.append(obj)
     # x = time.time()
     detail = "Env = 4room - 4x4; with pre-trained DQN (64x64): dqn_vf_12.p"
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_InitialValue_PretrainedDQN64x64_dqn_vf_12.p", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_Bootstrap_PretrainedDQN64x64_dqn_vf_12.p", detail=detail)
     # print(time.time() - x)

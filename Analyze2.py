@@ -137,37 +137,37 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
         axs.axhline(mean_agent2_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name2)
 
 if __name__ == "__main__":
-    # fig, axs = plt.subplots(1, 1, constrained_layout=False)
+    fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
-    # file_name = 'Results/DQNMCTS_Rollout.p'
-    # with open(file_name, "rb") as f:
-    #     res = pickle.load(f)
-    # print(res['num_steps'])
-    # steps_run_list = res['num_steps']
-    # label_name1 = 'DQN'
-    # label_name2 = 'MCTS(Rollout)'
-    # plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs)
-    #
-    # file_name = 'Results/MCTS_ParameterStudy.p'
-    # with open(file_name, "rb") as f:
-    #     res = pickle.load(f)
-    # print(res['num_steps'])
-    # steps_run_list = res['num_steps']
-    # label_name = 'MCTS'
-    # plot_simple_agent_single_episode(steps_run_list, label_name, axs)
-
-
-    file_name = 'Results/DQNVF/VF 64-64/DQNVF.p'
+    file_name = 'Results/DQNMCTS_Bootstrap_PretrainedDQN_64x64_vf_49.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
-    print(res['num_steps'].shape)
+    print(res['num_steps'])
     steps_run_list = res['num_steps']
-    label_name = 'DQN'
+    label_name1 = 'DQN'
+    label_name2 = 'MCTS(Bootstrap)'
+    plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs)
 
-    plot_simple_agent_each_run(steps_run_list, label_name)
+    file_name = 'Results/MCTS_ParameterStudy.p'
+    with open(file_name, "rb") as f:
+        res = pickle.load(f)
+    print(res['num_steps'])
+    steps_run_list = res['num_steps']
+    label_name = 'MCTS'
+    plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 
 
-    # axs.title.set_text("DQN find value function")
-    # axs.legend()
-    # fig.savefig("Results/DQNVF/VF 8-8/DQNVF.png")
-    # fig.show()
+    # file_name = 'Results/DQNVF/VF 64-64/DQNVF.p'
+    # with open(file_name, "rb") as f:
+    #     res = pickle.load(f)
+    # print(res['num_steps'].shape)
+    # steps_run_list = res['num_steps']
+    # label_name = 'DQN'
+    #
+    # plot_simple_agent_each_run(steps_run_list, label_name)
+
+
+    axs.title.set_text("DQN find value function")
+    axs.legend()
+    fig.savefig("Results/DQNVF/VF 8-8/DQNVF.png")
+    fig.show()

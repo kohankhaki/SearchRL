@@ -88,6 +88,6 @@ if __name__ == '__main__':
                                         obj = ExperimentObject(agent_class, params)
                                         experiment_object_list.append(obj)
     # x = time.time()
-    detail = "Env = 4room - 4x4; with pre-trained DQN (64x64): dqn_vf_49.p"
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_Bootstrap_PretrainedDQN_64x64_vf_49.p", detail=detail)
+    detail = "Env = 4room - 4x4; with pre-trained DQN (64x64): dqn_vf_3.p"
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_Bootstrap_PretrainedDQN_64x64_vf_3.p", detail=detail)
     # print(time.time() - x)

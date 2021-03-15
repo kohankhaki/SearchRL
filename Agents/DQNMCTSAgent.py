@@ -53,12 +53,12 @@ class DQNMCTSAgent_InitialValue(MCTSAgent, BaseDynaAgent):
         if self.episode_counter < episodes_only_dqn:
             BaseDynaAgent.end(self, reward)
         elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
-            MCTSAgent.end(self, reward, observation)
+            MCTSAgent.end(self, reward)
         else:
             if self.episode_counter % 2 == 0:
-                BaseDynaAgent.end(self, reward, observation)
+                BaseDynaAgent.end(self, reward)
             else:
-                MCTSAgent.end(self, reward, observation)
+                MCTSAgent.end(self, reward)
 
     def get_initial_value(self, state):
         state_representation = self.getStateRepresentation(state)
@@ -132,16 +132,12 @@ class DQNMCTSAgent_Bootstrap(MCTSAgent, BaseDynaAgent):
         if self.episode_counter < episodes_only_dqn:
             BaseDynaAgent.end(self, reward)
         elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
-            MCTSAgent.end(self, reward, observation)
+            MCTSAgent.end(self, reward)
         else:
             if self.episode_counter % 2 == 0:
-                BaseDynaAgent.end(self, reward, observation)
+                BaseDynaAgent.end(self, reward)
             else:
-                MCTSAgent.end(self, reward, observation)
-            if self.episode_counter % 2 == 0:
-                BaseDynaAgent.end(self, reward, observation)
-            else:
-                MCTSAgent.end(self, reward, observation)
+                MCTSAgent.end(self, reward)
 
     def rollout(self, node):
         sum_returns = 0

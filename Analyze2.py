@@ -71,7 +71,7 @@ def plot_simple_agent_single_episode(steps_run_list, label_name, axs):
     best_par = np.argmin(mean_steps_run_list)
     # print(best_par)
     print("best parameter case: ", mean_steps_run_list[best_par])
-    for stepsize_index in range(1,2):
+    for stepsize_index in range(0, 1):
     # for stepsize_index in range(mean_steps_run_list.shape[0]):
         axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name)
         # axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name+str(stepsize_index))
@@ -139,7 +139,7 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
 if __name__ == "__main__":
     fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
-    file_name = 'Results/DQNMCTS_Bootstrap_PretrainedDQN_64x64_vf_49.p'
+    file_name = 'Results/DQNMCTS_Bootstrap_PretrainedDQN_8x8_vf_24.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
     print(res['num_steps'])
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     label_name2 = 'MCTS(Bootstrap)'
     plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs)
 
-    file_name = 'Results/MCTS_ParameterStudy.p'
+    file_name = 'Results/MCTS.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
     print(res['num_steps'])

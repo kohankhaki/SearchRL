@@ -105,6 +105,7 @@ class GridWorldExperiment(BaseExperiment):
                 pos = env.stateToPos(state)
                 visit_count[(pos, tuple(action))] = 0
         return visit_count
+        
 
 class RunExperiment():
     def __init__(self):
@@ -179,6 +180,7 @@ class RunExperiment():
                 #initialize experiment
                 experiment = GridWorldExperiment(agent, env, self.device)
 
+
                 for e in range(num_episode):
                     if debug:
                         print("starting episode ", e + 1)
@@ -190,6 +192,10 @@ class RunExperiment():
                         self.simulation_steps_run_list[i, r, e] = self.simulate_dqn(agent.policy, agent.true_model,
                                                                                     env.start(), env.getAllActions())
                         self.consistency[i, r, e] = agent.action_consistency / experiment.num_steps
+
+                
+                # vf_error = self.calculate_dqn_vf_error(agent, env)
+                # print('DQN VF ERROR:', vf_error)
                     # if e % 100 == 0:
                     #     mean = np.mean(self.num_steps_run_list[0], axis=0)
                     #     plt.plot(mean[0:e])
@@ -238,6 +244,19 @@ class RunExperiment():
         #     np.save(f, self.model_error_list)
         #     np.save(f, self.model_error_samples)
         self.show_num_steps_plot()
+
+    def calculate_dqn_vf_error(self, agent, env):
+        states = env.getAllStates()
+        actions = env.getAllActions()
+        error = 0
+        for state in states:
+            for action in actions:
+                env_vf = env.calculate_state_action_value(state, action, agent.gamma)
+                torch_state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
+                agent_vf = agent.getStateActionValue(torch_state, action)
+                error += (env_vf - agent_vf) ** 2
+        return error
+
 
     def calculate_model_error(self, agent, env):
         error = {}
@@ -389,3 +408,5 @@ class RunExperiment():
             next_state, is_terminal, reward = model(state, action)
             state = next_state
         return num_steps
+
+    

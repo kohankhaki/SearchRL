@@ -58,3 +58,25 @@ class GridWorldRooms(GridWorld):
         size = self.house_shape[0] * self.rooms_shape[0] + (self.house_shape[0] - 1),\
                self.house_shape[1] * self.rooms_shape[1] + (self.house_shape[1] - 1)
         return size
+
+
+    
+if __name__ == "__main__":
+    params = {'init_state': 'random' , 'state_mode': 'coord', #init_state (_n-1, 0)
+    'house_shape': (2,2), 'rooms_shape': (4, 4),
+    'obstacles_pos': [],
+    'rewards_value': [10],
+    'termination_probs': [1],
+    'actions': [(0, -1), (-1, 0), (0, 1) , (1, 0)], # L, U, R, D
+    'neighbour_distance': 0,
+    'agent_color': [0, 1, 0], 'ground_color': [0, 0, 0], 'obstacle_color': [1, 1, 1],
+    'transition_randomness': 0.0,
+    'window_size': (900, 900),
+    'aging_reward': -1,
+    }
+    env = GridWorldRooms(params)
+    error = env.calculate_state_action_value((0, 8), (0, 1), 1)
+    print (error)
+
+
+

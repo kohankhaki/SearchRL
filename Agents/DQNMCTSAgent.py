@@ -215,19 +215,54 @@ class DQNMCTSAgent_UseTreeSelection(MCTSAgent, BaseDynaAgent):
         return action
 
     def end(self, reward):
-        if self._vf['q']['training']:
-            if len(self.transition_buffer) >= self._vf['q']['batch_size']:
-                transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
-                self.updateValueFunction(transition_batch, 'q')
-        if self._vf['s']['training']:
-            if len(self.transition_buffer) >= self._vf['s']['batch_size']:
-                transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
-                self.updateValueFunction(transition_batch, 's')
+        if self.episode_counter % 2 == 0:
+            if self._vf['q']['training']:
+                if len(self.transition_buffer) >= self._vf['q']['batch_size']:
+                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                    self.updateValueFunction(transition_batch, 'q')
+            if self._vf['s']['training']:
+                if len(self.transition_buffer) >= self._vf['s']['batch_size']:
+                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                    self.updateValueFunction(transition_batch, 's')
 
-        self.trainModel()
-        self.updateStateRepresentation()
+            self.trainModel()
+            self.updateStateRepresentation()
 
+    
     def selection(self):
+        selected_node = self.subtree_node
+        while len(selected_node.get_childs()) > 0:
+            max_uct_value = -np.inf
+            child_values = list(map(lambda n: n.get_avg_value()+n.reward_from_par, selected_node.get_childs()))
+            max_child_value = max(child_values)
+            min_child_value = min(child_values)
+            for ind, child in enumerate(selected_node.get_childs()):
+                if child.num_visits == 0:
+                    selected_node = child
+                    break
+                else:
+                    child_value = child_values[ind]
+                    if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
+                        child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
+                    uct_value = child_value + \
+                                self.C * ((child.parent.num_visits / child.num_visits) ** 0.5)
+                if max_uct_value < uct_value:
+                    max_uct_value = uct_value
+                    selected_node = child
+            prev_state_torch = self.getStateRepresentation(selected_node.parent.state)
+            prev_action_index = self.getActionIndex(selected_node.action_from_par)
+            prev_action_torch = torch.tensor([prev_action_index], device=self.device).view(1, 1)
+            reward = torch.tensor([selected_node.reward_from_par], device=self.device)
+            state_torch = self.getStateRepresentation(selected_node.state)
+            self.updateTransitionBuffer(utils.transition(prev_state_torch,
+                                                         prev_action_torch,
+                                                         reward,
+                                                         state_torch,
+                                                         None, selected_node.is_terminal, self.time_step, 0))
+            
+        return selected_node
+
+    def selection_SARSA(self):
         selected_node = self.subtree_node
         buffer_prev_state = None
         buffer_prev_action = None

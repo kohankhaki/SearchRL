@@ -91,7 +91,7 @@ class MCTSAgent(BaseAgent):
                 max_child = child
         return max_action, max_child
 
-    @timecall(immediate=False)
+#     @timecall(immediate=False)
     def MCTS_iteration(self):
         # self.render_tree()
         selected_node = self.selection()
@@ -107,7 +107,7 @@ class MCTSAgent(BaseAgent):
             self.backpropagate(selected_node.get_childs()[0], rollout_value)
 
 
-    @timecall(immediate=False)
+#     @timecall(immediate=False)
     def selection(self):
         selected_node = self.subtree_node
         while len(selected_node.get_childs()) > 0:
@@ -130,7 +130,7 @@ class MCTSAgent(BaseAgent):
                     selected_node = child
         return selected_node
 
-    @timecall(immediate=False)
+#     @timecall(immediate=False)
     def expansion(self, node):
         for a in self.action_list:
             next_state, is_terminal, reward = self.true_model(node.get_state(),
@@ -142,7 +142,7 @@ class MCTSAgent(BaseAgent):
                          value=value)
             node.add_child(child)
 
-    @timecall(immediate=False)
+#     @timecall(immediate=False)
     def rollout(self, node):
         sum_returns = 0
         for i in range(self.num_rollouts):
@@ -159,7 +159,7 @@ class MCTSAgent(BaseAgent):
             sum_returns += single_return
         return sum_returns / self.num_rollouts
 
-    @timecall(immediate=False)
+#     @timecall(immediate=False)
     def backpropagate(self, node, value):
         while node is not None:
             node.add_to_values(value)

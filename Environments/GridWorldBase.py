@@ -222,7 +222,7 @@ class GridWorld():
     def __terminalFunction(self, pos):
         if self.checkPosInsideGrid(pos):
             for i, terminal_pos in enumerate(self._terminals_pos):
-                if pos == terminal_pos:
+                if np.array_equal(pos, terminal_pos):
                     prob = self._terminate_probs[i]
                     termination = np.random.rand() < prob
                     return termination
@@ -534,11 +534,32 @@ class GridWorld():
 
         # Go ahead and update the screen with what we've drawn.
         pygame.display.flip()
+    
+    def calculate_state_action_value(self, state, action, gamma):
+        next_state, is_terminal, reward = self.fullTransitionFunction(state, action)
+        queue = [(next_state, reward)]
+        visited_states = []
+        while(len(queue) != 0):
+            node, distance = queue.pop(0)
+            # print(node, '------', distance)
+            if self.__terminalFunction(node):
+                break
+            for a in self.getAllActions():
+                child, is_terminal, reward = self.fullTransitionFunction(node, a)
+                if not self.is_in(child, visited_states):
+                    queue.append((child, distance * gamma + reward))
+            visited_states.append(node)
+        return distance
 
-
+    def is_in(self, child, visited_states):
+        for visited in visited_states:
+            if np.array_equal(child, visited):
+                return True
+        return False
 
 if __name__ == "__main__":
     env = GridWorld()
+
 
 
 

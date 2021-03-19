@@ -25,11 +25,11 @@ if __name__ == '__main__':
     # agent_class_list = [BaseDynaAgent]
     # agent_class_list = [DQNMCTSAgent_MCTSPolicy]
     # agent_class_list = [DQNMCTSAgent_InitialValue]
-    # agent_class_list = [DQNMCTSAgent_BootstrapInitial]
+    agent_class_list = [DQNMCTSAgent_BootstrapInitial]
     # agent_class_list = [DQNMCTSAgent_Bootstrap]
     # agent_class_list = [MCTSAgent]
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
-    agent_class_list = [DQNMCTSAgent_UseTreeSelection]
+    # agent_class_list = [DQNMCTSAgent_UseTreeSelection]
     # agent_class_list = [DQNMCTSAgent_Rollout]
     # agent_class_list = [DQNMCTSAgent_MCTSSelectedAction]
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     c_list = [2 ** 0]
     num_iteration_list = [100]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [75]
+    simulation_depth_list = [10]
     num_simulation_list = [1]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
@@ -56,10 +56,10 @@ if __name__ == '__main__':
 
     model_list = [{'type': None, 'num_networks': 1, 'layers_type': ['fc'], 'layers_features': [128]}]
     vf_list = [
-        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
+        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 32], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 16], 'action_layer_num': 3},
-        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 8], 'action_layer_num': 3},
+        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 8], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [8, 8], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [4, 4], 'action_layer_num': 3}
                ]
@@ -88,7 +88,7 @@ if __name__ == '__main__':
                                         obj = ExperimentObject(agent_class, params)
                                         experiment_object_list.append(obj)
     # x = time.time()
-    detail = "Env = 4room - 4x4"
-    experiment.run_experiment(experiment_object_list, result_file_name="fff", detail=detail)
+    detail = "Env = 4room - 4x4; Pretrained DQN 16x8 dqn_vf_9.p"
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNCMCTS_LowBootstrapInitial_PretrainedDQN_16x8_vf_9", detail=detail)
     
     # print(time.time() - x)

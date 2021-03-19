@@ -20,7 +20,7 @@ class BaseDynaAgent(BaseAgent):
     def __init__(self, params={}):
 
         self.time_step = 0
-        self.writer = SummaryWriter()
+        # self.writer = SummaryWriter()
 
         self.prev_state = None
         self.state = None
@@ -191,8 +191,11 @@ class BaseDynaAgent(BaseAgent):
                                                    self._vf['q']['layers_features'],
                                                    self._vf['q']['action_layer_num']).to(self.device)
         #remove later
-        self.loadValueFunction("Results/DQNVF/VF 8-8/dqn_vf_0.p")
-        self._vf['q']['training'] = False
+        if True:
+            value_function_file = "Results/DQNVF/VF 16-8/dqn_vf_9.p"
+            print("loading ", value_function_file)
+            self.loadValueFunction(value_function_file)
+            self._vf['q']['training'] = False
         self.optimizer = optim.Adam(self._vf['q']['network'].parameters(), lr=self._vf['q']['step_size'])
 
     def init_s_value_function_network(self, state):
@@ -222,10 +225,7 @@ class BaseDynaAgent(BaseAgent):
     # ***
     def updateValueFunction(self, transition_batch, vf_type):
 
-        print('gav')
         batch = utils.transition(*zip(*transition_batch))
-        if batch is None:
-            print(':))))))))')
 
         non_final_mask = torch.tensor(
             tuple(map(lambda s: s is not None,

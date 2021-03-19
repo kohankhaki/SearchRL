@@ -139,7 +139,7 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
 if __name__ == "__main__":
     fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
-    file_name = 'Results/DQNMCTS_Bootstrap_PretrainedDQN_8x8_vf_24.p'
+    file_name = 'Results/DQNMCTS_InitialValue_PretrainedDQN_16x8_vf_37.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
     print(res['num_steps'])
@@ -151,9 +151,10 @@ if __name__ == "__main__":
     file_name = 'Results/MCTS.p'
     with open(file_name, "rb") as f:
         res = pickle.load(f)
-    print(res['num_steps'])
+    # print(res['num_steps'])
     steps_run_list = res['num_steps']
     label_name = 'MCTS'
+    print(steps_run_list)
     plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 
 

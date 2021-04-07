@@ -38,9 +38,13 @@ class MCTSAgent(BaseAgent):
         self.num_iterations = params['num_iteration']
         self.num_rollouts = params['num_simulation']
         self.rollout_depth = params['simulation_depth']
-        self.keep_subtree = True
+        self.keep_subtree = False
         self.keep_tree = False
         self.root = None
+
+        self.is_model_imperfect = False
+        self.corrupt_prob = 0.1
+        self.corrupt_step = 10
 
     
     def start(self, observation):
@@ -172,6 +176,14 @@ class MCTSAgent(BaseAgent):
         action_index = self.getActionIndex(action)
         transition = self.transition_dynamics[int(state[0]), int(state[1]), action_index]
         next_state, is_terminal, reward = transition[0:2], transition[2], transition[3]
+        if self.is_model_imperfect:
+            r = random.random()
+            if r < self.corrupt_prob:
+                for _ in range(self.corrupt_step):
+                    action_index = random.randint(0, self.num_actions - 1)
+                    transition = self.transition_dynamics[int(state[0]), int(state[1]), action_index]
+                    next_state, is_terminal, reward = transition[0:2], transition[2], transition[3]
+                    state = next_state
         return next_state, is_terminal, reward
 
     def show(self):

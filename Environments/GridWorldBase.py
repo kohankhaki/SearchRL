@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import pygame
+import os
 
 class GridWorld():
     def __init__(self, params=None):
@@ -67,7 +68,12 @@ class GridWorld():
         self.addObstacles(params['obstacles_pos'], self._grid)
         self.__createOnehotMap()
         self.screen = None # for visualization
+        self.is_imperfect = True
+        self.corrupt_prob = 0.1
+        self.corrupt_step = 10
+        self.imperfect_model_file = "Imperfect15: prob=" +  str(self.corrupt_prob) + " - step=" + str(self.corrupt_step)
         self.__create_transition_dynamics()
+
 
     def start(self):
         """
@@ -337,6 +343,44 @@ class GridWorld():
                 self.transition_dynamics[state[0], state[1], action_index, 1] = next_state[1]
                 self.transition_dynamics[state[0], state[1], action_index, 2] = is_terminal
                 self.transition_dynamics[state[0], state[1], action_index, 3] = reward
+        
+        if self.is_imperfect:
+            self.__make_transition_dynamics_imperfect()
+    
+    def __make_transition_dynamics_imperfect(self):
+        if self.imperfect_model_file in os.listdir("Environments/Imperfect_Models"):
+            with open("Environments/Imperfect_Models/" + self.imperfect_model_file, 'rb') as file:
+                self.transition_dynamics = np.load(file)
+            return
+        with open("Environments/Imperfect_Models/Imperfect_Models_Detail.txt", 'a') as file:
+            file.write("\n" + self.imperfect_model_file + "\n")
+        all_states = self.getAllStates(state_type="coord")
+        all_actions = self.getAllActions()
+        num_actions = len(all_actions)
+        for state in all_states:
+            for action in all_actions:
+                r = random.random()
+                if r < self.corrupt_prob:
+                    current_state = state
+                    random_action_index = random.randint(0, num_actions - 1)
+                    current_action = all_actions[random_action_index]
+                    for _ in range(self.corrupt_step):
+                        next_state, is_terminal, reward = self.fullTransitionFunction(current_state, current_action, state_type="coord")
+                        current_state = next_state
+                        random_action_index = random.randint(0, num_actions - 1)
+                        current_action = all_actions[random_action_index]
+                    action_index = self.getActionIndex(action)
+                    self.transition_dynamics[state[0], state[1], action_index, 0] = next_state[0]
+                    self.transition_dynamics[state[0], state[1], action_index, 1] = next_state[1]
+                    self.transition_dynamics[state[0], state[1], action_index, 2] = is_terminal
+                    self.transition_dynamics[state[0], state[1], action_index, 3] = reward
+                    with open("Environments/Imperfect_Models/Imperfect_Models_Detail.txt", 'a') as file:
+                        file.write("state: " + str(state) + " - action: " + str(action) +  " - next state: " + str(next_state) + " - reward: " + str(reward) + " - is terminal: " + str(is_terminal) + "\n")
+
+        with open("Environments/Imperfect_Models/" + self.imperfect_model_file, 'wb') as file:
+            np.save(file, self.transition_dynamics)
+
+
 
     def transitionFunctionBackward(self, state, prev_action, state_type='coord', type='sample'):
         if type == 'expectation':

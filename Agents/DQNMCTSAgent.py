@@ -415,9 +415,11 @@ class DQNMCTSAgent_UseTreeExpansion(MCTSAgent, BaseDynaAgent):
                                                          buffer_action, is_terminal,
                                                          self.time_step, 0))
 
-# DQN uses MCTS as the policy
-class DQNMCTSAgent_MCTSPolicy(MCTSAgent, BaseDynaAgent):
-    name = "DQNMCTSAgent_MCTSPolicy"
+
+
+# DQN uses actions chosen by MCTS iterations
+class DQNMCTSAgent_UseSelectedAction(MCTSAgent, BaseDynaAgent):
+    name = "DQNMCTSAgent_UseSelectedAction"
     def __init__(self, params={}):
         BaseDynaAgent.__init__(self, params)
         MCTSAgent.__init__(self, params)
@@ -425,57 +427,155 @@ class DQNMCTSAgent_MCTSPolicy(MCTSAgent, BaseDynaAgent):
 
     def start(self, observation):
         self.episode_counter += 1
-        if self.keep_tree and self.root is None:
-            self.root = Node(None, observation)
-            self.expansion(self.root)
-
-        if self.keep_tree:
-            self.subtree_node = self.root
+        if self.episode_counter % 2 == 0:
+            action = BaseDynaAgent.start(self, observation)
         else:
-            self.subtree_node = Node(None, observation)
-            self.expansion(self.subtree_node)
-
-        action = BaseDynaAgent.start(self, observation)
+            action = MCTSAgent.start(self, observation)
+            self.mcts_prev_state = self.getStateRepresentation(observation)
+            self.mcts_prev_action = action
         return action
 
     def step(self, reward, observation):
-        if not self.keep_subtree:
-            self.subtree_node = Node(None, observation)
-            self.expansion(self.subtree_node)
-        action = BaseDynaAgent.step(self, reward, observation)
+        if self.episode_counter % 2 == 0:
+            self.time_step += 1
+
+            self.state = self.getStateRepresentation(observation)
+            self.action = self.policy(self.state)
+            
+            reward = torch.tensor([reward], device=self.device)
+
+            # store the new transition in buffer
+            self.updateTransitionBuffer(utils.transition(self.prev_state,
+                                                     self.prev_action,
+                                                     reward,
+                                                     self.state,
+                                                     self.action, False, self.time_step, 0))
+
+            # update target
+            if self._target_vf['counter'] >= self._target_vf['update_rate']:
+                self.setTargetValueFunction(self._vf['q'], 'q')
+                # self.setTargetValueFunction(self._vf['s'], 's')
+
+            # update value function with the buffer
+            if self._vf['q']['training']:
+                if len(self.transition_buffer) >= self._vf['q']['batch_size']:
+                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                    self.updateValueFunction(transition_batch, 'q')
+            if self._vf['s']['training']:
+                if len(self.transition_buffer) >= self._vf['s']['batch_size']:
+                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                    self.updateValueFunction(transition_batch, 's')
+
+            # train/plan with model
+            self.trainModel()
+            self.plan()
+
+            self.updateStateRepresentation()
+
+            self.prev_state = self.getStateRepresentation(observation)
+            self.prev_action = self.action  # another option:** we can again call self.policy function **
+
+            action = self.action_list[self.prev_action.item()]
+        else:
+            action = MCTSAgent.step(self, reward, observation)
+            prev_action_index = self.getActionIndex(self.mcts_prev_action)
+            prev_action_torch = torch.tensor([prev_action_index], device=self.device, dtype=int).view(1, 1)
+            reward = torch.tensor([reward], device=self.device).float()
+            state_torch = self.getStateRepresentation(observation)
+            self.updateTransitionBuffer(utils.transition(self.mcts_prev_state,
+                                                         prev_action_torch,
+                                                         reward,
+                                                         state_torch,
+                                                         None, False, self.time_step, 0))
+            self.mcts_prev_state = state_torch
+            self.mcts_prev_action = action
+
+            # update target
+            if self._target_vf['counter'] >= self._target_vf['update_rate']:
+                self.setTargetValueFunction(self._vf['q'], 'q')
+                # self.setTargetValueFunction(self._vf['s'], 's')
+
+            # update value function with the buffer
+            if self._vf['q']['training']:
+                if len(self.transition_buffer) >= self._vf['q']['batch_size']:
+                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                    self.updateValueFunction(transition_batch, 'q')
+            if self._vf['s']['training']:
+                if len(self.transition_buffer) >= self._vf['s']['batch_size']:
+                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                    self.updateValueFunction(transition_batch, 's')
         return action
 
     def end(self, reward):
-        BaseDynaAgent.end(self, reward)
+        if self.episode_counter % 2 == 0:
+            reward = torch.tensor([reward], device=self.device)
+            self.updateTransitionBuffer(utils.transition(self.prev_state,
+                                                     self.prev_action,
+                                                     reward,
+                                                     None,
+                                                     None, True, self.time_step, 0))
 
-    @timecall(immediate=False)
-    def policy(self, state):
-        if self.episode_counter > 0:
-            if random.random() < self.epsilon:
-                if len(self.subtree_node.get_childs()) == 0 :
-                    print(self.subtree_node.get_state())
-                    raise ValueError("subtree node has no childs")
-                random_child = np.random.choice(self.subtree_node.get_childs())
-                random_action = random_child.action_from_par
-                self.subtree_node = random_child
-                action = torch.tensor([self.getActionIndex(random_action)]).unsqueeze(0).to(self.device)
-                return action
+            if self._vf['q']['training']:
+                if len(self.transition_buffer) >= self._vf['q']['batch_size']:
+                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                    self.updateValueFunction(transition_batch, 'q')
+            if self._vf['s']['training']:
+                if len(self.transition_buffer) >= self._vf['s']['batch_size']:
+                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                    self.updateValueFunction(transition_batch, 's')
 
-            for i in range(self.num_iterations):
-                self.MCTS_iteration()
-            action, sub_tree = MCTSAgent.policy(self)
-            self.subtree_node = sub_tree
-            action = torch.tensor([self.getActionIndex(action)]).unsqueeze(0).to(self.device)
+            self.trainModel()
+            self.updateStateRepresentation()
         else:
-            action = BaseDynaAgent.policy(self, state)
-        return action
+            prev_action_index = self.getActionIndex(self.mcts_prev_action)
+            prev_action_torch = torch.tensor([prev_action_index], device=self.device, dtype=int).view(1, 1)
+            reward = torch.tensor([reward], device=self.device).float()
+            self.updateTransitionBuffer(utils.transition(self.mcts_prev_state,
+                                                         prev_action_torch,
+                                                         reward,
+                                                         None,
+                                                         None, True, self.time_step, 0))
 
-    @timecall(immediate=False)
+            if self._vf['q']['training']:
+                if len(self.transition_buffer) >= self._vf['q']['batch_size']:
+                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                    self.updateValueFunction(transition_batch, 'q')
+            if self._vf['s']['training']:
+                if len(self.transition_buffer) >= self._vf['s']['batch_size']:
+                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                    self.updateValueFunction(transition_batch, 's')
+    
     def rollout(self, node):
-        state = node.get_state()
-        t_state = torch.from_numpy(state).unsqueeze(0).to(self.device)
-        value = self.getStateActionValue(t_state)
-        return value
+        if self.episode_counter > 200:
+            sum_returns = 0
+            for i in range(self.num_rollouts):
+                depth = 0
+                single_return = 0
+                is_terminal = False
+                state = node.get_state()
+                while not is_terminal and depth < self.rollout_depth:
+                    a = random.choice(self.action_list)
+                    next_state, is_terminal, reward = self.true_model(state, a)
+                    single_return += reward
+                    depth += 1
+                    state = next_state
+                if not is_terminal:
+                    state_representation = self.getStateRepresentation(state)
+                    bootstrap_value = self.getStateActionValue(state_representation)
+                    single_return += bootstrap_value.item()
+                sum_returns += single_return
+
+            return sum_returns / self.num_rollouts
+        else:
+            return MCTSAgent.rollout(self, node)
+
+    def get_initial_value(self, state):
+        if self.episode_counter > 200:
+            state_representation = self.getStateRepresentation(state)
+            value = self.getStateActionValue(state_representation)
+            return value.item()
+        else:
+            return 0
 
 
 # DQN uses MCTS as the policy

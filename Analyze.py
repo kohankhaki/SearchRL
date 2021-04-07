@@ -1,193 +1,273 @@
 import numpy as np
 import random
 from matplotlib import pyplot as plt
+import pickle
+import Config as config
+
+generate_random_color = False
+color_counter = 0
+color_list = ['#FF2929', '#19A01D', '#F4D03F', '#FF7F50', '#8E44AD', '#34495E', '#95A5A6', '#5DADE2', '#A2FF00', '#003AFF', '#FF008F']
 
 
-def drawPlotUncertainty(x, y, y_err, label, color, axis):
-    axis.plot(x, y, color, label=label)
+def generate_hex_color():
+    global color_counter
+    if generate_random_color:
+        r = random.randint(0, 255)
+        g = random.randint(0, 255)
+        b = random.randint(0, 255)
+        c = (r, g, b)
+        hex_c = '#%02x%02x%02x' % c
+    else:
+        hex_c = color_list[color_counter]
+        color_counter = (color_counter + 1) % len(color_list)
+    return hex_c
+
+
+def drawPlotUncertainty(x, y, y_err, color, label, axis):
+    axis.plot(x, y, color = color, label=label)
     axis.fill_between(x,
                       y - y_err,
                       y + y_err,
                       facecolor=color, alpha=.4, edgecolor='none')
 
 
-# with open('Results/DQN_num_steps_list.npy', 'rb') as f:
-#     DQNnum_steps_run_list = np.load(f)
-#
-# print(DQNnum_steps_run_list.shape)
-# mean_DQNnum_steps_run_list = np.mean(DQNnum_steps_run_list, axis=1)
-# std_DQNnum_steps_run_list = np.std(DQNnum_steps_run_list, axis=1)
-# x_DQNnum_steps_run_list = np.arange(DQNnum_steps_run_list.shape[2])
-#
-# fig, axs_DQN = plt.subplots(1, 1, constrained_layout=False)
-# for stepsize_index in range(1, 2):
-#     r = random.randint(0, 255)
-#     g = random.randint(0, 255)
-#     b = random.randint(0, 255)
-#     c = (r, g, b)
-#     hex_c = '#%02x%02x%02x' % c
-#     drawPlotUncertainty(x_DQNnum_steps_run_list,
-#                         mean_DQNnum_steps_run_list[stepsize_index],
-#                         std_DQNnum_steps_run_list[stepsize_index],
-#                         # label="MCTS(Baseline)" + str(stepsize_index),
-#                         label="DQN",
-#
-#                         color=hex_c,
-#                         axis=axs_DQN)
-#
-# axs_DQN.legend()
-# # fig.show()
-# #
-# with open('Results/MCTS_num_steps_list.npy', 'rb') as f:
-#     MCTSnum_steps_run_list = np.load(f)
-#
-# print(MCTSnum_steps_run_list.shape)
-# mean_MCTSnum_steps_run_list = np.mean(MCTSnum_steps_run_list, axis=1)
-# std_MCTSnum_steps_run_list = np.std(MCTSnum_steps_run_list, axis=1)
-# x_MCTSnum_steps_run_list = np.arange(MCTSnum_steps_run_list.shape[2])
-#
-# mean_MCTSnum_steps_run_list = np.mean(mean_MCTSnum_steps_run_list, axis=1)
-# std_MCTSnum_steps_run_list = np.std(std_MCTSnum_steps_run_list, axis=1)
-#
-# # fig2, axs_MCTS = plt.subplots(1, 1, constrained_layout=False)
-# best_par = np.argmin(mean_MCTSnum_steps_run_list)
-# # print(best_par)
-# print("best parameter case: ", mean_MCTSnum_steps_run_list[best_par])
-# # for stepsize_index in range(mean_MCTSnum_steps_run_list.shape[0]):
-# for stepsize_index in range(165, 166):
-#
-#     r = random.randint(0, 255)
-#     g = random.randint(0, 255)
-#     b = random.randint(0, 255)
-#     c = (r, g, b)
-#     hex_c = '#%02x%02x%02x' % c
-#     # axs_MCTS.axhline(mean_MCTSnum_steps_run_list[stepsize_index], color=hex_c, label=str(stepsize_index))
-#     axs_DQN.axhline(mean_MCTSnum_steps_run_list[stepsize_index], color=hex_c, label="MCTS")
-#
-# axs_DQN.legend()
-# # fig.show()
-# #
-# with open('Results/DQNMCTS_UseTreeSelection_num_steps_list.npy', 'rb') as f:
-#     DQNMCTSnum_steps_run_list = np.load(f)
-#
-# num_step = DQNMCTSnum_steps_run_list.shape[2] // 2
-# odd_ind = list(range(1, num_step * 2, 2))
-# even_ind = list(range(0, num_step * 2, 2))
-# dqn_step_list = np.delete(DQNMCTSnum_steps_run_list, odd_ind, 2)
-# mcts_step_list = np.delete(DQNMCTSnum_steps_run_list, even_ind, 2)
-#
-# mean_dqnnum_steps_run_list = np.mean(dqn_step_list, axis=1)
-# std_dqnnum_steps_run_list = np.std(dqn_step_list, axis=1)
-# x_dqnnum_steps_run_list = np.arange(dqn_step_list.shape[2])
-#
-# mean_mctsnum_steps_run_list = np.mean(mcts_step_list, axis=1)
-# std_mctsnum_steps_run_list = np.std(mcts_step_list, axis=1)
-# x_mctsnum_steps_run_list = np.arange(mcts_step_list.shape[2])
+def plot_simple_agent(steps_run_list, label_name, axs):
+    mean_steps_run_list = np.mean(steps_run_list, axis=1)
+    std_steps_run_list = np.std(steps_run_list, axis=1)
+    x_steps_run_list = np.arange(steps_run_list.shape[2])
+
+    for stepsize_index in range(mean_steps_run_list.shape[0]):
+        drawPlotUncertainty(x_steps_run_list,
+                            mean_steps_run_list[stepsize_index],
+                            std_steps_run_list[stepsize_index],
+                            label=label_name + str(stepsize_index),
+                            color=generate_hex_color(),
+                            axis=axs)
 
 
-# fig, axs_DQNMCTS = plt.subplots(1, 1, constrained_layout=False)
+def plot_simple_agent_each_run(steps_run_list, label_name):
 
-# drawPlotUncertainty(x_dqnnum_steps_run_list,
-#                     mean_dqnnum_steps_run_list[0],
-#                     std_dqnnum_steps_run_list[0],
-#                     label="DQN(Selection)",
-#                     color="blue",
-#                     axis=axs_DQN)
+    x_steps_run_list = np.arange(steps_run_list.shape[2])
+    for run_index in range(steps_run_list.shape[1]):
+        fig, axs = plt.subplots(1, 1, constrained_layout=False)
+        drawPlotUncertainty(x_steps_run_list,
+                            steps_run_list[0][run_index],
+                            np.zeros(steps_run_list[0][run_index].shape),
+                            label=label_name + "_" + str(run_index),
+                            color=generate_hex_color(),
+                            axis=axs)
 
-# drawPlotUncertainty(x_mctsnum_steps_run_list,
-#                     mean_mctsnum_steps_run_list[0],
-#                     std_mctsnum_steps_run_list[0],
-#                     label="MCTS(Keep Tree)",
-#                     color="red",
-#                     axis=axs_DQN)
-# totalmean_mcts = np.mean(mean_mctsnum_steps_run_list, axis=1)
-# print(totalmean_mcts, mean_MCTSnum_steps_run_list[best_par])
-# axs_DQNMCTS.axhline(mean_MCTSnum_steps_run_list[best_par], color="green", label="normal mcts")
-# axs_DQNMCTS.axhline(totalmean_mcts, color = "black", label="mean mcts")
-# axs_DQN.legend()
-# axs_DQN.title.set_text("DQN & MCTS")
-# fig.show()
-#
-#
-#
-# with open('Results/MCTS_keeptree_num_steps_list.npy', 'rb') as f:
-#     DQNnum_steps_run_list = np.load(f)
-#
-# print(DQNnum_steps_run_list.shape)
-# mean_DQNnum_steps_run_list = np.mean(DQNnum_steps_run_list, axis=1)
-# std_DQNnum_steps_run_list = np.std(DQNnum_steps_run_list, axis=1)
-# x_DQNnum_steps_run_list = np.arange(DQNnum_steps_run_list.shape[2])
-#
-# fig, axs_DQN = plt.subplots(1, 1, constrained_layout=False)
-# for stepsize_index in range(mean_DQNnum_steps_run_list.shape[0]):
-#     r = random.randint(0, 255)
-#     g = random.randint(0, 255)
-#     b = random.randint(0, 255)
-#     c = (r, g, b)
-#     hex_c = '#%02x%02x%02x' % c
-#     drawPlotUncertainty(x_DQNnum_steps_run_list,
-#                         mean_DQNnum_steps_run_list[stepsize_index],
-#                         std_DQNnum_steps_run_list[stepsize_index],
-#                         label="mcts-keeptreeepisode" + str(stepsize_index),
-#                         color=hex_c,
-#                         axis=axs_DQN)
-#
-# axs_DQN.legend()
-# fig.show()
+        axs.title.set_text("DQN find value function")
+        axs.legend()
+        fig.savefig("Results/DQNVF/VF 64-64/DQNVF_" + str(run_index) + ".png")
+        fig.show()
 
-#
-# with open('Results/MCTSAgent_Iterationsnum_steps_run_list.npy', 'rb') as f:
-#     MCTSnum_steps_run_list = np.load(f)
-# mean_MCTSnum_steps_run_list = np.mean(MCTSnum_steps_run_list, axis=1)
-# std_MCTSnum_steps_run_list = np.std(MCTSnum_steps_run_list, axis=1)
-# print(MCTSnum_steps_run_list.shape)
-# mean_MCTSnum_steps_run_list = mean_MCTSnum_steps_run_list.reshape([4, 11, 3, -1])
-# std_MCTSnum_steps_run_list = std_MCTSnum_steps_run_list.reshape([4, 11, 3, -1])
-# print(mean_MCTSnum_steps_run_list.shape)
 
-# with open('Results/MCTSAgent_different_iterations.npy', 'rb') as f:
-#     MCTSnum_steps_run_list = np.load(f)
-# print(MCTSnum_steps_run_list.shape)
-# mean_MCTSnum_steps_run_list = np.mean(MCTSnum_steps_run_list, axis=1)
-# std_MCTSnum_steps_run_list = np.std(MCTSnum_steps_run_list, axis=1)
-# x_MCTSnum_steps_run_list = [i for i in range(2, 300, 10)]
-# fig, axs_MCTS = plt.subplots(1, 1, constrained_layout=False)
-# drawPlotUncertainty(x_MCTSnum_steps_run_list,
-#                     mean_MCTSnum_steps_run_list[:,0],
-#                     std_MCTSnum_steps_run_list[:,0],
-#                     label="MCTS",
-#                     color="blue",
-#                     axis=axs_MCTS)
-# axs_MCTS.title.set_text("MCTSAgent")
-#
-# with open('Results/DQN_num_steps_list.npy', 'rb') as f:
-#     DQNnum_steps_run_list = np.load(f)
-#
-# mean_dqnnum_steps_run_list = np.mean(DQNnum_steps_run_list, axis=1)[1]
-# dqn_best = np.mean(mean_dqnnum_steps_run_list[-50:])
-#
-#
-# axs_MCTS.axhline(dqn_best, color = "black", label="dqn best")
-# axs_MCTS.legend()
-# axs_MCTS.title.set_text("DQN Best - MCTS Iteration")
-# fig.show()
+def plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = False):
 
-with open('Results/DQN_3by3_num_steps_list.npy', 'rb') as f:
-    DQNnum_steps_run_list = np.load(f)
-data = DQNnum_steps_run_list.reshape((4, 5, 10, 600))
-data_mean = np.mean(data, axis=2)
-data_std = np.std(data, axis=2)
+    mean_steps_run_list = np.mean(steps_run_list, axis=1)
+    std_steps_run_list = np.std(steps_run_list, axis=1)
+    x_steps_run_list = np.arange(steps_run_list.shape[2])
 
-best_par = np.zeros(data_mean.shape[1], dtype=int)
-for m in range(data_mean.shape[1]):
-    best_performance = np.inf
-    for i in range(data_mean.shape[0]):
-        auc = np.sum(data_mean[i, m, -100:])
-        if auc < best_performance:
-            best_performance = auc
-            best_par[m] = i
+    mean_steps_run_list = np.mean(mean_steps_run_list, axis=1)
+    std_steps_run_list = np.std(std_steps_run_list, axis=1)
 
-for m in range(data_mean.shape[1]):
-    plt.plot(data_mean[best_par[m], m], label=str(m))
-plt.legend()
-plt.show()
+    best_par = np.argmin(mean_steps_run_list)
+    
+    # for stepsize_index in range(mean_steps_run_list.shape[0]):
+        # axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name+str(stepsize_index))
+    
+    line_style = "dashed"
+    if is_imperfect:
+        line_style = "solid"
+
+    for stepsize_index in range(0, 1):
+        axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name, linestyle=line_style)
+
+def plot_alternate_agents(steps_run_list, label_name1, label_name2, axs):
+    num_step = steps_run_list.shape[2] // 2
+    odd_ind = list(range(1, num_step * 2, 2))
+    even_ind = list(range(0, num_step * 2, 2))
+    agent1_step_list = np.delete(steps_run_list, odd_ind, 2)
+    agent2_step_list = np.delete(steps_run_list, even_ind, 2)
+
+    mean_agent1_steps_run_list = np.mean(agent1_step_list, axis=1)
+    std_agent1_steps_run_list = np.std(agent1_step_list, axis=1)
+    x_agent1_steps_run_list = np.arange(agent1_step_list.shape[2])
+
+    mean_agent2_steps_run_list = np.mean(agent2_step_list, axis=1)
+    std_agent2_steps_run_list = np.std(agent2_step_list, axis=1)
+    x_agent2_steps_run_list = np.arange(agent2_step_list.shape[2])
+
+    drawPlotUncertainty(x_agent1_steps_run_list,
+                        mean_agent1_steps_run_list[0],
+                        std_agent1_steps_run_list[0],
+                        label=label_name1,
+                        color=generate_hex_color(),
+                        axis=axs)
+
+    drawPlotUncertainty(x_agent2_steps_run_list,
+                        mean_agent2_steps_run_list[0],
+                        std_agent2_steps_run_list[0],
+                        label=label_name2,
+                        color=generate_hex_color(),
+                        axis=axs)
+
+def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first=True,  is_imperfect = False):
+
+
+
+    num_step = config.episodes_only_dqn
+    agent1_ind = list(range(0, num_step, 1))
+    agent2_ind = list(range(num_step, steps_run_list.shape[2], 1))
+    agent1_step_list = np.delete(steps_run_list, agent2_ind, 2)
+    agent2_step_list = np.delete(steps_run_list, agent1_ind, 2)
+
+    # num_step = steps_run_list.shape[2] // 2
+    # odd_ind = list(range(1, num_step * 2, 2))
+    # even_ind = list(range(0, num_step * 2, 2))
+    # agent1_step_list = np.delete(steps_run_list, odd_ind, 2)
+    # agent2_step_list = np.delete(steps_run_list, even_ind, 2)
+
+
+    # mean_agent1_steps_run_list = np.mean(agent1_step_list, axis=1)
+    # std_agent1_steps_run_list = np.std(agent1_step_list, axis=1)
+    # x_agent1_steps_run_list = np.arange(agent1_step_list.shape[2])
+
+
+    # if plot_first:
+    #     drawPlotUncertainty(x_agent1_steps_run_list,
+    #                         mean_agent1_steps_run_list[0],
+    #                         std_agent1_steps_run_list[0],
+    #                         label=label_name1,
+    #                         color=generate_hex_color(),
+    #                         axis=axs)
+
+    line_style = "dashed"
+    if is_imperfect:
+        line_style = "solid"
+
+    mean_agent1_steps_run_list = np.mean(agent1_step_list, axis=1)
+    mean_agent1_steps_run_list = np.mean(mean_agent1_steps_run_list, axis=1)
+
+    if plot_first:
+        for stepsize_index in range(mean_agent1_steps_run_list.shape[0]):
+            axs.axhline(mean_agent1_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name1, linestyle=line_style)
+
+    mean_agent2_steps_run_list = np.mean(agent2_step_list, axis=1)
+    mean_agent2_steps_run_list = np.mean(mean_agent2_steps_run_list, axis=1)
+
+    for stepsize_index in range(mean_agent2_steps_run_list.shape[0]):
+        axs.axhline(mean_agent2_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name2, linestyle=line_style)
+
+fig, axs = plt.subplots(1, 1, constrained_layout=False)
+
+file_name = 'Results_Imperfect_Model/MCTS.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name = 'MCTS'
+plot_simple_agent_single_episode(steps_run_list, label_name, axs)
+
+color_counter = (color_counter - 1) % len(color_list)
+file_name = 'Results_Imperfect_Model/MCTS_AutoImperfect_prob=0.1_step=10.p'
+file_name = 'Results_Imperfect_Model/MCTS_AutoImperfect10.p'
+
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name = 'MCTS-Imperfect'
+plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+
+# file_name = 'Results_Imperfect_Model/DQNMCTS_UseSelectedAction_AutoImperfect8.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name = 'DQNMCTS_UseSelectedAction'
+# plot_simple_agent_single_episode(steps_run_list, label_name, axs)
+
+
+
+# file_name = 'Results_Imperfect_Model/DQNMCTS_UseSelectedAction_AutoImperfect9.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name1 = 'DQN(UseSelectedAction)'
+# label_name2 = 'MCTS(UseSelectedAction)'
+# plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
+
+file_name = 'Results_Imperfect_Model/DQNMCTS_InitialValue_PretrainedDQN_AutoImperfect_prob=0.1_step=10.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+# print(res['num_steps'])
+steps_run_list = res['num_steps']
+label_name1 = 'DQN'
+label_name2 = 'MCTS(Initial Value)-Imperfect'
+plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = True,  is_imperfect = True)
+
+color_counter = (color_counter - 1) % len(color_list)
+file_name = 'Results_Imperfect_Model/DQNMCTS_InitialValue_PretrainedDQN.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+# print(res['num_steps'])
+steps_run_list = res['num_steps']
+label_name1 = 'DQN'
+label_name2 = 'MCTS(Initial Value)'
+plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
+
+
+file_name = 'Results_Imperfect_Model/DQNMCTS_BootstrapInitial_PretrainedDQN_AutoImperfect_prob=0.1_step=10.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+# print(res['num_steps'])
+steps_run_list = res['num_steps']
+label_name1 = 'DQN'
+label_name2 = 'MCTS(BootstrapInitial)-Imperfect'
+plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = True)
+color_counter = (color_counter - 1) % len(color_list)
+
+file_name = 'Results_Imperfect_Model/DQNMCTS_BootstrapInitial_PretrainedDQN.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+# print(res['num_steps'])
+steps_run_list = res['num_steps']
+label_name1 = 'DQN'
+label_name2 = 'MCTS(BootstrapInitial)'
+plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
+
+file_name = 'Results_Imperfect_Model/DQNMCTS_Bootstrap_PretrainedDQN_AutoImperfect_prob=0.1_step=10.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+# print(res['num_steps'])
+steps_run_list = res['num_steps']
+label_name1 = 'DQN'
+label_name2 = 'MCTS(Bootstrap)-Imperfect'
+plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = True)
+color_counter = (color_counter - 1) % len(color_list)
+
+file_name = 'Results_Imperfect_Model/DQNMCTS_Bootstrap_PretrainedDQN.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+# print(res['num_steps'])
+steps_run_list = res['num_steps']
+label_name1 = 'DQN'
+label_name2 = 'MCTS(Bootstrap)'
+plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
+
+# file_name = 'Results_Imperfect_Model/DQNMCTS_UseSelectedAction_Imperfect5.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name1 = 'DQN'
+# label_name2 = 'MCTS'
+# plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
+
+
+# axs.title.set_text("DQN find value function")
+axs.legend()
+# fig.savefig("Results_Imperfect_Model/Plots/AutoImperfect_prob=0dot1_step=10")
+
+fig.savefig("222")
+fig.show()

@@ -234,7 +234,7 @@ class RunExperiment():
         # self.show_agent_model_error_plot()
         # with open('sim_num_steps_run_list.npy', 'wb') as f:
         #     np.save(f, self.simulation_steps_run_list)
-        with open("Results/" + result_file_name + '.p', 'wb') as f:
+        with open("Results_Imperfect_Model/" + result_file_name + '.p', 'wb') as f:
             result = {'num_steps': self.num_steps_run_list,
                       'experiment_objs': experiment_object_list,
                       'detail': detail}

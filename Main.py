@@ -32,7 +32,7 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_UseTreeSelection]
     # agent_class_list = [DQNMCTSAgent_Rollout]
     # agent_class_list = [DQNMCTSAgent_MCTSSelectedAction]
-
+    # agent_class_list = [DQNMCTSAgent_UseSelectedAction]
 
     # agent_class_list = [DQNMCTSAgent_InitialValue_offline]
 
@@ -88,7 +88,13 @@ if __name__ == '__main__':
                                         obj = ExperimentObject(agent_class, params)
                                         experiment_object_list.append(obj)
     # x = time.time()
-    detail = "Env = 4room - 4x4; Pretrained DQN 16x8 dqn_vf_9.p"
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNCMCTS_LowBootstrapInitial_PretrainedDQN_16x8_vf_9", detail=detail)
-    
+    detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100; Pretrained DQN - DQN VF: 16x8 dqn_vf_9.p"
+    # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_InitialValue_PretrainedDQN_AutoImperfect15", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_BootstrapInitial_PretrainedDQN_AutoImperfect15", detail=detail)
+    # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_InitialValue_PretrainedDQN", detail=detail)
+
+    # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
+    # experiment.run_experiment(experiment_object_list, result_file_name="MCTS_AutoImperfect_prob=0.025_step=1", detail=detail)
+    # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
+    # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_UseSelectedAction_AutoImperfect_prob=0.1_step=10", detail=detail)
     # print(time.time() - x)

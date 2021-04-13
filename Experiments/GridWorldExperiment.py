@@ -140,8 +140,8 @@ class RunExperiment():
             pre_trained_plot_x_run_list = []
             for r in range(num_runs):
                 print("starting runtime ", r+1)
-                # env = GridWorld(params=config.empty_room_params)
-                env = GridWorldRooms(params=config.n_room_params)
+                env = GridWorld(params=config.empty_room_params)
+                # env = GridWorldRooms(params=config.n_room_params)
 
                 train, test = data_store(env)
                 reward_function = env.rewardFunction
@@ -216,7 +216,7 @@ class RunExperiment():
                     #     # self.agent_model_error_list[agent_counter, r, e] = agent_model_error
                     #     self.model_error_samples[i, r, e] = experiment.num_samples
 
-                # agent.saveValueFunction("Results/DQNVF/dqn_vf_" + str(r) + ".p")
+                # agent.saveValueFunction("Results_EmptyRoom/DQNVF_16x8/dqn_vf_" + str(r) + ".p")
 
 
                 # *********
@@ -234,7 +234,7 @@ class RunExperiment():
         # self.show_agent_model_error_plot()
         # with open('sim_num_steps_run_list.npy', 'wb') as f:
         #     np.save(f, self.simulation_steps_run_list)
-        with open("Results_Imperfect_Model/" + result_file_name + '.p', 'wb') as f:
+        with open("Results_EmptyRoom/" + result_file_name + '.p', 'wb') as f:
             result = {'num_steps': self.num_steps_run_list,
                       'experiment_objs': experiment_object_list,
                       'detail': detail}

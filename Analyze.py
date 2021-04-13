@@ -57,9 +57,9 @@ def plot_simple_agent_each_run(steps_run_list, label_name):
                             color=generate_hex_color(),
                             axis=axs)
 
-        axs.title.set_text("DQN find value function")
+        axs.title.set_text("Pretrained DQN 16x8")
         axs.legend()
-        fig.savefig("Results/DQNVF/VF 64-64/DQNVF_" + str(run_index) + ".png")
+        fig.savefig("Results_EmptyRoom/DQNVF_16x8/DQNVF_" + str(run_index) + ".png")
         fig.show()
 
 
@@ -74,15 +74,15 @@ def plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfe
 
     best_par = np.argmin(mean_steps_run_list)
     
-    # for stepsize_index in range(mean_steps_run_list.shape[0]):
-        # axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name+str(stepsize_index))
+    for stepsize_index in range(mean_steps_run_list.shape[0]):
+        axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name+str(stepsize_index))
     
-    line_style = "dashed"
-    if is_imperfect:
-        line_style = "solid"
+    # line_style = "dashed"
+    # if is_imperfect:
+    #     line_style = "solid"
 
-    for stepsize_index in range(0, 1):
-        axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name, linestyle=line_style)
+    # for stepsize_index in range(0, 1):
+    #     axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name, linestyle=line_style)
 
 def plot_alternate_agents(steps_run_list, label_name1, label_name2, axs):
     num_step = steps_run_list.shape[2] // 2
@@ -135,13 +135,25 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
     # x_agent1_steps_run_list = np.arange(agent1_step_list.shape[2])
 
 
-    # if plot_first:
-    #     drawPlotUncertainty(x_agent1_steps_run_list,
-    #                         mean_agent1_steps_run_list[0],
-    #                         std_agent1_steps_run_list[0],
-    #                         label=label_name1,
-    #                         color=generate_hex_color(),
-    #                         axis=axs)
+    # drawPlotUncertainty(x_agent1_steps_run_list,
+    #                     mean_agent1_steps_run_list[0],
+    #                     std_agent1_steps_run_list[0],
+    #                     label=label_name1,
+    #                     color=generate_hex_color(),
+    #                     axis=axs)
+
+
+    # mean_agent2_steps_run_list = np.mean(agent2_step_list, axis=1)
+    # std_agent2_steps_run_list = np.std(agent2_step_list, axis=1)
+    # x_agent2_steps_run_list = np.arange(agent2_step_list.shape[2])
+    
+    # drawPlotUncertainty(x_agent2_steps_run_list,
+    #                 mean_agent2_steps_run_list[0],
+    #                 std_agent2_steps_run_list[0],
+    #                 label=label_name2,
+    #                 color=generate_hex_color(),
+    #                 axis=axs)
+
 
     line_style = "dashed"
     if is_imperfect:
@@ -160,24 +172,32 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
     for stepsize_index in range(mean_agent2_steps_run_list.shape[0]):
         axs.axhline(mean_agent2_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name2, linestyle=line_style)
 
+
+
 fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
-file_name = 'Results_Imperfect_Model/MCTS.p'
+# file_name = 'Results_EmptyRoom/MCTS_ParameterStudy_n=20.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name = 'MCTS'
+# plot_simple_agent_single_episode(steps_run_list, label_name, axs)
+
+file_name = 'Results_EmptyRoom/DQNVF_16x8/DQN_Runs.p'
 with open(file_name, "rb") as f:
     res = pickle.load(f)
 steps_run_list = res['num_steps']
-label_name = 'MCTS'
-plot_simple_agent_single_episode(steps_run_list, label_name, axs)
+label_name = 'DQN'
+plot_simple_agent_each_run(steps_run_list, label_name)
 
-color_counter = (color_counter - 1) % len(color_list)
-file_name = 'Results_Imperfect_Model/MCTS_AutoImperfect_prob=0.1_step=10.p'
-file_name = 'Results_Imperfect_Model/MCTS_AutoImperfect10.p'
+# color_counter = (color_counter - 1) % len(color_list)
+# file_name = 'Results_Imperfect_Model/MCTS_AutoImperfect16.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name = 'MCTS-Imperfect'
+# plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
 
-with open(file_name, "rb") as f:
-    res = pickle.load(f)
-steps_run_list = res['num_steps']
-label_name = 'MCTS-Imperfect'
-plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
 
 
 
@@ -190,7 +210,7 @@ plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect =
 
 
 
-# file_name = 'Results_Imperfect_Model/DQNMCTS_UseSelectedAction_AutoImperfect9.p'
+# file_name = 'Results_Imperfect_Model/MCTS_AutoImperfect_prob=0.1_step=10.p'
 # with open(file_name, "rb") as f:
 #     res = pickle.load(f)
 # steps_run_list = res['num_steps']
@@ -198,63 +218,61 @@ plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect =
 # label_name2 = 'MCTS(UseSelectedAction)'
 # plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
 
-file_name = 'Results_Imperfect_Model/DQNMCTS_InitialValue_PretrainedDQN_AutoImperfect_prob=0.1_step=10.p'
-with open(file_name, "rb") as f:
-    res = pickle.load(f)
-# print(res['num_steps'])
-steps_run_list = res['num_steps']
-label_name1 = 'DQN'
-label_name2 = 'MCTS(Initial Value)-Imperfect'
-plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = True,  is_imperfect = True)
+# file_name = 'Results_Imperfect_Model/DQNMCTS_InitialValue_PretrainedDQN_AutoImperfect16.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name1 = 'DQN'
+# label_name2 = 'MCTS(Initial Value)-Imperfect'
+# plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = True,  is_imperfect = True)
 
-color_counter = (color_counter - 1) % len(color_list)
-file_name = 'Results_Imperfect_Model/DQNMCTS_InitialValue_PretrainedDQN.p'
-with open(file_name, "rb") as f:
-    res = pickle.load(f)
-# print(res['num_steps'])
-steps_run_list = res['num_steps']
-label_name1 = 'DQN'
-label_name2 = 'MCTS(Initial Value)'
-plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
+# color_counter = (color_counter - 1) % len(color_list)
+# file_name = 'Results_Imperfect_Model/DQNMCTS_InitialValue_PretrainedDQN.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name1 = 'DQN'
+# label_name2 = 'MCTS(Initial Value)'
+# plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
 
 
-file_name = 'Results_Imperfect_Model/DQNMCTS_BootstrapInitial_PretrainedDQN_AutoImperfect_prob=0.1_step=10.p'
-with open(file_name, "rb") as f:
-    res = pickle.load(f)
-# print(res['num_steps'])
-steps_run_list = res['num_steps']
-label_name1 = 'DQN'
-label_name2 = 'MCTS(BootstrapInitial)-Imperfect'
-plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = True)
-color_counter = (color_counter - 1) % len(color_list)
+# file_name = 'Results_Imperfect_Model/DQNMCTS_BootstrapInitial_PretrainedDQN_AutoImperfect16.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# # print(res['num_steps'])
+# steps_run_list = res['num_steps']
+# label_name1 = 'DQN'
+# label_name2 = 'MCTS(BootstrapInitial)-Imperfect'
+# plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = True)
+# color_counter = (color_counter - 1) % len(color_list)
 
-file_name = 'Results_Imperfect_Model/DQNMCTS_BootstrapInitial_PretrainedDQN.p'
-with open(file_name, "rb") as f:
-    res = pickle.load(f)
-# print(res['num_steps'])
-steps_run_list = res['num_steps']
-label_name1 = 'DQN'
-label_name2 = 'MCTS(BootstrapInitial)'
-plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
+# file_name = 'Results_Imperfect_Model/DQNMCTS_BootstrapInitial_PretrainedDQN.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# # print(res['num_steps'])
+# steps_run_list = res['num_steps']
+# label_name1 = 'DQN'
+# label_name2 = 'MCTS(BootstrapInitial)'
+# plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
 
-file_name = 'Results_Imperfect_Model/DQNMCTS_Bootstrap_PretrainedDQN_AutoImperfect_prob=0.1_step=10.p'
-with open(file_name, "rb") as f:
-    res = pickle.load(f)
-# print(res['num_steps'])
-steps_run_list = res['num_steps']
-label_name1 = 'DQN'
-label_name2 = 'MCTS(Bootstrap)-Imperfect'
-plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = True)
-color_counter = (color_counter - 1) % len(color_list)
+# file_name = 'Results_Imperfect_Model/DQNMCTS_Bootstrap_PretrainedDQN_AutoImperfect16.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# # print(res['num_steps'])
+# steps_run_list = res['num_steps']
+# label_name1 = 'DQN'
+# label_name2 = 'MCTS(Bootstrap)-Imperfect'
+# plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = True)
+# color_counter = (color_counter - 1) % len(color_list)
 
-file_name = 'Results_Imperfect_Model/DQNMCTS_Bootstrap_PretrainedDQN.p'
-with open(file_name, "rb") as f:
-    res = pickle.load(f)
-# print(res['num_steps'])
-steps_run_list = res['num_steps']
-label_name1 = 'DQN'
-label_name2 = 'MCTS(Bootstrap)'
-plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
+# file_name = 'Results_Imperfect_Model/DQNMCTS_Bootstrap_PretrainedDQN.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# # print(res['num_steps'])
+# steps_run_list = res['num_steps']
+# label_name1 = 'DQN'
+# label_name2 = 'MCTS(Bootstrap)'
+# plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
 
 # file_name = 'Results_Imperfect_Model/DQNMCTS_UseSelectedAction_Imperfect5.p'
 # with open(file_name, "rb") as f:
@@ -266,8 +284,9 @@ plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, a
 
 
 # axs.title.set_text("DQN find value function")
-axs.legend()
-# fig.savefig("Results_Imperfect_Model/Plots/AutoImperfect_prob=0dot1_step=10")
+# axs.legend()
+# fig.savefig("Results_EmptyRoom/Plots/DQN_ParameterStudy_n=20")
+# fig.savefig("Results/Plots/DQN_VF=16x8_dqn_vf_9")
 
-fig.savefig("222")
+# fig.savefig("Results_Imperfect_Model/Plots/UseSelectedAction_prob=0dot025_step=1_run=1")
 fig.show()

@@ -68,7 +68,7 @@ class GridWorld():
         self.addObstacles(params['obstacles_pos'], self._grid)
         self.__createOnehotMap()
         self.screen = None # for visualization
-        self.is_imperfect = True
+        self.is_imperfect = False
         self.corrupt_prob = 0.1
         self.corrupt_step = 10
         self.imperfect_model_file = "Imperfect15: prob=" +  str(self.corrupt_prob) + " - step=" + str(self.corrupt_step)

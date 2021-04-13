@@ -76,6 +76,8 @@ class BaseDynaAgent(BaseAgent):
         self.num_steps = 0
         self.num_terminal_steps = 0
 
+        self.is_pretrained = True
+
 
     def start(self, observation):
         '''
@@ -191,8 +193,8 @@ class BaseDynaAgent(BaseAgent):
                                                    self._vf['q']['layers_features'],
                                                    self._vf['q']['action_layer_num']).to(self.device)
         #remove later
-        if True:
-            value_function_file = "Results/DQNVF/VF 16-8/dqn_vf_9.p"
+        if self.is_pretrained:
+            value_function_file = "Results_EmptyRoom/DQNVF_16x8/dqn_vf_7.p"
             print("loading ", value_function_file)
             self.loadValueFunction(value_function_file)
             self._vf['q']['training'] = False

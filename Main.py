@@ -40,11 +40,15 @@ if __name__ == '__main__':
     show_values_grid = [False, False],
     show_model_error_grid = [False, False]
 
+    # s_vf_list = [2 ** -5, 2 ** -7, 2 ** -9, 2 ** -11]
     s_vf_list = [2 ** -7]
+
     s_md_list = [2 ** -9]
 
 
-    c_list = [2 ** 0]
+    # c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
+    c_list = [2 ** 0.5]
+
     num_iteration_list = [100]#[i for i in range(30, 40, 10)]
     simulation_depth_list = [10]
     num_simulation_list = [1]
@@ -88,13 +92,20 @@ if __name__ == '__main__':
                                         obj = ExperimentObject(agent_class, params)
                                         experiment_object_list.append(obj)
     # x = time.time()
-    detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100; Pretrained DQN - DQN VF: 16x8 dqn_vf_9.p"
+    # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100; Pretrained DQN - DQN VF: 16x8 dqn_vf_9.p"
+    detail = "Env = Empty Room; _n = 20; max_episode = 100; Pretrained DQN - DQN VF: 16x8 dqn_vf_5.p"
+
     # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_InitialValue_PretrainedDQN_AutoImperfect15", detail=detail)
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_BootstrapInitial_PretrainedDQN_AutoImperfect15", detail=detail)
-    # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_InitialValue_PretrainedDQN", detail=detail)
+    # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_BootstrapInitial_PretrainedDQN_AutoImperfect15", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_BootstrapInitial_PretrainedDQN", detail=detail)
 
     # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="MCTS_AutoImperfect_prob=0.025_step=1", detail=detail)
     # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_UseSelectedAction_AutoImperfect_prob=0.1_step=10", detail=detail)
+
+    # detail = "Env = Empty Room; _n = 20; max_episode = 100"
+    # experiment.run_experiment(experiment_object_list, result_file_name="DQNVF_16x8/DQN_Runs.p", detail=detail)
+
+
     # print(time.time() - x)

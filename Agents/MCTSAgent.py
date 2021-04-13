@@ -86,14 +86,18 @@ class MCTSAgent(BaseAgent):
 
     def choose_action(self):
         max_visit = -np.inf
-        max_action = None
-        max_child = None
+        max_action_list = []
+        max_child_list = []
         for child in self.subtree_node.get_childs():
             if child.num_visits > max_visit:
                 max_visit = child.num_visits
-                max_action = child.get_action_from_par()
-                max_child = child
-        return max_action, max_child
+                max_action_list = [child.get_action_from_par()]
+                max_child_list = [child]
+            elif child.num_visits == max_visit:
+                max_action_list.append(child.get_action_from_par())
+                max_child_list.append(child)
+        random_ind = random.randint(0, len(max_action_list) - 1)
+        return max_action_list[random_ind], max_child_list[random_ind]
 
 #     @timecall(immediate=False)
     def MCTS_iteration(self):

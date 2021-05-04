@@ -11,6 +11,7 @@ class Node:
         self.is_terminal = is_terminal
         self.action_from_par = action_from_par
         self.reward_from_par = reward_from_par
+        self.value = value
 
     def get_action_from_par(self):
         return np.copy(self.action_from_par)
@@ -28,9 +29,12 @@ class Node:
         # return self.sum_values / (self.num_visits + 1)
 
         if self.num_visits > 0:
-            return self.sum_values / self.num_visits
+            avg_value = self.sum_values / self.num_visits
         else:
-            return self.sum_values
+            avg_value = self.sum_values
+
+        self.value = avg_value
+        return avg_value
 
     def inc_visits(self):
         self.num_visits += 1

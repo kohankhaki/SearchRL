@@ -1018,3 +1018,68 @@ class DQNMCTSAgent_UseMCTSwPriority(MCTSAgent, BaseDynaAgent):
         # print(self.td_average)
 
 
+# MCTS uses DQN value function for for reducing breadth of the search
+class DQNMCTSAgent_ReduceBreadth(MCTSAgent, BaseDynaAgent):
+    name = "DQNMCTSAgent_ReduceBreadth"
+
+    def __init__(self, params={}):
+        BaseDynaAgent.__init__(self, params)
+        MCTSAgent.__init__(self, params)
+        self.episode_counter = -1
+        self.branch_factor = 3
+
+    def start(self, observation):
+        self.episode_counter += 1
+        if self.episode_counter < episodes_only_dqn:
+            action = BaseDynaAgent.start(self, observation)
+        elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
+            action = MCTSAgent.start(self, observation)
+        else:
+            if self.episode_counter % 2 == 0:
+                action = BaseDynaAgent.start(self, observation)
+            else:
+                action = MCTSAgent.start(self, observation)
+        return action
+
+    def step(self, reward, observation):
+        if self.episode_counter < episodes_only_dqn:
+            action = BaseDynaAgent.step(self, reward, observation)
+        elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
+            action = MCTSAgent.step(self, reward, observation)
+        else:
+            if self.episode_counter % 2 == 0:
+                action = BaseDynaAgent.step(self, reward, observation)
+            else:
+                action = MCTSAgent.step(self, reward, observation)
+        return action
+
+    def end(self, reward):
+        if self.episode_counter < episodes_only_dqn:
+            BaseDynaAgent.end(self, reward)
+        elif self.episode_counter < episodes_only_dqn + episodes_only_mcts:
+            MCTSAgent.end(self, reward)
+        else:
+            if self.episode_counter % 2 == 0:
+                BaseDynaAgent.end(self, reward)
+            else:
+                MCTSAgent.end(self, reward)
+
+    def expansion(self, node):
+        children_list = []
+        for a in self.action_list:
+            next_state, is_terminal, reward = self.true_model(node.get_state(),
+                                                              a)  # with the assumption of deterministic model
+            # if np.array_equal(next_state, node.get_state()):
+            #     continue
+            value = self.get_initial_value(next_state)
+            child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
+                         value=value)
+            children_list.append(child)    
+        children_list.sort(key=lambda x: x.value, reverse=True)
+        for i in range(self.branch_factor)
+            node.add_child(children_list[i])
+
+    def get_initial_value(self, state):
+        state_representation = self.getStateRepresentation(state)
+        value = self.getStateActionValue(state_representation)
+        return value.item()

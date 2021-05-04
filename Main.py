@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # agent_class_list = [BaseDynaAgent]
     # agent_class_list = [DQNMCTSAgent_MCTSPolicy]
     # agent_class_list = [DQNMCTSAgent_InitialValue]
-    agent_class_list = [DQNMCTSAgent_BootstrapInitial]
+    # agent_class_list = [DQNMCTSAgent_BootstrapInitial]
     # agent_class_list = [DQNMCTSAgent_Bootstrap]
     # agent_class_list = [MCTSAgent]
     # agent_class_list = [DQNMCTSAgent_UseTreeExpansion]
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_Rollout]
     # agent_class_list = [DQNMCTSAgent_MCTSSelectedAction]
     # agent_class_list = [DQNMCTSAgent_UseSelectedAction]
-
+    agent_class_list = [DQNMCTSAgent_UseMCTSwPriority]
     # agent_class_list = [DQNMCTSAgent_InitialValue_offline]
 
     show_pre_trained_error_grid = [False, False],
@@ -50,7 +50,9 @@ if __name__ == '__main__':
     c_list = [2 ** 0.5]
 
     num_iteration_list = [100]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [10]
+    # simulation_depth_list = [200]
+    simulation_depth_list = [75]
+    # num_simulation_list = [10]
     num_simulation_list = [1]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
@@ -60,10 +62,10 @@ if __name__ == '__main__':
 
     model_list = [{'type': None, 'num_networks': 1, 'layers_type': ['fc'], 'layers_features': [128]}]
     vf_list = [
-        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
+        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 32], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 16], 'action_layer_num': 3},
-        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 8], 'action_layer_num': 3},
+        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 8], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [8, 8], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [4, 4], 'action_layer_num': 3}
                ]
@@ -93,19 +95,19 @@ if __name__ == '__main__':
                                         experiment_object_list.append(obj)
     # x = time.time()
     # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100; Pretrained DQN - DQN VF: 16x8 dqn_vf_9.p"
-    detail = "Env = Empty Room; _n = 20; max_episode = 100; Pretrained DQN - DQN VF: 16x8 dqn_vf_5.p"
+    # detail = "Env = Empty Room; _n = 20; max_episode = 100; Pretrained DQN - DQN VF: 16x8 dqn_vf_5.p"
 
     # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_InitialValue_PretrainedDQN_AutoImperfect15", detail=detail)
     # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_BootstrapInitial_PretrainedDQN_AutoImperfect15", detail=detail)
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_BootstrapInitial_PretrainedDQN", detail=detail)
+    # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_BootstrapInitial_PretrainedDQN_AutoImperfect_prob=0.025_step=1", detail=detail)
 
     # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
-    # experiment.run_experiment(experiment_object_list, result_file_name="MCTS_AutoImperfect_prob=0.025_step=1", detail=detail)
-    # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
-    # experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_UseSelectedAction_AutoImperfect_prob=0.1_step=10", detail=detail)
+    # experiment.run_experiment(experiment_object_list, result_file_name="ddd", detail=detail)
+    detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTS_UseMCTSwPriority_AvgRate=0dot1", detail=detail)
 
     # detail = "Env = Empty Room; _n = 20; max_episode = 100"
-    # experiment.run_experiment(experiment_object_list, result_file_name="DQNVF_16x8/DQN_Runs.p", detail=detail)
+    # experiment.run_experiment(experiment_object_list, result_file_name="MCTS_BestParameter", detail=detail)
 
 
     # print(time.time() - x)

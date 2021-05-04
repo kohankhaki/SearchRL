@@ -76,7 +76,7 @@ class BaseDynaAgent(BaseAgent):
         self.num_steps = 0
         self.num_terminal_steps = 0
 
-        self.is_pretrained = True
+        self.is_pretrained = False
 
 
     def start(self, observation):

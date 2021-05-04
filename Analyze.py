@@ -72,17 +72,19 @@ def plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfe
     mean_steps_run_list = np.mean(mean_steps_run_list, axis=1)
     std_steps_run_list = np.std(std_steps_run_list, axis=1)
 
-    best_par = np.argmin(mean_steps_run_list)
+    # best_par = np.argmin(mean_steps_run_list)
     
-    for stepsize_index in range(mean_steps_run_list.shape[0]):
-        axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name+str(stepsize_index))
+    # for stepsize_index in range(mean_steps_run_list.shape[0]):
+    #     axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name+str(stepsize_index))
     
-    # line_style = "dashed"
-    # if is_imperfect:
-    #     line_style = "solid"
-
-    # for stepsize_index in range(0, 1):
-    #     axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name, linestyle=line_style)
+    line_style = "dashed"
+    if is_imperfect:
+        line_style = "solid"
+        for stepsize_index in range(0, 1):
+            axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name, linestyle=line_style)
+    else:
+        for stepsize_index in range(1, 2):
+            axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name, linestyle=line_style)
 
 def plot_alternate_agents(steps_run_list, label_name1, label_name2, axs):
     num_step = steps_run_list.shape[2] // 2
@@ -183,12 +185,12 @@ fig, axs = plt.subplots(1, 1, constrained_layout=False)
 # label_name = 'MCTS'
 # plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 
-file_name = 'Results_EmptyRoom/DQNVF_16x8/DQN_Runs.p'
-with open(file_name, "rb") as f:
-    res = pickle.load(f)
-steps_run_list = res['num_steps']
-label_name = 'DQN'
-plot_simple_agent_each_run(steps_run_list, label_name)
+# file_name = 'Results_EmptyRoom/DQNVF_16x8/DQN_Runs.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name = 'DQN'
+# plot_simple_agent_each_run(steps_run_list, label_name)
 
 # color_counter = (color_counter - 1) % len(color_list)
 # file_name = 'Results_Imperfect_Model/MCTS_AutoImperfect16.p'
@@ -236,17 +238,17 @@ plot_simple_agent_each_run(steps_run_list, label_name)
 # plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
 
 
-# file_name = 'Results_Imperfect_Model/DQNMCTS_BootstrapInitial_PretrainedDQN_AutoImperfect16.p'
+# file_name = 'Results_EmptyRoom/DQNMCTS_BootstrapInitial_PretrainedDQN_AutoImperfect_prob=0.025_step=1.p'
 # with open(file_name, "rb") as f:
 #     res = pickle.load(f)
 # # print(res['num_steps'])
 # steps_run_list = res['num_steps']
 # label_name1 = 'DQN'
 # label_name2 = 'MCTS(BootstrapInitial)-Imperfect'
-# plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = True)
+# plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = True,  is_imperfect = True)
 # color_counter = (color_counter - 1) % len(color_list)
 
-# file_name = 'Results_Imperfect_Model/DQNMCTS_BootstrapInitial_PretrainedDQN.p'
+# file_name = 'Results_EmptyRoom/DQNMCTS_BootstrapInitial_PretrainedDQN.p'
 # with open(file_name, "rb") as f:
 #     res = pickle.load(f)
 # # print(res['num_steps'])
@@ -274,18 +276,18 @@ plot_simple_agent_each_run(steps_run_list, label_name)
 # label_name2 = 'MCTS(Bootstrap)'
 # plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
 
-# file_name = 'Results_Imperfect_Model/DQNMCTS_UseSelectedAction_Imperfect5.p'
-# with open(file_name, "rb") as f:
-#     res = pickle.load(f)
-# steps_run_list = res['num_steps']
-# label_name1 = 'DQN'
-# label_name2 = 'MCTS'
-# plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
+file_name = 'Results/DQNMCTS_UseMCTSwPriority_AvgRate=0dot1.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name1 = 'DQN'
+label_name2 = 'MCTS'
+plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
 
 
-# axs.title.set_text("DQN find value function")
-# axs.legend()
-# fig.savefig("Results_EmptyRoom/Plots/DQN_ParameterStudy_n=20")
+axs.title.set_text("DQNMCTS_UseMCTSwPriority")
+axs.legend()
+fig.savefig("Results/Plots/DQNMCTS_UseMCTSwPriority_AvgRate=0dot")
 # fig.savefig("Results/Plots/DQN_VF=16x8_dqn_vf_9")
 
 # fig.savefig("Results_Imperfect_Model/Plots/UseSelectedAction_prob=0dot025_step=1_run=1")

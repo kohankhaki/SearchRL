@@ -43,8 +43,8 @@ class MCTSAgent(BaseAgent):
         self.root = None
 
         self.is_model_imperfect = False
-        self.corrupt_prob = 0.1
-        self.corrupt_step = 10
+        self.corrupt_prob = 0.025
+        self.corrupt_step = 1
 
     
     def start(self, observation):
@@ -245,6 +245,7 @@ class MCTSAgent(BaseAgent):
         t.show(tree_style=ts)
 
     def getActionIndex(self, action):
+        # print(action)
         if is_gridWorld:
             if action[0] == 0:
                 if action[1] == 1:

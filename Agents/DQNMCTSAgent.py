@@ -1066,6 +1066,7 @@ class DQNMCTSAgent_ReduceBreadth(MCTSAgent, BaseDynaAgent):
 
     def expansion(self, node):
         children_list = []
+        sort_list = []
         for a in self.action_list:
             next_state, is_terminal, reward = self.true_model(node.get_state(),
                                                               a)  # with the assumption of deterministic model
@@ -1074,12 +1075,15 @@ class DQNMCTSAgent_ReduceBreadth(MCTSAgent, BaseDynaAgent):
             value = self.get_initial_value(next_state)
             child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
                          value=value)
-            children_list.append(child)    
-        children_list.sort(key=lambda x: x.value, reverse=True)
-        for i in range(self.branch_factor)
+            children_list.append(child)
+            sort_value = self.get_state_value(next_state)
+            sort_list.append(sort_value)
+
+        children_list = [x for _, x in sorted(zip(sort_list, children_list), key=lambda pair: pair[0], reverse=True)]
+        for i in range(self.branch_factor):
             node.add_child(children_list[i])
 
-    def get_initial_value(self, state):
+    def get_state_value(self, state):
         state_representation = self.getStateRepresentation(state)
         value = self.getStateActionValue(state_representation)
         return value.item()

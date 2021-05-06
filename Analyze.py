@@ -284,17 +284,18 @@ fig, axs = plt.subplots(1, 1, constrained_layout=False)
 # plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
 
 
-file_name = 'Results/DQN_ParameterStudy_VF64x64.p'
+file_name = 'Results/MCTS_ParameterStudy_keep_subtree=F_keep_tree=F.p'
 with open(file_name, "rb") as f:
     res = pickle.load(f)
 steps_run_list = res['num_steps']
 label_name = 'DQN'
-plot_simple_agent(steps_run_list, label_name, axs)
+print(steps_run_list.shape)
+# plot_simple_agent(steps_run_list, label_name, axs)
 
-axs.title.set_text("DQN_ParameterStudy_VF64x64")
-axs.legend()
-fig.savefig("DQN_ParameterStudy_VF64x64dddddd")
-fig.savefig("safasd")
+# axs.title.set_text("DQN_ParameterStudy_VF64x64")
+# axs.legend()
+# fig.savefig("DQN_ParameterStudy_VF64x64dddddd")
+# fig.savefig("safasd")
 
 # fig.savefig("Results_Imperfect_Model/Plots/UseSelectedAction_prob=0dot025_step=1_run=1")
 fig.show()

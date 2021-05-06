@@ -37,7 +37,6 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_InitialValue_offline]
     agent_class_list = [DQNMCTSAgent_ReduceBreadth]
 
-
     show_pre_trained_error_grid = [False, False],
     show_values_grid = [False, False],
     show_model_error_grid = [False, False]
@@ -48,12 +47,12 @@ if __name__ == '__main__':
     s_md_list = [2 ** -9]
 
 
-    c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
-    # c_list = [2 ** 1]
+    # c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
+    c_list = [2 ** 0.5]
 
     num_iteration_list = [100]#[i for i in range(30, 40, 10)]
-    # simulation_depth_list = [200]
-    simulation_depth_list = [5, 10, 75]
+    simulation_depth_list = [75]
+    # simulation_depth_list = [5, 10, 75]
     # num_simulation_list = [10]
     num_simulation_list = [1]
 
@@ -64,9 +63,9 @@ if __name__ == '__main__':
 
     model_list = [{'type': None, 'num_networks': 1, 'layers_type': ['fc'], 'layers_features': [128]}]
     vf_list = [
-        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
+        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 32], 'action_layer_num': 3},
-        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 16], 'action_layer_num': 3},
+        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 16], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 8], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [8, 8], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [4, 4], 'action_layer_num': 3}
@@ -106,7 +105,7 @@ if __name__ == '__main__':
     # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="ddd", detail=detail)
     detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTSAgent_Bootstrap_VF16x16", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTSAgent_ReduceBreadth_VF64x64", detail=detail)
 
     # detail = "Env = Empty Room; _n = 20; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="MCTS_BestParameter", detail=detail)

@@ -11,6 +11,8 @@ import torchvision
 
 from Datasets.TransitionDataGrid import data_store
 import Utils as utils
+from Environments.GridWorldRooms import GridWorldRooms
+import Config
 
 class StateTransitionModel(nn.Module):
     def __init__(self, state_shape, num_actions, layers_type, layers_features, action_layer_num):
@@ -64,8 +66,6 @@ class StateTransitionModel(nn.Module):
 
 
     def forward(self, state, action=None):
-        if self.action_layer_num == len(self.layers) + 1 and action is None:
-            raise ValueError("action is not given")
         x = 0
         for i, layer in enumerate(self.layers_type):
             if layer == 'conv':
@@ -87,13 +87,13 @@ class StateTransitionModel(nn.Module):
             x = torch.cat((x.float(), a.float()), dim=1)
 
         head = self.head(x.float())
-        is_terminal = torch.sigmoid(5 * self.is_terminal(x.float()))
+        # is_terminal = torch.sigmoid(5 * self.is_terminal(x.float()))
 
         if self.action_layer_num == len(self.layers_type) + 1:
             return head.view((-1,) + (self.num_actions,) + state.shape[1:]), \
-                   is_terminal.view((-1,) + (self.num_actions,) + (1,))  # -1 is for the batch size
+                #    is_terminal.view((-1,) + (self.num_actions,) + (1,))  # -1 is for the batch size
         else:
-            return head.view(state.shape), is_terminal #
+            return head.view(state.shape), 0 #is_terminal #
 
 
 # PreTrain Forward
@@ -299,3 +299,9 @@ def preTrainBackward(env, device):
 
     print("model training finished")
     return state_transition_model, visit_count, plot_y, plot_x
+
+
+
+if __name__ == "__main__":
+    env = GridWorldRooms(Config.n_room_params)
+    preTrainForward(env, "cuda")

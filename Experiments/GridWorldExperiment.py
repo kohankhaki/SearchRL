@@ -9,12 +9,12 @@ import pickle
 from Experiments.BaseExperiment import BaseExperiment
 from Environments.GridWorldBase import GridWorld
 from Environments.GridWorldRooms import GridWorldRooms
-from Networks.ModelNN.StateTransitionModel import preTrainBackward, preTrainForward
+# from Networks.ModelNN.StateTransitionModel import preTrainBackward, preTrainForward
 from Datasets.TransitionDataGrid import data_store
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-debug = True
+debug = False
 
 class GridWorldExperiment(BaseExperiment):
     def __init__(self, agent, env, device, params=None):
@@ -140,18 +140,18 @@ class RunExperiment():
             pre_trained_plot_x_run_list = []
             for r in range(num_runs):
                 print("starting runtime ", r+1)
-                env = GridWorld(params=config.empty_room_params)
-                # env = GridWorldRooms(params=config.n_room_params)
+                # env = GridWorld(params=config.empty_room_params)
+                env = GridWorldRooms(params=config.n_room_params)
 
                 train, test = data_store(env)
                 reward_function = env.rewardFunction
                 goal = np.asarray(env.posToState((0, config._n - 1), state_type='coord'))
 
                 # Pre-train the model
-                pre_trained_model, pre_trained_visit_counts, pre_trained_plot_y, pre_trained_plot_x = \
-                    self.pretrain_model(obj.pre_trained_model, env)
-                pre_trained_plot_y_run_list.append(pre_trained_plot_y)
-                pre_trained_plot_x_run_list.append(pre_trained_plot_x)
+                # pre_trained_model, pre_trained_visit_counts, pre_trained_plot_y, pre_trained_plot_x = \
+                #     self.pretrain_model(obj.pre_trained_model, env)
+                # pre_trained_plot_y_run_list.append(pre_trained_plot_y)
+                # pre_trained_plot_x_run_list.append(pre_trained_plot_x)
 
                 # initializing the agent
                 agent = obj.agent_class({'action_list': np.asarray(env.getAllActions()),
@@ -173,22 +173,22 @@ class RunExperiment():
 
                 #initialize experiment
                 experiment = GridWorldExperiment(agent, env, self.device)
-                self.test_model(env, agent,"before.txt")
-                self.pretrain_model2(env, agent)
-                self.test_model(env, agent, "after.txt")
-                exit(0)
+                # self.test_model(env, agent,"before.txt")
+                # self.pretrain_model2(env, agent)
+                # self.test_model(env, agent, "after.txt")
+                # exit(0)
                 for e in range(num_episode):
                     if debug:
                         print("starting episode ", e + 1)
                     experiment.runEpisode(max_step_each_episode)
                     self.num_steps_run_list[i, r, e] = experiment.num_steps
-                    print(self.model_error(agent, env))
+                    # print(self.model_error(agent, env))
 
 
-                    if agent.name == 'DQNMCTSAgent':
-                        self.simulation_steps_run_list[i, r, e] = self.simulate_dqn(agent.policy, agent.true_model,
-                                                                                    env.start(), env.getAllActions())
-                        self.consistency[i, r, e] = agent.action_consistency / experiment.num_steps
+                    # if agent.name == 'DQNMCTSAgent':
+                    #     self.simulation_steps_run_list[i, r, e] = self.simulate_dqn(agent.policy, agent.true_model,
+                    #                                                                 env.start(), env.getAllActions())
+                    #     self.consistency[i, r, e] = agent.action_consistency / experiment.num_steps
                 
                 # vf_error = self.calculate_dqn_vf_error(agent, env)
                 # print('DQN VF ERROR:', vf_error)
@@ -421,7 +421,6 @@ class RunExperiment():
     def pretrain_model2(self, env, agent):
         # don't use it on the real agent
         buffer = []
-        print(env)
         num_states = len(env.getAllStates())
         num_actions = len(env.getAllActions())
         agent.start(env.getAllStates(state_type='coord')[0])
@@ -430,13 +429,13 @@ class RunExperiment():
             for a in env.getAllActions():
                 # true_next_state = env.transitionFunctionBackward(s, a)
                 action_index = torch.tensor([agent.getActionIndex(a)], device=self.device)
-                true_next_state = torch.tensor([env.transitionFunction(s, a)[0]], device=self.device).unsqueeze(1)
+                true_next_state = torch.tensor([env.transitionFunction(s, a)], device=self.device)
                 
                 agent.updateTransitionBuffer(utils.transition(state, action_index, 0, true_next_state, None, False, 0, 0))
-        for i in range(1000):
+        for i in range(100):
             for i in range((num_states*num_actions) // agent._model['ensemble']['batch_size']):
                 agent.trainModel()
-            print(self.model_error(agent, env))
+            # print(self.model_error(agent, env))
     
     def test_model(self, env, agent, file_name):
         # don't use it on the real agent
@@ -445,10 +444,10 @@ class RunExperiment():
             state = agent.getStateRepresentation(s)
             for a in env.getAllActions():
                 # true_next_state = env.transitionFunctionBackward(s, a)
-                action_index = torch.tensor([agent.getActionIndex(a)], device=self.device)
+                action_index = torch.tensor([agent.getActionIndex(a)], device=self.device).unsqueeze(0)
                 true_next_state = torch.tensor([env.transitionFunction(s, a)], device=self.device)
-                pred_next_state = agent.modelRollout(state, action_index)
-                print(state, a, true_next_state, pred_next_state)
+                pred_next_state, model_error = agent.modelRollout(state, action_index)
+                print(true_next_state, pred_next_state, model_error, torch.dist(pred_next_state, true_next_state))
                 with open(file_name, "a") as file:
                     file.write(str(s)+ str(a) + str( true_next_state.cpu().numpy()) + str(pred_next_state.cpu().numpy()) + "\n")
 

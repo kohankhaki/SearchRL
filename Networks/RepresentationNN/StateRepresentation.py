@@ -8,7 +8,6 @@ class StateRepresentation(nn.Module): # action inserted to a layer
         super(StateRepresentation, self).__init__()
         self.layers_type = layers_type
         self.layers = []
-        print(len(state_shape))
         if len(state_shape) == 3:
             linear_input_size = state_shape[0] * state_shape[1] * state_shape[2]
         elif len(state_shape) == 1:

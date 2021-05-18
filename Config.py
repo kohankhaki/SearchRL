@@ -16,7 +16,7 @@ num_thread = 2
 
 # # environment
 # empty room parameters
-_n = 20
+_n = 2
 empty_room_params = \
     {'size': (_n, _n), 'init_state':(_n-1, 0), 'state_mode': 'coord', #init_state (_n-1, 0)
     'obstacles_pos': [],

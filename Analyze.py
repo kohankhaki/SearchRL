@@ -62,7 +62,7 @@ def plot_simple_agent_each_run(steps_run_list, label_name, axs):
         fig.show()
 
 
-def plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = False):
+def plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True):
 
     mean_steps_run_list = np.mean(steps_run_list, axis=1)
     std_steps_run_list = np.std(steps_run_list, axis=1)
@@ -79,8 +79,9 @@ def plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfe
     line_style = "dashed"
     if is_imperfect:
         line_style = "solid"
-        for stepsize_index in range(mean_steps_run_list.shape[0]):
-            axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name + str(stepsize_index // 2), linestyle=line_style)
+        # for stepsize_index in range(mean_steps_run_list.shape[0]):
+        for stepsize_index in range(0, 1):
+            axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name, linestyle=line_style)
     else:
         for stepsize_index in range(mean_steps_run_list.shape[0]):
             axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name + str(stepsize_index // 2), linestyle=line_style)
@@ -177,12 +178,12 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
 
 fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
-# file_name = 'Results_EmptyRoom/MCTS_ParameterStudy_n=20.p'
-# with open(file_name, "rb") as f:
-#     res = pickle.load(f)
-# steps_run_list = res['num_steps']
-# label_name = 'MCTS'
-# plot_simple_agent_single_episode(steps_run_list, label_name, axs)
+file_name = 'Results/MCTS_ParameterStudy_keep_subtree=F_keep_tree=F.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name = 'MCTS'
+plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 
 # file_name = 'Results_EmptyRoom/DQNVF_16x8/DQN_Runs.p'
 # with open(file_name, "rb") as f:
@@ -275,26 +276,26 @@ fig, axs = plt.subplots(1, 1, constrained_layout=False)
 # label_name2 = 'MCTS(Bootstrap)'
 # plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
 
-# file_name = 'Results/DQNMCTS_UseMCTSwPriority_AvgRate=0dot1.p'
-# with open(file_name, "rb") as f:
-#     res = pickle.load(f)
-# steps_run_list = res['num_steps']
-# label_name1 = 'DQN'
-# label_name2 = 'MCTS'
-# plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
-
-
-file_name = 'Results/MCTS_ParameterStudy_keep_subtree=F_keep_tree=F.p'
+file_name = 'Results/DQNMCTSAgent_ReduceBreadth_VF64x64.p'
 with open(file_name, "rb") as f:
     res = pickle.load(f)
 steps_run_list = res['num_steps']
-label_name = 'DQN'
-print(steps_run_list.shape)
+label_name1 = 'DQN(VF64x64)'
+label_name2 = 'MCTS(Reduced Breadth)'
+plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
+
+
+# file_name = 'Results/DQNMCTSAgent_ReduceBreadth_VF64x64.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name = 'DQN'
+# print(steps_run_list.shape)
 # plot_simple_agent(steps_run_list, label_name, axs)
 
-# axs.title.set_text("DQN_ParameterStudy_VF64x64")
-# axs.legend()
-# fig.savefig("DQN_ParameterStudy_VF64x64dddddd")
+axs.title.set_text("DQNMCTS Agent ReduceBreadth")
+axs.legend()
+fig.savefig("Results/Plots/DQNMCTSAgent_ReduceBreadth_VF64x64")
 # fig.savefig("safasd")
 
 # fig.savefig("Results_Imperfect_Model/Plots/UseSelectedAction_prob=0dot025_step=1_run=1")

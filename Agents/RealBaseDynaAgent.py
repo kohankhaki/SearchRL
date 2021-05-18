@@ -62,7 +62,7 @@ class RealBaseDynaAgent(BaseAgent):
                                             batch_size=16,
                                             step_size=params['model_stepsize'],
                                             training=True)}
-        self.num_ensembles = 1
+        self.num_ensembles = 5
 
         self._sr = dict(network=None,
                         layers_type=[],
@@ -105,11 +105,13 @@ class RealBaseDynaAgent(BaseAgent):
 
         if self._vf['s']['network'] is None and self._vf['s']['training']:
             self.init_s_value_function_network(self.prev_state)  # a separate state VF for each action
-        if self._model[self.model_type]['network'] is None and self._model[self.model_type]['training']:
-            self.initModel(self.prev_state)
 
         self.setTargetValueFunction(self._vf['q'], 'q')
         self.prev_action = self.policy(self.prev_state)
+
+        if self._model[self.model_type]['network'] is None and self._model[self.model_type]['training']:
+            self.initModel(self.prev_state, self.prev_action)
+
         return self.action_list[self.prev_action.item()]
 
     def step(self, reward, observation):
@@ -442,17 +444,27 @@ class RealBaseDynaAgent(BaseAgent):
 
     # ***
     def getActionIndex(self, action):
-
         for i, a in enumerate(self.action_list):
             if np.array_equal(a, action):
                 return i
         raise ValueError("action is not defined")
 
     def getActionOnehot(self, action):
-
         res = np.zeros([len(self.action_list)])
         res[self.getActionIndex(action)] = 1
         return res
+
+    def getActionOnehotTorch(self, action):
+        '''
+        action = index torch
+        output = onehot torch
+        '''
+        batch_size = action.shape[0]
+        num_actions = len(self.action_list)
+        onehot = torch.zeros([batch_size, num_actions], device = self.device)
+        # onehot.zero_()
+        onehot.scatter_(1, action, 1)
+        return onehot
 
     def saveValueFunction(self, name):
         with open(name, "wb") as file:
@@ -475,8 +487,8 @@ class RealBaseDynaAgent(BaseAgent):
                                             if t.state is not None])
             non_final_prev_action_batch = torch.cat([a for a, t in zip(batch.prev_action, transition_batch)
                                             if t.state is not None])
-            predicted_next_state = self._model['general']['network'](non_final_prev_states_batch)[0]
-            predicted_next_state = predicted_next_state[:,  non_final_prev_action_batch][0].squeeze(1)
+            non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch.unsqueeze(1))                        
+            predicted_next_state = self._model['general']['network'](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
 
             loss = F.mse_loss(predicted_next_state.float(),
                             non_final_next_states_batch.float())
@@ -495,8 +507,8 @@ class RealBaseDynaAgent(BaseAgent):
                                                 if t.state is not None])
                 non_final_prev_action_batch = torch.cat([a for a, t in zip(batch.prev_action, transition_batch)
                                                 if t.state is not None])
-                predicted_next_state = self._model['ensemble']['network'][i](non_final_prev_states_batch)[0]
-                predicted_next_state = predicted_next_state[:,  non_final_prev_action_batch][0].squeeze(1)
+                non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch.unsqueeze(1))                        
+                predicted_next_state = self._model['ensemble']['network'][i](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
                 loss = F.mse_loss(predicted_next_state.float(),
                                 non_final_next_states_batch.float())
                 self.model_optimizer[i].zero_grad()
@@ -510,31 +522,27 @@ class RealBaseDynaAgent(BaseAgent):
         pass
 
     @abstractmethod
-    def initModel(self, state):
+    def initModel(self, state, action):
         '''
         :param state: torch -> (1, state)
         :return: None
         '''
         nn_state_shape = state.shape
+        action_onehot = self.getActionOnehotTorch(action)
+        nn_action_onehot_shape = action_onehot.shape
         if self.model_type == 'general':
-            self._model['general']['network'] = StateTransitionModel(nn_state_shape, self.num_actions, 
+            self._model['general']['network'] = StateTransitionModel(nn_state_shape, nn_action_onehot_shape, 
                                                                            self._model['general']['layers_type'],
-                                                                           self._model['general']['layers_features'],
-                                                                           self._model['general']['action_layer_num']).to(self.device)
+                                                                           self._model['general']['layers_features']).to(self.device)
             self.model_optimizer = optim.Adam(self._model[self.model_type]['network'].parameters(), lr=self._model[self.model_type]['step_size'])
 
         elif self.model_type == 'ensemble':
             self._model['ensemble']['network'] = []
             self.model_optimizer = []
             for i in range(self.num_ensembles):
-                self._model['ensemble']['network'].append(StateTransitionModel(nn_state_shape, self.num_actions, 
+                self._model['ensemble']['network'].append(StateTransitionModel(nn_state_shape, nn_action_onehot_shape, 
                                                                            self._model['ensemble']['layers_type'],
-                                                                           self._model['ensemble']['layers_features'],
-                                                                           self._model['ensemble']['action_layer_num']).to(self.device))
-                # self._model['ensemble']['network'].append(StateActionVFNN(nn_state_shape, self.num_actions, 
-                #                                                            self._model['ensemble']['layers_type'],
-                #                                                            self._model['ensemble']['layers_features'],
-                #                                                            self._model['ensemble']['action_layer_num']).to(self.device))
+                                                                           self._model['ensemble']['layers_features']).to(self.device))
                 self.model_optimizer.append(optim.Adam(self._model['ensemble']['network'][i].parameters(), lr=self._model['ensemble']['step_size']))
 
         else:
@@ -546,23 +554,23 @@ class RealBaseDynaAgent(BaseAgent):
         :return: next state
         '''
         if self.model_type == "general":
-            with torch.no_grad():
-                predicted_next_state = self._model['general']['network'](state)[0].detach()
-                predicted_next_state = predicted_next_state[:,  action_index][0].squeeze(1)
-                return predicted_next_state
+            with torch.no_grad():  
+                one_hot_action = self.getActionOnehotTorch(action_index)
+                predicted_next_state = self._model['general']['network'](state, one_hot_action).detach()
+                return predicted_next_state, 0
         elif self.model_type == "ensemble":
             with torch.no_grad():
+                one_hot_action = self.getActionOnehotTorch(action_index)
                 predicted_next_state_ensembles = torch.zeros_like(self.prev_state)
                 next_state_list = torch.tensor([], device = self.device)
                 for i in range(self.num_ensembles):
-                    predicted_next_state = self._model['ensemble']['network'][i](state)[0].detach()
-                    predicted_next_state = predicted_next_state[:,  action_index][0].squeeze(1)
+                    predicted_next_state = self._model['ensemble']['network'][i](state, one_hot_action).detach()
                     predicted_next_state_ensembles = torch.add(predicted_next_state_ensembles, predicted_next_state)
                     next_state_list = torch.cat((next_state_list, predicted_next_state))
                 std = torch.std(next_state_list, dim=0)
                 avg_std = torch.mean(std)
                 predicted_next_state_ensembles = torch.div(predicted_next_state_ensembles, self.num_ensembles)
-                return predicted_next_state
+                return predicted_next_state_ensembles, avg_std
         else:
             raise NotImplementedError("model not implemented")
 

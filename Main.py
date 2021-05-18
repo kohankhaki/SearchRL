@@ -16,6 +16,7 @@ from Experiments.GridWorldExperiment import RunExperiment as GridWorld_RunExperi
 from Environments.GridWorldRooms import GridWorldRooms
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.RealBaseDynaAgent import RealBaseDynaAgent
+from Agents.ImperfectDQNMCTSAgent import *
 
 from Agents.MCTSAgent import MCTSAgent
 from Agents.DQNMCTSAgent import *
@@ -38,7 +39,8 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_UseMCTSwPriority]
     # agent_class_list = [DQNMCTSAgent_InitialValue_offline]
     # agent_class_list = [DQNMCTSAgent_ReduceBreadth]
-    agent_class_list = [RealBaseDynaAgent]
+    # agent_class_list = [RealBaseDynaAgent]
+    agent_class_list = [ImperfectMCTSAgent]
 
     # show_pre_trained_error_grid = [False, False],
     # show_values_grid = [False, False],
@@ -64,7 +66,7 @@ if __name__ == '__main__':
     #               {'type': 'forward', 'num_networks': 4, 'layers_type': ['fc'], 'layers_features': [32]}
     #               ]
 
-    model_list = [{'type': 'heter', 'layers_type': ['fc', 'fc', 'fc'], 'layers_features': [64, 64, 64], 'action_layer_num': 4}]
+    model_list = [{'type': 'general', 'layers_type': ['fc', 'fc', 'fc'], 'layers_features': [64, 64, 64], 'action_layer_num': 4}]
     vf_list = [
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
         {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 32], 'action_layer_num': 3},
@@ -108,7 +110,7 @@ if __name__ == '__main__':
     # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="ddd", detail=detail)
     detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
-    experiment.run_experiment(experiment_object_list, result_file_name="DQNMCTSAgent_Bootstrap_VF32x32_Depth10", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="tmmppp", detail=detail)
 
     # detail = "Env = Empty Room; _n = 20; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="MCTS_BestParameter", detail=detail)

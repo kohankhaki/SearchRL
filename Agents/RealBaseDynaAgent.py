@@ -554,6 +554,7 @@ class RealBaseDynaAgent(BaseAgent):
         :param state: torch -> (1, state)
         :return: None
         '''
+        print("init")
         nn_state_shape = state.shape
         action_onehot = self.getActionOnehotTorch(action)
         nn_action_onehot_shape = action_onehot.shape

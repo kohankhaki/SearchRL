@@ -8,6 +8,8 @@ from Agents.BaseAgent import BaseAgent
 from DataStructures.Node import Node
 from profilehooks import timecall, profile, coverage
 
+
+#Warning: for other environments check the true model
 is_gridWorld = True
 class MCTSAgent(BaseAgent):
     name = "MCTSAgent"

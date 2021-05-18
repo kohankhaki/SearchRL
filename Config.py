@@ -1,9 +1,9 @@
 # # experiment
-num_runs = 10
+num_runs = 1
 # num_episode = 300
 # num_episode = 350
 # num_episode = 3000
-num_episode = 2000
+num_episode = 20
 
 max_step_each_episode = 100
 

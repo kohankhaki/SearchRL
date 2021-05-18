@@ -173,10 +173,10 @@ class RunExperiment():
 
                 #initialize experiment
                 experiment = GridWorldExperiment(agent, env, self.device)
-                self.test_model(env, agent,"before.txt")
-                self.pretrain_model2(env, agent)
-                self.test_model(env, agent, "after.txt")
-                exit(0)
+                # self.test_model(env, agent,"before.txt")
+                # self.pretrain_model2(env, agent)
+                # self.test_model(env, agent, "after.txt")
+                # exit(0)
                 for e in range(num_episode):
                     if debug:
                         print("starting episode ", e + 1)

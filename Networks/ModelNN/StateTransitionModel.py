@@ -58,7 +58,7 @@ class StateTransitionModel(nn.Module):
         head = self.head(x.float())
         return head
 
-
+   
 # # PreTrain Forward
 # def preTrainForward(env, device):
 

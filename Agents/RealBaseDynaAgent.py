@@ -515,8 +515,35 @@ class RealBaseDynaAgent(BaseAgent):
                 loss.backward()
                 self.model_loss.append(loss)
                 self.model_optimizer[i].step()
+
+        elif self.model_type == 'heter':
+            transition_batch = self.getTransitionFromBuffer(n=self._model['heter']['batch_size'])
+            batch = utils.transition(*zip(*transition_batch))
+            non_final_next_states_batch = torch.cat([s for s in batch.state
+                                            if s is not None])
+            non_final_prev_states_batch = torch.cat([s for s, t in zip(batch.prev_state, transition_batch)
+                                            if t.state is not None])
+            non_final_prev_action_batch = torch.cat([a for a, t in zip(batch.prev_action, transition_batch)
+                                            if t.state is not None])
+            non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch.unsqueeze(1))                        
+            
+            predicted_next_state_mu = self._model['heter']['network'][0](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
+            predicted_next_state_var = F.softplus(self._model['heter']['network'][1](non_final_prev_states_batch, non_final_prev_action_onehot_batch)) + 10**-6
+            predicted_next_state_var = torch.diag_embed(predicted_next_state_var)
+
+            A = (predicted_next_state_mu.float()-non_final_next_states_batch.float()).unsqueeze(2)
+            inv_var = torch.inverse(predicted_next_state_var.float())
+            loss = torch.mean(torch.matmul(torch.matmul(A.permute(0,2,1), inv_var), A).squeeze(2).squeeze(1) + torch.logdet(predicted_next_state_var.float()))
+
+            self.model_optimizer[0].zero_grad()
+            self.model_optimizer[1].zero_grad()
+            loss.backward()
+            self.model_loss.append(loss)
+            self.model_optimizer[0].step()
+            self.model_optimizer[1].step()
         else:
             raise NotImplementedError("train model not implemented")
+    
     @abstractmethod
     def plan(self):
         pass
@@ -544,6 +571,15 @@ class RealBaseDynaAgent(BaseAgent):
                                                                            self._model['ensemble']['layers_type'],
                                                                            self._model['ensemble']['layers_features']).to(self.device))
                 self.model_optimizer.append(optim.Adam(self._model['ensemble']['network'][i].parameters(), lr=self._model['ensemble']['step_size']))
+        
+        elif self.model_type == 'heter':
+            self._model['heter']['network'] = []
+            self.model_optimizer = []
+            for i in range(2):
+                self._model['heter']['network'].append(StateTransitionModel(nn_state_shape, nn_action_onehot_shape, 
+                                                                           self._model['heter']['layers_type'],
+                                                                           self._model['heter']['layers_features']).to(self.device))
+                self.model_optimizer.append(optim.Adam(self._model['heter']['network'][i].parameters(), lr=self._model['heter']['step_size']))
 
         else:
             raise NotImplementedError("model not implemented")
@@ -558,6 +594,7 @@ class RealBaseDynaAgent(BaseAgent):
                 one_hot_action = self.getActionOnehotTorch(action_index)
                 predicted_next_state = self._model['general']['network'](state, one_hot_action).detach()
                 return predicted_next_state, 0
+        
         elif self.model_type == "ensemble":
             with torch.no_grad():
                 one_hot_action = self.getActionOnehotTorch(action_index)
@@ -571,6 +608,14 @@ class RealBaseDynaAgent(BaseAgent):
                 avg_std = torch.mean(std)
                 predicted_next_state_ensembles = torch.div(predicted_next_state_ensembles, self.num_ensembles)
                 return predicted_next_state_ensembles, avg_std
+
+        elif self.model_type == 'heter':
+            with torch.no_grad():
+                one_hot_action = self.getActionOnehotTorch(action_index)
+                predicted_next_state_mu = self._model['heter']['network'][0](state, one_hot_action).detach()
+                predicted_next_state_var = F.softplus(self._model['heter']['network'][1](state, one_hot_action)).detach().trace()
+                return predicted_next_state_mu, predicted_next_state_var
+
         else:
             raise NotImplementedError("model not implemented")
 

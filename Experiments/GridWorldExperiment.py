@@ -173,10 +173,10 @@ class RunExperiment():
 
                 #initialize experiment
                 experiment = GridWorldExperiment(agent, env, self.device)
-                # self.test_model(env, agent,"before.txt")
-                # self.pretrain_model2(env, agent)
-                # self.test_model(env, agent, "after.txt")
-                # exit(0)
+                self.test_model(env, agent,"before.txt")
+                self.pretrain_model2(env, agent)
+                self.test_model(env, agent, "after.txt")
+                exit(0)
                 for e in range(num_episode):
                     if debug:
                         print("starting episode ", e + 1)
@@ -260,9 +260,9 @@ class RunExperiment():
             state = agent.getStateRepresentation(s)
             for a in env.getAllActions():
                 # true_next_state = env.transitionFunctionBackward(s, a)
-                action_index = torch.tensor([agent.getActionIndex(a)], device=self.device)
+                action_index = torch.tensor([agent.getActionIndex(a)], device=self.device).unsqueeze(0)
                 true_next_state = torch.tensor([env.transitionFunction(s, a)], device=self.device)
-                pred_next_state = agent.modelRollout(state, action_index)
+                pred_next_state, pred_error = agent.modelRollout(state, action_index)
                 error += torch.dist(pred_next_state, true_next_state)
                 counter += 1
         return error / counter
@@ -433,9 +433,9 @@ class RunExperiment():
                 
                 agent.updateTransitionBuffer(utils.transition(state, action_index, 0, true_next_state, None, False, 0, 0))
         for i in range(100):
-            for i in range((num_states*num_actions) // agent._model['ensemble']['batch_size']):
+            for i in range((num_states*num_actions) // agent._model['heter']['batch_size']):
                 agent.trainModel()
-            # print(self.model_error(agent, env))
+            print(self.model_error(agent, env))
     
     def test_model(self, env, agent, file_name):
         # don't use it on the real agent

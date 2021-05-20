@@ -9,8 +9,9 @@ from ete3 import Tree, TreeStyle, TextFace, add_face_to_node
 
 from Agents.BaseAgent import BaseAgent
 from Agents.RealBaseDynaAgent import RealBaseDynaAgent
-from Agents.MCTSAgent import MCTSAgent
-from DataStructures.Node import Node
+from Agents.MCTSAgent_Torch import MCTSAgent_Torch as MCTSAgent
+from DataStructures.Node_Torch import Node_Torch as Node
+
 from profilehooks import timecall, profile, coverage
 
 
@@ -92,14 +93,14 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
 
 
         if self.keep_tree and self.root is None:
-            self.root = Node(None, observation)
+            self.root = Node(None, self.prev_state)
             self.expansion(self.root)
 
         if self.keep_tree:
             self.subtree_node = self.root
             print(self.subtree_node.get_avg_value())
         else:
-            self.subtree_node = Node(None, observation)
+            self.subtree_node = Node(None, self.prev_state)
             self.expansion(self.subtree_node)
 
         # self.render_tree()
@@ -108,18 +109,17 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         action, sub_tree = self.choose_action()
         self.subtree_node = sub_tree
 
-        action_ind = self.getActionIndex(action)
-        self.prev_action = torch.tensor([[action_ind]], device=self.device, dtype=torch.long)
-
-        return action
+        self.prev_action = torch.tensor([[action]], device=self.device)
+        return self.action_list[action]
 
 
 
     def step(self, reward, observation):
         self.time_step += 1
 
+        self.state = self.getStateRepresentation(observation)
         if not self.keep_subtree:
-            self.subtree_node = Node(None, observation)
+            self.subtree_node = Node(None, self.state)
             self.expansion(self.subtree_node)
 
         for i in range(self.num_iterations):
@@ -127,9 +127,7 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         action, sub_tree = self.choose_action()
         self.subtree_node = sub_tree
 
-        self.state = self.getStateRepresentation(observation)
-        action_ind = self.getActionIndex(action)
-        self.action = torch.tensor([[action_ind]], device=self.device, dtype=torch.long)
+        self.action = torch.tensor([[action]], device=self.device, dtype=torch.long)
         reward = torch.tensor([reward], device=self.device)
 
         # store the new transition in buffer
@@ -149,7 +147,7 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         self.prev_state = self.getStateRepresentation(observation)
         self.prev_action = self.action  # another option:** we can again call self.policy function **
 
-        return action
+        return self.action_list[action]
 
 
     def end(self, reward):
@@ -166,14 +164,40 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         self.updateStateRepresentation()
 
 
-    def true_model(self, state, action):
-        action_index = self.getActionIndex(action)
-        torch_action_index = torch.tensor([action_index], device=self.device).unsqueeze(0)
-        torch_state = self.getStateRepresentation(state)
-        torch_next_state = torch.round(self.modelRollout(torch_state, torch_action_index)[0])
+    # def true_model(self, state, action):
+    #     action_index = self.getActionIndex(action)
+    #     torch_action_index = torch.tensor([action_index], device=self.device).unsqueeze(0)
+    #     torch_state = self.getStateRepresentation(state)
+    #     torch_next_state = torch.round(self.modelRollout(torch_state, torch_action_index)[0])
 
-        transition = self.transition_dynamics[int(state[0]), int(state[1]), action_index]
-        next_state, is_terminal, reward = transition[0:2], transition[2], transition[3]
+    #     transition = self.transition_dynamics[int(state[0]), int(state[1]), action_index]
+    #     next_state, is_terminal, reward = transition[0:2], transition[2], transition[3]
 
-        print(next_state, ' --- ', torch_next_state)
+    #     np_next_state = torch_next_state.cpu().numpy()[0]
+    #     return np_next_state, is_terminal, reward
+
+
+    @timecall(immediate=False)
+    def model(self, state, action_index):
+        next_state = self.modelRollout(state, action_index)[0]
+        # next_state = torch.clamp(next_state, min=0, max=8)
+        next_state, reward, is_terminal = self.get_transition(next_state)
         return next_state, is_terminal, reward
+
+    @timecall(immediate=False)
+    def get_torch_action_index(self, action_index):
+        return torch.tensor([action_index], device=self.device).unsqueeze(0)
+
+    @timecall(immediate=False)
+    def get_transition(self, state):
+        state = torch.round(state)
+        reward = None
+        is_terminal = None
+        if torch.equal(state, self.goal):
+            reward = 0
+            is_terminal = True
+        else:
+            reward = -1
+            is_terminal = False
+
+        return state, reward, is_terminal

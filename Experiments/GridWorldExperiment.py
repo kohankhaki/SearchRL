@@ -14,7 +14,7 @@ from Datasets.TransitionDataGrid import data_store
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-debug = False
+debug = True
 
 class GridWorldExperiment(BaseExperiment):
     def __init__(self, agent, env, device, params=None):
@@ -155,7 +155,7 @@ class RunExperiment():
 
                 # initializing the agent
                 agent = obj.agent_class({'action_list': np.asarray(env.getAllActions()),
-                                       'gamma': 0.99, 'epsilon': 1.0,
+                                       'gamma': 0.99, 'epsilon': 0.1,
                                        'max_stepsize': obj.vf_step_size,
                                        'model_stepsize': obj.model_step_size,
                                        'reward_function': reward_function,
@@ -183,13 +183,15 @@ class RunExperiment():
                     experiment.runEpisode(max_step_each_episode)
                     self.num_steps_run_list[i, r, e] = experiment.num_steps
                     # print(self.model_error(agent, env))
+                    # if e % 100 == 0:
+                    #     self.test_model(env, agent, "after-episode" + str(e) + ".txt")
 
 
                     # if agent.name == 'DQNMCTSAgent':
                     #     self.simulation_steps_run_list[i, r, e] = self.simulate_dqn(agent.policy, agent.true_model,
                     #                                                                 env.start(), env.getAllActions())
                     #     self.consistency[i, r, e] = agent.action_consistency / experiment.num_steps
-                
+
                 # vf_error = self.calculate_dqn_vf_error(agent, env)
                 # print('DQN VF ERROR:', vf_error)
                     # if e % 100 == 0:
@@ -433,7 +435,7 @@ class RunExperiment():
                 
                 agent.updateTransitionBuffer(utils.transition(state, action_index, 0, true_next_state, None, False, 0, 0))
         for i in range(100):
-            for i in range((num_states*num_actions) // agent._model['heter']['batch_size']):
+            for i in range((num_states*num_actions) // agent._model['general']['batch_size']):
                 agent.trainModel()
             print(self.model_error(agent, env))
     

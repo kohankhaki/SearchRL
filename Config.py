@@ -3,9 +3,9 @@ num_runs = 1
 # num_episode = 300
 # num_episode = 350
 # num_episode = 3000
-num_episode = 20
+num_episode = 5
 
-max_step_each_episode = 100
+max_step_each_episode = 50
 
 episodes_only_dqn = 0
 # episodes_only_mcts = 1150

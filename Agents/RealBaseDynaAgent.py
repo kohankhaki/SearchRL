@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from abc import abstractmethod
 import random
+from profilehooks import timecall, profile, coverage
 
 import Utils as utils
 from Agents.BaseAgent import BaseAgent
@@ -277,58 +278,6 @@ class RealBaseDynaAgent(BaseAgent):
 
         self._target_vf['counter'] += 1
 
-    def getStateActionValue(self, state, action=None, vf_type='q', gradient=False):
-        '''
-        :param state: torch -> [1, state_shape]
-        :param action: numpy array
-        :param vf_type: str -> 'q' or 's'
-        :param gradient: boolean
-        :return: value: int
-        '''
-
-        if action is not None:
-            action_index = self.getActionIndex(action)
-            action_onehot = torch.from_numpy(self.getActionOnehot(action)).float().unsqueeze(0).to(self.device)
-
-            if vf_type == 'q':
-                if len(self._vf['q']['layers_type']) + 1 == self._vf['q']['action_layer_num']:
-                    value = self._vf['q']['network'](state).detach()[:, action_index] if not gradient \
-                        else self._vf['q']['network'](state)[:, action_index]
-                else:
-                    value = self._vf['q']['network'](state, action_onehot).detach()[0] if not gradient \
-                        else self._vf['q']['network'](state, action_onehot)[0]
-
-            elif vf_type == 's':
-                value = self._vf['s']['network'][action_index](state).detach()[0] if not gradient \
-                    else self._vf['s']['network'][action_index](state)[0]
-
-            else:
-                raise ValueError('state action value type is not defined')
-            return value
-        else:
-            # state value (no gradient)
-            if gradient:
-                raise ValueError("cannot calculate the gradient for state values!")
-            sum = 0
-            for action in self.action_list:
-                action_index = self.getActionIndex(action)
-                action_onehot = torch.from_numpy(self.getActionOnehot(action)).float().unsqueeze(0).to(self.device)
-
-                if vf_type == 'q':
-                    if len(self._vf['q']['layers_type']) + 1 == self._vf['q']['action_layer_num']:
-                        value = self._vf['q']['network'](state).detach()[:, action_index]
-                    else:
-                        value = self._vf['q']['network'](state, action_onehot).detach()[0]
-
-                elif vf_type == 's':
-                    value = self._vf['s']['network'][action_index](state).detach()[0]
-
-                else:
-                    raise ValueError('state action value type is not defined')
-
-                sum += value
-
-            return sum / len(self.action_list)
 
     # ***
     def getStateRepresentation(self, observation, gradient=False):
@@ -374,51 +323,7 @@ class RealBaseDynaAgent(BaseAgent):
         self._target_vf['counter'] = 0
         self._target_vf['type'] = type
 
-    def getTargetValue(self, state, action=None):
-        '''
-        :param state: torch -> (1, state_shape)
-        :param action: numpy array
-        :return value: int
-        '''
 
-        with torch.no_grad():
-            if action is not None:
-                action_index = self.getActionIndex(action)
-                action_onehot = torch.from_numpy(self.getActionOnehot(action)).float().unsqueeze(0).to(self.device)
-                if self._target_vf['type'] == 'q':
-                    if self._target_vf['layers_num'] + 1 == self._target_vf['action_layer_num']:
-                        value = self._target_vf['network'](state).detach()[:, action_index]
-                    else:
-                        value = self._target_vf['network'](state, action_onehot).detach()[0]
-
-                elif self._target_vf['type'] == 's':
-                    value = self._target_vf['network'][action_index](state).detach()[0]
-
-                else:
-                    raise ValueError('state action value type is not defined')
-                return value
-
-            else:
-                # state value (no gradient)
-                sum = 0
-                for action in self.action_list:
-                    action_index = self.getActionIndex(action)
-                    action_onehot = torch.from_numpy(self.getActionOnehot(action)).float().unsqueeze(0).to(self.device)
-
-                    if self._target_vf['type'] == 'q':
-                        if self._target_vf['layers_num'] + 1 == self._target_vf['action_layer_num']:
-                            value = self._target_vf['network'](state).detach()[:, action_index]
-                        else:
-                            value = self._target_vf['network'](state, action_onehot).detach()[0]
-
-                    elif self._target_vf['type'] == 's':
-                        value = self._target_vf['network'][action_index](state).detach()
-
-                    else:
-                        raise ValueError('state action value type is not defined')
-
-                    sum += value
-                return sum / len(self.action_list)
 
     # ***
     def getTransitionFromBuffer(self, n):
@@ -487,7 +392,7 @@ class RealBaseDynaAgent(BaseAgent):
                                             if t.state is not None])
             non_final_prev_action_batch = torch.cat([a for a, t in zip(batch.prev_action, transition_batch)
                                             if t.state is not None])
-            non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch.unsqueeze(1))                        
+            non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch)  
             predicted_next_state = self._model['general']['network'](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
 
             loss = F.mse_loss(predicted_next_state.float(),
@@ -507,7 +412,7 @@ class RealBaseDynaAgent(BaseAgent):
                                                 if t.state is not None])
                 non_final_prev_action_batch = torch.cat([a for a, t in zip(batch.prev_action, transition_batch)
                                                 if t.state is not None])
-                non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch.unsqueeze(1))                        
+                non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch)                        
                 predicted_next_state = self._model['ensemble']['network'][i](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
                 loss = F.mse_loss(predicted_next_state.float(),
                                 non_final_next_states_batch.float())
@@ -525,7 +430,7 @@ class RealBaseDynaAgent(BaseAgent):
                                             if t.state is not None])
             non_final_prev_action_batch = torch.cat([a for a, t in zip(batch.prev_action, transition_batch)
                                             if t.state is not None])
-            non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch.unsqueeze(1))                        
+            non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch)                        
             
             predicted_next_state_mu = self._model['heter']['network'][0](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
             predicted_next_state_var = F.softplus(self._model['heter']['network'][1](non_final_prev_states_batch, non_final_prev_action_onehot_batch)) + 10**-6
@@ -554,7 +459,6 @@ class RealBaseDynaAgent(BaseAgent):
         :param state: torch -> (1, state)
         :return: None
         '''
-        print("init")
         nn_state_shape = state.shape
         action_onehot = self.getActionOnehotTorch(action)
         nn_action_onehot_shape = action_onehot.shape
@@ -585,6 +489,8 @@ class RealBaseDynaAgent(BaseAgent):
         else:
             raise NotImplementedError("model not implemented")
 
+
+    @timecall(immediate=False)
     def modelRollout(self, state, action_index):
         '''
         :param state: torch -> (1, state), 

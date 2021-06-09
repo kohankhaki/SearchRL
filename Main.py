@@ -18,8 +18,8 @@ from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.RealBaseDynaAgent import RealBaseDynaAgent
 from Agents.ImperfectDQNMCTSAgent import *
 
-from Agents.MCTSAgent import MCTSAgent
-from Agents.DQNMCTSAgent import *
+# from Agents.MCTSAgent import MCTSAgent
+# from Agents.DQNMCTSAgent import *
 
 
 
@@ -49,14 +49,17 @@ if __name__ == '__main__':
     # s_vf_list = [2 ** -5, 2 ** -7, 2 ** -9, 2 ** -11]
     s_vf_list = [2 ** -7]
 
-    s_md_list = [2 ** -12]
+    # s_md_list = [2 ** -2, 2 ** -4, 2 ** -6, 2 ** -8, 2 ** -10, 2 ** -12, 2 ** -14, 2 ** -16]
+    
+    s_md_list = [2 ** -6]
+
 
 
     # c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
     c_list = [2 ** 0.5]
 
     num_iteration_list = [100]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [10]
+    simulation_depth_list = [75]
     # simulation_depth_list = [5, 10, 75]
     # num_simulation_list = [10]
     num_simulation_list = [1]
@@ -66,14 +69,14 @@ if __name__ == '__main__':
     #               {'type': 'forward', 'num_networks': 4, 'layers_type': ['fc'], 'layers_features': [32]}
     #               ]
 
-    model_list = [{'type': 'general', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 32], 'action_layer_num': 4}]
+    model_list = [{'type': 'general', 'layers_type': ['fc', 'fc'], 'layers_features': [8, 4], 'action_layer_num': 4}]
     vf_list = [
-        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
+        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 32], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 16], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 8], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [8, 8], 'action_layer_num': 3},
-        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [4, 4], 'action_layer_num': 3}
+        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [4, 4], 'action_layer_num': 3}
                ]
 
     experiment = GridWorld_RunExperiment()
@@ -110,7 +113,7 @@ if __name__ == '__main__':
     # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="ddd", detail=detail)
     detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
-    experiment.run_experiment(experiment_object_list, result_file_name="tmp", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="ImperfectMCTSAgent_M8x4", detail=detail)
 
     # detail = "Env = Empty Room; _n = 20; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="MCTS_BestParameter", detail=detail)

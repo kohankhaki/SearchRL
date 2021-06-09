@@ -3,7 +3,7 @@ import torch
 
 
 class Node_Torch:
-    def __init__(self, parent, state, value=0, is_terminal=False, action_from_par=None, reward_from_par=0):
+    def __init__(self, parent, state, value=0, is_terminal=False, action_from_par=None, reward_from_par=0, uncertainty=0):
         self.state = state
         self.sum_values = value
         self.num_visits = 0
@@ -12,6 +12,7 @@ class Node_Torch:
         self.is_terminal = is_terminal
         self.action_from_par = action_from_par
         self.reward_from_par = reward_from_par
+        self.uncertainty = uncertainty
 
     def get_action_from_par(self):
         return self.action_from_par
@@ -39,6 +40,9 @@ class Node_Torch:
 
     def get_state(self):
         return self.state.detach().clone()
+    
+    def get_uncertainty(self):
+        return self.uncertainty
 
     def show(self):
         try:

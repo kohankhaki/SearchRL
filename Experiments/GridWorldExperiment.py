@@ -14,7 +14,7 @@ from Datasets.TransitionDataGrid import data_store
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-debug = True
+debug = False
 
 class GridWorldExperiment(BaseExperiment):
     def __init__(self, agent, env, device, params=None):
@@ -111,7 +111,8 @@ class RunExperiment():
     def __init__(self):
         gpu_counts = torch.cuda.device_count()
         # self.device = torch.device("cuda:"+str(random.randint(0, gpu_counts-1)) if torch.cuda.is_available() else "cpu")
-        self.device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device("cpu")
 
         # self.show_pre_trained_error_grid = config.show_pre_trained_error_grid
         # self.show_values_grid = config.show_values_grid
@@ -143,7 +144,7 @@ class RunExperiment():
                 # env = GridWorld(params=config.empty_room_params)
                 env = GridWorldRooms(params=config.n_room_params)
 
-                train, test = data_store(env)
+                # train, test = data_store(env)
                 reward_function = env.rewardFunction
                 goal = np.asarray(env.posToState((0, config._n - 1), state_type='coord'))
 
@@ -182,9 +183,11 @@ class RunExperiment():
                         print("starting episode ", e + 1)
                     experiment.runEpisode(max_step_each_episode)
                     self.num_steps_run_list[i, r, e] = experiment.num_steps
+                    # model_err = self.model_error(agent, env)
+                    # self.num_steps_run_list[i, r, e] = model_err
                     # print(self.model_error(agent, env))
-                    # if e % 100 == 0:
-                    #     self.test_model(env, agent, "after-episode" + str(e) + ".txt")
+                    if e == 999:
+                        self.test_model(env, agent, "LearnedModel/" + str(i) + "ImperfectMCTS_8x4_run=" + str(r) + ".txt")
 
 
                     # if agent.name == 'DQNMCTSAgent':
@@ -441,7 +444,7 @@ class RunExperiment():
     
     def test_model(self, env, agent, file_name):
         # don't use it on the real agent
-        agent.start(env.getAllStates(state_type='coord')[0])
+        # agent.start(env.getAllStates(state_type='coord')[0])
         for s in env.getAllStates(state_type='coord'):
             state = agent.getStateRepresentation(s)
             for a in env.getAllActions():
@@ -449,7 +452,7 @@ class RunExperiment():
                 action_index = torch.tensor([agent.getActionIndex(a)], device=self.device).unsqueeze(0)
                 true_next_state = torch.tensor([env.transitionFunction(s, a)], device=self.device)
                 pred_next_state, model_error = agent.modelRollout(state, action_index)
-                print(true_next_state, pred_next_state, model_error, torch.dist(pred_next_state, true_next_state))
+                # print(true_next_state, pred_next_state, model_error, torch.dist(pred_next_state, true_next_state))
                 with open(file_name, "a") as file:
                     file.write(str(s)+ str(a) + str( true_next_state.cpu().numpy()) + str(pred_next_state.cpu().numpy()) + "\n")
 

@@ -60,6 +60,7 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         self.device = params['device']
         if params['goal'] is not None:
             self.goal = torch.from_numpy(params['goal']).float().to(self.device)
+            self.goal_np = params['goal']
 
         self.num_steps = 0
         self.num_terminal_steps = 0
@@ -77,6 +78,8 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
 
         self.transition_dynamics = params['transition_dynamics']
 
+        self.use_uncertainty = False
+
     def start(self, observation):
         '''
         :param observation: numpy array -> (observation shape)
@@ -85,22 +88,19 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         if self._sr['network'] is None:
             self.init_s_representation_network(observation)
 
-
         self.prev_state = self.getStateRepresentation(observation)
         temp_prev_action = torch.tensor([[0]], device=self.device, dtype=torch.long)
         if self._model[self.model_type]['network'] is None and self._model[self.model_type]['training']:
             self.initModel(self.prev_state, temp_prev_action)
 
-
         if self.keep_tree and self.root is None:
-            self.root = Node(None, self.prev_state)
+            self.root = Node(None, self.prev_state[0])
             self.expansion(self.root)
 
         if self.keep_tree:
             self.subtree_node = self.root
-            print(self.subtree_node.get_avg_value())
         else:
-            self.subtree_node = Node(None, self.prev_state)
+            self.subtree_node = Node(None, self.prev_state[0])
             self.expansion(self.subtree_node)
 
         # self.render_tree()
@@ -112,14 +112,13 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         self.prev_action = torch.tensor([[action]], device=self.device)
         return self.action_list[action]
 
-
-
+    # @timecall(immediate=False)
     def step(self, reward, observation):
         self.time_step += 1
 
         self.state = self.getStateRepresentation(observation)
         if not self.keep_subtree:
-            self.subtree_node = Node(None, self.state)
+            self.subtree_node = Node(None, self.state[0])
             self.expansion(self.subtree_node)
 
         for i in range(self.num_iterations):
@@ -163,32 +162,55 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
                 self.trainModel()      
         self.updateStateRepresentation()
 
-
-    # def true_model(self, state, action):
-    #     action_index = self.getActionIndex(action)
-    #     torch_action_index = torch.tensor([action_index], device=self.device).unsqueeze(0)
-    #     torch_state = self.getStateRepresentation(state)
-    #     torch_next_state = torch.round(self.modelRollout(torch_state, torch_action_index)[0])
-
-    #     transition = self.transition_dynamics[int(state[0]), int(state[1]), action_index]
-    #     next_state, is_terminal, reward = transition[0:2], transition[2], transition[3]
-
-    #     np_next_state = torch_next_state.cpu().numpy()[0]
-    #     return np_next_state, is_terminal, reward
-
-
     @timecall(immediate=False)
     def model(self, state, action_index):
-        next_state = self.modelRollout(state, action_index)[0]
-        # next_state = torch.clamp(next_state, min=0, max=8)
-        next_state, reward, is_terminal = self.get_transition(next_state)
+        #prev
+        # next_state = self.modelRollout(state, action_index)[0]
+        # # next_state = torch.clamp(next_state, min=0, max=8)
+        # next_state, reward, is_terminal = self.get_transition(next_state)
+        #prev
+        with torch.no_grad():
+            state = torch.clamp(state, min=0, max=8)
+            state0 = int(state[0].item())
+            state1 = int(state[1].item())
+            action_index = action_index[0, 0].item()
+            next_state = self.saved_model[state0, state1, action_index]
+            uncertainty = self.saved_uncertainty[state0, state1, action_index][0].item()
+            next_state, reward, is_terminal = self.get_transition(next_state)
+        
+        return next_state, is_terminal, reward, uncertainty
+
+    # @timecall(immediate=False)
+    def rollout(self, node):
+        sum_returns = 0
+        for i in range(self.num_rollouts):
+            depth = 0
+            single_return = 0
+            is_terminal = node.is_terminal
+            state = node.get_state().cpu().numpy()
+            while not is_terminal and depth < self.rollout_depth:
+                action_index = random.randint(0, self.num_actions - 1)
+                next_state, is_terminal, reward = self.model_np(state, action_index)
+                single_return += reward
+                depth += 1
+                state = next_state
+            sum_returns += single_return
+        return sum_returns / self.num_rollouts
+
+
+    # @timecall(immediate=False)
+    def model_np(self, state, action_index):
+        state = np.clip(state, 0, 8)
+        next_state = self.saved_model_np[int(state[0]), int(state[1]), action_index]
+        next_state, reward, is_terminal = self.get_transition_np(next_state)
         return next_state, is_terminal, reward
 
-    @timecall(immediate=False)
+
+    # @timecall(immediate=False)
     def get_torch_action_index(self, action_index):
         return torch.tensor([action_index], device=self.device).unsqueeze(0)
 
-    @timecall(immediate=False)
+    # @timecall(immediate=False)
     def get_transition(self, state):
         state = torch.round(state)
         reward = None
@@ -201,3 +223,70 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
             is_terminal = False
 
         return state, reward, is_terminal
+
+    def get_transition_np(self, state):
+        state = np.round(state)
+        state = np.clip(state, 0, 8)
+        reward = None
+        is_terminal = None
+        if np.array_equal(state, self.goal_np):
+            reward = 0
+            is_terminal = True
+        else:
+            reward = -1
+            is_terminal = False
+
+        return state, reward, is_terminal
+
+    # @timecall(immediate=False)
+    def trainModel(self):
+        RealBaseDynaAgent.trainModel(self)
+        self.saveModel()
+        self.saveModelNp()
+
+
+    def initModel(self, state, action):
+        RealBaseDynaAgent.initModel(self, state, action)
+        self.saved_model = torch.zeros([9, 9, 4, 2], device=self.device)
+        self.saved_uncertainty = torch.zeros([9, 9, 4, 1], device=self.device)
+        self.saved_model_np = np.zeros([9, 9, 4, 2])
+        self.saveModel()
+        self.saveModelNp()
+
+    # @timecall(immediate=False)
+    def saveModel(self):
+        with torch.no_grad():
+            for s0 in range(9):
+                for s1 in range(9):
+                    for a in range(4):
+                        state = torch.tensor([[s0, s1]], device=self.device)
+                        action_index = torch.tensor([[a]], device=self.device)
+                        next_state, uncertainty = self.modelRollout(state, action_index)
+                        self.saved_model[s0, s1, a] = next_state[0]
+                        self.saved_uncertainty[s0, s1, a] = torch.tensor([uncertainty], device=self.device)
+
+    def saveModelNp(self):
+        with torch.no_grad():
+            for s0 in range(9):
+                for s1 in range(9):
+                    for a in range(4):
+                        state = torch.tensor([[s0, s1]], device=self.device)
+                        action_index = torch.tensor([[a]], device=self.device)
+                        next_state, uncertainty = self.modelRollout(state, action_index)
+                        self.saved_model_np[s0, s1, a] = next_state[0].cpu().numpy()    
+
+
+
+
+
+    def expansion(self, node):
+        for a in range(self.num_actions):
+            action_index = torch.tensor([a]).unsqueeze(0)
+            next_state, is_terminal, reward, uncertainty = self.model(node.get_state(),
+                                                              action_index)  # with the assumption of deterministic model
+            # if np.array_equal(next_state, node.get_state()):
+            #     continue
+            value = self.get_initial_value(next_state)
+            child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
+                         value=value, uncertainty=uncertainty)
+            node.add_child(child)

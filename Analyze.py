@@ -32,11 +32,12 @@ def drawPlotUncertainty(x, y, y_err, color, label, axis):
 
 
 def plot_simple_agent(steps_run_list, label_name, axs):
+    # steps_run_list = steps_run_list[:, :, 0:25]
     mean_steps_run_list = np.mean(steps_run_list, axis=1)
     std_steps_run_list = np.std(steps_run_list, axis=1)
     x_steps_run_list = np.arange(steps_run_list.shape[2])
 
-    for stepsize_index in range(1,3):
+    for stepsize_index in range(steps_run_list.shape[0]):
         drawPlotUncertainty(x_steps_run_list,
                             mean_steps_run_list[stepsize_index],
                             std_steps_run_list[stepsize_index],
@@ -80,13 +81,14 @@ def plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfe
     if is_imperfect:
         line_style = "solid"
         # for stepsize_index in range(mean_steps_run_list.shape[0]):
-        for stepsize_index in range(0, 1):
+        for stepsize_index in range(2, 3):
             axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name, linestyle=line_style)
     else:
         for stepsize_index in range(mean_steps_run_list.shape[0]):
             axs.axhline(mean_steps_run_list[stepsize_index], color=generate_hex_color(), label=label_name + str(stepsize_index // 2), linestyle=line_style)
 
 def plot_alternate_agents(steps_run_list, label_name1, label_name2, axs):
+    # steps_run_list = steps_run_list[:, :, 0:800]
     num_step = steps_run_list.shape[2] // 2
     odd_ind = list(range(1, num_step * 2, 2))
     even_ind = list(range(0, num_step * 2, 2))
@@ -97,23 +99,26 @@ def plot_alternate_agents(steps_run_list, label_name1, label_name2, axs):
     std_agent1_steps_run_list = np.std(agent1_step_list, axis=1)
     x_agent1_steps_run_list = np.arange(agent1_step_list.shape[2])
 
+
     mean_agent2_steps_run_list = np.mean(agent2_step_list, axis=1)
     std_agent2_steps_run_list = np.std(agent2_step_list, axis=1)
     x_agent2_steps_run_list = np.arange(agent2_step_list.shape[2])
 
-    drawPlotUncertainty(x_agent1_steps_run_list,
-                        mean_agent1_steps_run_list[0],
-                        std_agent1_steps_run_list[0],
-                        label=label_name1,
-                        color=generate_hex_color(),
-                        axis=axs)
-
-    drawPlotUncertainty(x_agent2_steps_run_list,
-                        mean_agent2_steps_run_list[0],
-                        std_agent2_steps_run_list[0],
-                        label=label_name2,
-                        color=generate_hex_color(),
-                        axis=axs)
+    for p in range(steps_run_list.shape[0]):
+        color = generate_hex_color()
+        drawPlotUncertainty(x_agent1_steps_run_list,
+                            mean_agent1_steps_run_list[p],
+                            std_agent1_steps_run_list[p],
+                            label=label_name1,
+                            color=color,
+                            axis=axs)
+        color = generate_hex_color()
+        drawPlotUncertainty(x_agent2_steps_run_list,
+                            mean_agent2_steps_run_list[p],
+                            std_agent2_steps_run_list[p],
+                            label=label_name2,
+                            color=color,
+                            axis=axs)
 
 def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first=True,  is_imperfect = False):
 
@@ -178,12 +183,24 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
 
 fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
-file_name = 'Results/MCTS_ParameterStudy_keep_subtree=F_keep_tree=F.p'
+file_name = 'Results/RealBaseDynaAgent_M8x4_ModelParameterStudy.p'
 with open(file_name, "rb") as f:
     res = pickle.load(f)
 steps_run_list = res['num_steps']
-label_name = 'MCTS'
-plot_simple_agent_single_episode(steps_run_list, label_name, axs)
+# print(steps_run_list1.shape)
+
+# file_name = 'Results/ImperfectMCTSAgent_M16x8_3.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list2 = res['num_steps']
+# print(steps_run_list2.shape)
+
+
+# steps_run_list = np.concatenate((steps_run_list1, steps_run_list2), axis=1)
+# print(steps_run_list.shape)
+
+label_name = 'ModelError'
+plot_simple_agent(steps_run_list, label_name, axs)
 
 # file_name = 'Results_EmptyRoom/DQNVF_16x8/DQN_Runs.p'
 # with open(file_name, "rb") as f:
@@ -276,27 +293,26 @@ plot_simple_agent_single_episode(steps_run_list, label_name, axs)
 # label_name2 = 'MCTS(Bootstrap)'
 # plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name2, axs, plot_first = False,  is_imperfect = False)
 
-file_name = 'Results/DQNMCTSAgent_ReduceBreadth_VF64x64.p'
-with open(file_name, "rb") as f:
-    res = pickle.load(f)
-steps_run_list = res['num_steps']
-label_name1 = 'DQN(VF64x64)'
-label_name2 = 'MCTS(Reduced Breadth)'
-plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
-
-
-# file_name = 'Results/DQNMCTSAgent_ReduceBreadth_VF64x64.p'
+# file_name = 'Results/tmp.p'
 # with open(file_name, "rb") as f:
 #     res = pickle.load(f)
 # steps_run_list = res['num_steps']
-# label_name = 'DQN'
+# label_name1 = 'DQN'
+# label_name2 = 'MCTS(Bootstrap)'
 # print(steps_run_list.shape)
-# plot_simple_agent(steps_run_list, label_name, axs)
+# plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
+# detail = res['experiment_objs'][0].epsilon
+# print(detail)
 
-axs.title.set_text("DQNMCTS Agent ReduceBreadth")
+# file_name = 'Results/DQNMCTSAgent_Bootstrap_VF16x16_Depth10.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name1 = 'DQN'
+# label_name2 = 'MCTS(Bootstrap)'
+# plot_alternate_agents(steps_run_list, label_name1, label_name2, axs)
+
+axs.title.set_text("Model 8x4 Parameter Study")
 axs.legend()
-fig.savefig("Results/Plots/DQNMCTSAgent_ReduceBreadth_VF64x64")
-# fig.savefig("safasd")
-
-# fig.savefig("Results_Imperfect_Model/Plots/UseSelectedAction_prob=0dot025_step=1_run=1")
+fig.savefig("Results/Plots/RealBaseDynaAgent_M8x4_ModelParameterStudy")
 fig.show()

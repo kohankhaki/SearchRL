@@ -58,9 +58,6 @@ class MCTSAgent_Torch(BaseAgent):
                         step_size=None,
                         batch_counter=None,
                         training=False)
-
-        self.use_uncertainty = False
-
     
     def start(self, observation):
         
@@ -109,8 +106,6 @@ class MCTSAgent_Torch(BaseAgent):
         max_child_list = []
         for child in self.subtree_node.get_childs():
             value = child.num_visits
-            if self.use_uncertainty:
-                value *= child.uncertainty
             if value > max_value:
                 max_value = value
                 max_action_list = [child.get_action_from_par()]

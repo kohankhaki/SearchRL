@@ -14,7 +14,7 @@ from Datasets.TransitionDataGrid import data_store
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-debug = False
+debug = True
 
 class GridWorldExperiment(BaseExperiment):
     def __init__(self, agent, env, device, params=None):
@@ -111,8 +111,8 @@ class RunExperiment():
     def __init__(self):
         gpu_counts = torch.cuda.device_count()
         # self.device = torch.device("cuda:"+str(random.randint(0, gpu_counts-1)) if torch.cuda.is_available() else "cpu")
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        # self.device = torch.device("cpu")
+        # self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
 
         # self.show_pre_trained_error_grid = config.show_pre_trained_error_grid
         # self.show_values_grid = config.show_values_grid
@@ -146,7 +146,7 @@ class RunExperiment():
 
                 # train, test = data_store(env)
                 reward_function = env.rewardFunction
-                goal = np.asarray(env.posToState((0, config._n - 1), state_type='coord'))
+                goal = np.asarray(env.posToState((0, 8), state_type='coord'))
 
                 # Pre-train the model
                 # pre_trained_model, pre_trained_visit_counts, pre_trained_plot_y, pre_trained_plot_x = \
@@ -186,8 +186,10 @@ class RunExperiment():
                     # model_err = self.model_error(agent, env)
                     # self.num_steps_run_list[i, r, e] = model_err
                     # print(self.model_error(agent, env))
-                    if e == 999:
-                        self.test_model(env, agent, "LearnedModel/" + str(i) + "ImperfectMCTS_8x4_run=" + str(r) + ".txt")
+                    # if e == 0:
+                    #     self.test_model(env, agent, "rounded.txt")
+
+                        # self.test_model(env, agent, "LearnedModel/" + str(i) + "ImperfectMCTS_8x4_run=" + str(r) + ".txt")
 
 
                     # if agent.name == 'DQNMCTSAgent':
@@ -218,7 +220,10 @@ class RunExperiment():
                     #     self.model_error_samples[i, r, e] = experiment.num_samples
 
                 # agent.saveValueFunction("Results_EmptyRoom/DQNVF_16x8/dqn_vf_" + str(r) + ".p")
-
+                    # if e == 999:
+                    #     agent.saveModelFile("LearnedModel/" + "M64x32_r" + str(r) + "e" + str(e) + ".p")
+                    # if e % 499 == 0:
+                    #     agent.saveModelFile("M64x32_r1e" + str(e) + "s100_ensemble5.p")
 
                 # *********
                 # model_type = list(agent.model.keys())[0]
@@ -453,8 +458,11 @@ class RunExperiment():
                 true_next_state = torch.tensor([env.transitionFunction(s, a)], device=self.device)
                 pred_next_state, model_error = agent.modelRollout(state, action_index)
                 # print(true_next_state, pred_next_state, model_error, torch.dist(pred_next_state, true_next_state))
+                pred_next_state_np_round = np.rint(pred_next_state.cpu().numpy())
+                true_next_state_np = true_next_state.cpu().numpy()
+                is_equal = np.array_equal(pred_next_state_np_round, true_next_state_np)
                 with open(file_name, "a") as file:
-                    file.write(str(s)+ str(a) + str( true_next_state.cpu().numpy()) + str(pred_next_state.cpu().numpy()) + "\n")
+                    file.write(str(s)+ str(a) + str(true_next_state_np) + str(pred_next_state_np_round) + str(is_equal) + "\n")
 
 
 

@@ -379,6 +379,15 @@ class RealBaseDynaAgent(BaseAgent):
         with open(name, "rb") as file:
             self._vf = pickle.load(file)
 
+    def saveModelFile(self, name):
+        with open(name, "wb") as file:
+            pickle.dump(self._model, file)
+    
+    def loadModelFile(self, name):
+        with open(name, "rb") as file:
+            self._model = pickle.load(file)
+
+
     # ***
     @abstractmethod
     def trainModel(self):

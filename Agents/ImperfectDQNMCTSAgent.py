@@ -36,7 +36,6 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         self.transition_buffer = []
         self.transition_buffer_size = 2**12
 
-
         self.model_type = params['model']['type']
         self._model = {self.model_type:dict(network=None,
                                             layers_type=params['model']['layers_type'],
@@ -46,7 +45,10 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
                                             batch_size=16,
                                             step_size=params['model_stepsize'],
                                             training=True)}
+
+
         self.num_ensembles = 5
+
 
         self._sr = dict(network=None,
                         layers_type=[],
@@ -65,7 +67,7 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         self.num_steps = 0
         self.num_terminal_steps = 0
 
-        self.is_pretrained = False
+        self.is_model_pretrained = True
 
         # MCTS parameters
         self.C = params['c']
@@ -78,7 +80,6 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
 
         self.transition_dynamics = params['transition_dynamics']
 
-        self.use_uncertainty = False
 
     def start(self, observation):
         '''
@@ -103,7 +104,6 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
             self.subtree_node = Node(None, self.prev_state[0])
             self.expansion(self.subtree_node)
 
-        # self.render_tree()
         for i in range(self.num_iterations):
             self.MCTS_iteration()
         action, sub_tree = self.choose_action()
@@ -112,7 +112,6 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         self.prev_action = torch.tensor([[action]], device=self.device)
         return self.action_list[action]
 
-    # @timecall(immediate=False)
     def step(self, reward, observation):
         self.time_step += 1
 
@@ -139,6 +138,7 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         if self._model[self.model_type]['training']:
             if len(self.transition_buffer) >= self._model[self.model_type]['batch_size']:
                 self.trainModel()
+        
         self.plan()
 
         self.updateStateRepresentation()
@@ -157,12 +157,13 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
                                                      reward,
                                                      None,
                                                      None, True, self.time_step, 0))
+        
         if self._model[self.model_type]['training']:
             if len(self.transition_buffer) >= self._model[self.model_type]['batch_size']:
                 self.trainModel()      
         self.updateStateRepresentation()
 
-    @timecall(immediate=False)
+    # @timecall(immediate=False)
     def model(self, state, action_index):
         #prev
         # next_state = self.modelRollout(state, action_index)[0]
@@ -170,13 +171,13 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         # next_state, reward, is_terminal = self.get_transition(next_state)
         #prev
         with torch.no_grad():
-            state = torch.clamp(state, min=0, max=8)
             state0 = int(state[0].item())
             state1 = int(state[1].item())
             action_index = action_index[0, 0].item()
             next_state = self.saved_model[state0, state1, action_index]
             uncertainty = self.saved_uncertainty[state0, state1, action_index][0].item()
             next_state, reward, is_terminal = self.get_transition(next_state)
+            #if want not rounded next_state, replace next_state with _  
         
         return next_state, is_terminal, reward, uncertainty
 
@@ -190,28 +191,25 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
             state = node.get_state().cpu().numpy()
             while not is_terminal and depth < self.rollout_depth:
                 action_index = random.randint(0, self.num_actions - 1)
-                next_state, is_terminal, reward = self.model_np(state, action_index)
+                next_state, is_terminal, reward, uncertainry = self.model_np(state, action_index)
                 single_return += reward
                 depth += 1
                 state = next_state
             sum_returns += single_return
         return sum_returns / self.num_rollouts
 
-
-    # @timecall(immediate=False)
     def model_np(self, state, action_index):
-        state = np.clip(state, 0, 8)
+        # state = np.clip(state, 0, 8)
         next_state = self.saved_model_np[int(state[0]), int(state[1]), action_index]
         next_state, reward, is_terminal = self.get_transition_np(next_state)
-        return next_state, is_terminal, reward
+        uncertainty = self.saved_model_uncertainty_np[int(state[0]), int(state[1]), action_index][0]
+        return next_state, is_terminal, reward, uncertainty
 
-
-    # @timecall(immediate=False)
     def get_torch_action_index(self, action_index):
         return torch.tensor([action_index], device=self.device).unsqueeze(0)
 
-    # @timecall(immediate=False)
     def get_transition(self, state):
+        state = torch.clamp(state, 0, 8)
         state = torch.round(state)
         reward = None
         is_terminal = None
@@ -225,8 +223,8 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         return state, reward, is_terminal
 
     def get_transition_np(self, state):
-        state = np.round(state)
         state = np.clip(state, 0, 8)
+        state = np.round(state)
         reward = None
         is_terminal = None
         if np.array_equal(state, self.goal_np):
@@ -235,25 +233,26 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         else:
             reward = -1
             is_terminal = False
-
         return state, reward, is_terminal
 
-    # @timecall(immediate=False)
     def trainModel(self):
+        if self.is_model_pretrained:
+            return
         RealBaseDynaAgent.trainModel(self)
         self.saveModel()
         self.saveModelNp()
 
-
     def initModel(self, state, action):
         RealBaseDynaAgent.initModel(self, state, action)
+        if self.is_model_pretrained:
+            RealBaseDynaAgent.loadModelFile(self, "M64x32_r1e998s100_ensemble5.p")
         self.saved_model = torch.zeros([9, 9, 4, 2], device=self.device)
         self.saved_uncertainty = torch.zeros([9, 9, 4, 1], device=self.device)
         self.saved_model_np = np.zeros([9, 9, 4, 2])
+        self.saved_model_uncertainty_np = np.zeros([9, 9, 4, 1])
         self.saveModel()
         self.saveModelNp()
 
-    # @timecall(immediate=False)
     def saveModel(self):
         with torch.no_grad():
             for s0 in range(9):
@@ -274,19 +273,77 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
                         action_index = torch.tensor([[a]], device=self.device)
                         next_state, uncertainty = self.modelRollout(state, action_index)
                         self.saved_model_np[s0, s1, a] = next_state[0].cpu().numpy()    
-
-
-
-
+                        self.saved_model_uncertainty_np[s0, s1, a] = uncertainty
 
     def expansion(self, node):
         for a in range(self.num_actions):
             action_index = torch.tensor([a]).unsqueeze(0)
             next_state, is_terminal, reward, uncertainty = self.model(node.get_state(),
                                                               action_index)  # with the assumption of deterministic model
-            # if np.array_equal(next_state, node.get_state()):
-            #     continue
             value = self.get_initial_value(next_state)
             child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
                          value=value, uncertainty=uncertainty)
             node.add_child(child)
+
+
+
+
+class ImperfectMCTSAgentUncertainty(ImperfectMCTSAgent):
+    name = "ImperfectMCTSAgentUncertainty"
+
+    def __init__(self, params={}):
+        ImperfectMCTSAgent.__init__(self, params)
+
+    def start(self, observation):
+        return ImperfectMCTSAgent.start(self, observation)
+
+    def step(self, reward, observation):
+        return ImperfectMCTSAgent.step(self, reward, observation)
+
+    def end(self, reward):
+        ImperfectMCTSAgent.end(self, reward)
+
+    def expansion(self, node):
+        expected_children = []
+        max_uncertainty = -np.inf
+        max_child_uncertainty_index = -1
+        for a in range(self.num_actions):
+            action_index = torch.tensor([a]).unsqueeze(0)
+            next_state, is_terminal, reward, uncertainty = self.model(node.get_state(),
+                                                              action_index)  # with the assumption of deterministic model
+            value = self.get_initial_value(next_state)
+            child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
+                         value=value, uncertainty=uncertainty)
+            expected_children.append(child)
+            if uncertainty > max_uncertainty:
+                max_child_uncertainty_index = a
+                max_uncertainty = uncertainty
+        if random.random() < 0.0:
+            expected_children.pop(max_child_uncertainty_index)
+        for i in range(len(expected_children)):
+            node.add_child(expected_children[i])
+
+
+    def rollout(self, node):
+        sum_returns = 0
+        for i in range(self.num_rollouts):
+            depth = 0
+            single_return = 0
+            is_terminal = node.is_terminal
+            state = node.get_state().cpu().numpy()
+            while not is_terminal and depth < self.rollout_depth:
+                uncertainty_list = []
+                action_index_list = []
+                sum = 0.0
+                for a_index in range(self.num_actions):
+                    next_state, is_terminal, reward, uncertainry = self.model_np(state, a_index)
+                    uncertainty_list.append(1 - uncertainry)
+                    sum += 1 - uncertainry
+                uncertainty_list /= sum
+                action_index = np.random.choice(4, 1, p = uncertainty_list)[0]
+                next_state, is_terminal, reward, uncertainry = self.model_np(state, action_index)
+                single_return += reward
+                depth += 1
+                state = next_state
+            sum_returns += single_return
+        return sum_returns / self.num_rollouts

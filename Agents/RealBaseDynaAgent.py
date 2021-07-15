@@ -13,6 +13,7 @@ from Networks.ValueFunctionNN.StateActionValueFunction import StateActionVFNN
 from Networks.ValueFunctionNN.StateValueFunction import StateVFNN
 from Networks.RepresentationNN.StateRepresentation import StateRepresentation
 from Networks.ModelNN.StateTransitionModel import StateTransitionModel
+from Networks.ModelNN.StateTransitionModel import StateTransitionModelHeter
 import pickle
 
 #this is an DQN agent.
@@ -23,9 +24,11 @@ class RealBaseDynaAgent(BaseAgent):
         self.model_loss = []
         self.time_step = 0
         # self.writer = SummaryWriter()
-
+        self.writer_iterations = 0
         self.prev_state = None
         self.state = None
+
+        self.dataset = params['dataset']
 
         self.action_list = params['action_list']
         self.num_actions = self.action_list.shape[0]
@@ -441,26 +444,61 @@ class RealBaseDynaAgent(BaseAgent):
                                             if t.state is not None])
             non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch)                        
             
-            predicted_next_state_mu = self._model['heter']['network'][0](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
-            predicted_next_state_var = F.softplus(self._model['heter']['network'][1](non_final_prev_states_batch, non_final_prev_action_onehot_batch)) + 10**-6
-            predicted_next_state_var = torch.diag_embed(predicted_next_state_var)
+            # predicted_next_state_mu = self._model['heter']['network'][0](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
+            # predicted_next_state_var = F.softplus(self._model['heter']['network'][1](non_final_prev_states_batch, non_final_prev_action_onehot_batch)) + 10**-6
+            # predicted_next_state_var = torch.diag_embed(predicted_next_state_var)
 
-            A = (predicted_next_state_mu.float()-non_final_next_states_batch.float()).unsqueeze(2)
-            inv_var = torch.inverse(predicted_next_state_var.float())
-            loss = torch.mean(torch.matmul(torch.matmul(A.permute(0,2,1), inv_var), A).squeeze(2).squeeze(1) + torch.logdet(predicted_next_state_var.float()))
+            predicted_next_state_mu = self._model['heter']['network'](non_final_prev_states_batch, non_final_prev_action_onehot_batch)[0]
+            predicted_next_state_var = self._model['heter']['network'](non_final_prev_states_batch, non_final_prev_action_onehot_batch)[1]
 
-            self.model_optimizer[0].zero_grad()
-            self.model_optimizer[1].zero_grad()
+            A = (predicted_next_state_mu - non_final_next_states_batch) ** 2
+            inv_var = 1 / predicted_next_state_var
+            loss_element1 = torch.sum(A * inv_var, dim=1)
+            loss_element2 = torch.log(torch.prod(predicted_next_state_var, dim=1))
+            loss = torch.mean(loss_element1 + loss_element2)
+
+            # self.model_optimizer[0].zero_grad()
+            # self.model_optimizer[1].zero_grad()
+            self.model_optimizer.zero_grad()
             loss.backward()
             self.model_loss.append(loss)
-            self.model_optimizer[0].step()
-            self.model_optimizer[1].step()
+            self.model_optimizer.step()
+            # self.model_optimizer[0].step()
+            # self.model_optimizer[1].step()
+        
         else:
             raise NotImplementedError("train model not implemented")
     
     @abstractmethod
-    def plan(self):
+    def plan(self):        
         pass
+        # with torch.no_grad():
+        #     states = torch.from_numpy(self.dataset[:, 0:2])
+        #     actions = torch.from_numpy(self.dataset[:, 2:6])
+        #     next_states = torch.from_numpy(self.dataset[:, 6:8])
+            
+        #     predicted_next_state_var = self._model['heter']['network'](states, actions)[1].float().detach()
+        #     predicted_next_state_var_trace = torch.sum(predicted_next_state_var, dim=1)
+        #     predicted_next_state = self._model['heter']['network'](states, actions)[0].float().detach()
+            
+        #     true_var = torch.sum((predicted_next_state - next_states) ** 2, dim=1)
+        #     var_err = torch.mean((true_var - predicted_next_state_var_trace)**2)
+        #     mu_err = torch.mean(true_var) 
+
+        #     # true_var_argsort = torch.argsort(true_var)
+        #     # pred_var_argsort = torch.argsort(predicted_next_state_var_trace)
+        #     # print(np.count_nonzero(pred_var_argsort != true_var_argsort), np.count_nonzero(pred_var_argsort == true_var_argsort))
+
+        #     A = (predicted_next_state - next_states) ** 2
+        #     inv_var = 1 / predicted_next_state_var
+        #     loss_element1 = torch.sum(A * inv_var, dim=1)
+        #     loss_element2 = torch.log(torch.prod(predicted_next_state_var, dim=1))
+        #     loss_het = torch.mean(loss_element1 + loss_element2)
+
+        #     self.writer.add_scalar('VarLoss/step_size'+str(self._model['heter']['step_size']), var_err, self.writer_iterations)
+        #     self.writer.add_scalar('MuLoss/step_size'+str(self._model['heter']['step_size']), mu_err, self.writer_iterations)
+        #     self.writer.add_scalar('HetLoss/step_size'+str(self._model['heter']['step_size']), loss_het, self.writer_iterations)
+        #     self.writer_iterations += 1
 
     @abstractmethod
     def initModel(self, state, action):
@@ -487,13 +525,11 @@ class RealBaseDynaAgent(BaseAgent):
                 self.model_optimizer.append(optim.Adam(self._model['ensemble']['network'][i].parameters(), lr=self._model['ensemble']['step_size']))
         
         elif self.model_type == 'heter':
-            self._model['heter']['network'] = []
-            self.model_optimizer = []
-            for i in range(2):
-                self._model['heter']['network'].append(StateTransitionModel(nn_state_shape, nn_action_onehot_shape, 
-                                                                           self._model['heter']['layers_type'],
-                                                                           self._model['heter']['layers_features']).to(self.device))
-                self.model_optimizer.append(optim.Adam(self._model['heter']['network'][i].parameters(), lr=self._model['heter']['step_size']))
+            self._model['heter']['network'] = StateTransitionModelHeter(nn_state_shape, nn_action_onehot_shape, 
+                                                                        self._model['heter']['layers_type'],
+                                                                        self._model['heter']['layers_features']).to(self.device)
+            self.model_optimizer = optim.Adam(self._model['heter']['network'].parameters(), lr=self._model['heter']['step_size'])
+            
 
         else:
             raise NotImplementedError("model not implemented")
@@ -528,10 +564,15 @@ class RealBaseDynaAgent(BaseAgent):
         elif self.model_type == 'heter':
             with torch.no_grad():
                 one_hot_action = self.getActionOnehotTorch(action_index)
-                predicted_next_state_mu = self._model['heter']['network'][0](state, one_hot_action).detach()
-                predicted_next_state_var = F.softplus(self._model['heter']['network'][1](state, one_hot_action)).detach().trace()
-                return predicted_next_state_mu, predicted_next_state_var
+                # predicted_next_state_mu = self._model['heter']['network'](state, one_hot_action)[0].detach()
+                # predicted_next_state_var = self._model['heter']['network'](state, one_hot_action)[1].detach().trace()
 
+                predicted_next_state_var = self._model['heter']['network'](state, one_hot_action)[1].float().detach()
+                predicted_next_state_var_trace = torch.sum(predicted_next_state_var, dim=1)
+                predicted_next_state_mu = self._model['heter']['network'](state, one_hot_action)[0].float().detach()
+                # print(predicted_next_state_mu.shape, predicted_next_state_var_trace.shape)
+                # exit(0)
+                return predicted_next_state_mu, predicted_next_state_var_trace
+                
         else:
             raise NotImplementedError("model not implemented")
-

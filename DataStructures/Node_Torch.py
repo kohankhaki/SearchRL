@@ -39,7 +39,9 @@ class Node_Torch:
         self.num_visits += 1
 
     def get_state(self):
-        return self.state.detach().clone()
+        # return self.state.detach().clone()
+        return self.state
+
     
     def get_uncertainty(self):
         return self.uncertainty

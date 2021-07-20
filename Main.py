@@ -17,6 +17,8 @@ from Environments.GridWorldRooms import GridWorldRooms
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.RealBaseDynaAgent import RealBaseDynaAgent
 from Agents.ImperfectDQNMCTSAgent import *
+from Agents.MCTSAgent_Torch import *
+
 
 # from Agents.MCTSAgent import MCTSAgent
 # from Agents.DQNMCTSAgent import *
@@ -41,14 +43,16 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_ReduceBreadth]
     # agent_class_list = [RealBaseDynaAgent]
     # agent_class_list = [ImperfectMCTSAgent]
-    agent_class_list = [ImperfectMCTSAgentUncertainty]
+    # agent_class_list = [ImperfectMCTSAgentUncertainty]
+    agent_class_list = [ImperfectMCTSAgentIdeas]
+    # agent_class_list = [MCTSAgent_Torch]
 
     # show_pre_trained_error_grid = [False, False],
     # show_values_grid = [False, False],
     # show_model_error_grid = [False, False]
 
     # s_vf_list = [2 ** -5, 2 ** -7, 2 ** -9, 2 ** -11]
-    s_vf_list = [2 ** -7]
+    s_vf_list = [2 ** -12]
 
     # s_md_list = [2 ** -2, 2 ** -4, 2 ** -6, 2 ** -8, 2 ** -10, 2 ** -12, 2 ** -14, 2 ** -16]
     
@@ -70,7 +74,7 @@ if __name__ == '__main__':
     #               {'type': 'forward', 'num_networks': 4, 'layers_type': ['fc'], 'layers_features': [32]}
     #               ]
 
-    model_list = [{'type': 'ensemble', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 32], 'action_layer_num': 4}]
+    model_list = [{'type': 'heter', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 16], 'action_layer_num': 3}]
     vf_list = [
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 32], 'action_layer_num': 3},
@@ -114,7 +118,7 @@ if __name__ == '__main__':
     # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="ddd", detail=detail)
     detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
-    experiment.run_experiment(experiment_object_list, result_file_name="ImperfectMCTSAgentUncertainty_Rollout_PretrainedModel_Ensemble5M64x32E998", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="ImperfectMCTSAgentIdeas_S7P25_SelectionDivLinear2m4_2", detail=detail)
 
     # detail = "Env = Empty Room; _n = 20; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="MCTS_BestParameter", detail=detail)

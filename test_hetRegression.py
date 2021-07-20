@@ -226,8 +226,8 @@ if __name__ == "__main__":
     batch_size = 32
     dataset = np.zeros([len(all_states)*len(all_actions), 8])
     i = 0
-    num_runs = 3
-    epochs = 100
+    num_runs = 1
+    epochs = 1000
     for s in all_states:
         for a in all_actions:
             next_state, is_terminal, reward = env.fullTransitionFunction(s, a)

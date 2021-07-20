@@ -5,6 +5,7 @@ import Utils as utils, Config as config
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import pickle
+from torch.utils.tensorboard import SummaryWriter
 
 from Experiments.BaseExperiment import BaseExperiment
 from Environments.GridWorldBase import GridWorld
@@ -107,6 +108,30 @@ class GridWorldExperiment(BaseExperiment):
         return visit_count
         
 
+    def het_model_error(self, dataset):
+        states = torch.from_numpy(dataset[:, 0:2])
+        actions = torch.from_numpy(dataset[:, 2:6])
+        next_states = torch.from_numpy(dataset[:, 6:8])
+        
+        predicted_next_state_var = self.agent._model['heter']['network'](states, actions)[1].float().detach()
+        predicted_next_state_var_trace = torch.sum(predicted_next_state_var, dim=1)
+        predicted_next_state = self.agent._model['heter']['network'](states, actions)[0].float().detach()
+        
+        true_var = torch.sum((predicted_next_state - next_states) ** 2, dim=1)
+        var_err = torch.mean((true_var - predicted_next_state_var_trace)**2)
+        mu_err = torch.mean(true_var) 
+
+        # true_var_argsort = torch.argsort(true_var)
+        # pred_var_argsort = torch.argsort(predicted_next_state_var_trace)
+        # print(np.count_nonzero(pred_var_argsort != true_var_argsort), np.count_nonzero(pred_var_argsort == true_var_argsort))
+
+        A = (predicted_next_state - next_states) ** 2
+        inv_var = 1 / predicted_next_state_var
+        loss_element1 = torch.sum(A * inv_var, dim=1)
+        loss_element2 = torch.log(torch.prod(predicted_next_state_var, dim=1))
+        loss_het = torch.mean(loss_element1 + loss_element2)
+        return mu_err, var_err, loss_het
+
 class RunExperiment():
     def __init__(self):
         gpu_counts = torch.cuda.device_count()
@@ -133,6 +158,10 @@ class RunExperiment():
         self.model_error_list = np.zeros([len(experiment_object_list), num_runs, num_episode], dtype=np.float)
         self.agent_model_error_list = np.zeros([len(experiment_object_list), num_runs, num_episode], dtype=np.float)
         self.model_error_samples = np.zeros([len(experiment_object_list), num_runs, num_episode], dtype=np.int)
+        # ****
+        self.het_mu_error = np.zeros([len(experiment_object_list), num_runs, num_episode], dtype=np.float)
+        self.het_var_error = np.zeros([len(experiment_object_list), num_runs, num_episode], dtype=np.float)
+        self.het_error = np.zeros([len(experiment_object_list), num_runs, num_episode], dtype=np.float)
 
         for i, obj in tqdm(enumerate(experiment_object_list)):
             print("---------------------")
@@ -143,7 +172,18 @@ class RunExperiment():
                 print("starting runtime ", r+1)
                 # env = GridWorld(params=config.empty_room_params)
                 env = GridWorldRooms(params=config.n_room_params)
-
+                
+                # ********************
+                all_states = env.getAllStates()
+                all_actions = env.getAllActions()
+                dataset = np.zeros([len(all_states)*len(all_actions), 8])
+                j = 0 
+                for s in all_states:
+                        for a in all_actions:
+                            next_state, is_terminal, reward = env.fullTransitionFunction(s, a)
+                            dataset[j] = np.concatenate([s, self.one_hot_encoder(a, all_actions), next_state])
+                            j += 1
+                # ********************
                 # train, test = data_store(env)
                 reward_function = env.rewardFunction
                 goal = np.asarray(env.posToState((0, 8), state_type='coord'))
@@ -156,7 +196,7 @@ class RunExperiment():
 
                 # initializing the agent
                 agent = obj.agent_class({'action_list': np.asarray(env.getAllActions()),
-                                       'gamma': 0.99, 'epsilon': 0.1,
+                                       'gamma': 0.99, 'epsilon': 1.0,
                                        'max_stepsize': obj.vf_step_size,
                                        'model_stepsize': obj.model_step_size,
                                        'reward_function': reward_function,
@@ -170,7 +210,47 @@ class RunExperiment():
                                        'num_iteration': obj.num_iteration,
                                        'simulation_depth': obj.simulation_depth,
                                        'num_simulation': obj.num_simulation,
-                                       'vf': obj.vf_network,})
+                                       'vf': obj.vf_network, 'dataset':dataset})
+                
+                #**********************
+                # agent.loadModelFile("LearnedModel/HeteroscedasticLearnedModel/r0_stepsize0.0009765625_network64x32")
+                # print(agent._model['heter']['network'])
+                # import torch.nn as nn
+                # import torch.nn.functional as F
+                # for m in agent._model['heter']['network'].modules():
+                #     if isinstance(m, nn.Linear):
+                #         print(m.weight.data)    
+                #         print("*****************")   
+                # counter = 0
+                # for s1 in range(9):
+                #     for s2 in range(9):
+                #         s = np.array([s1, s2])
+                #         for a in env.getAllActions():
+                #             action_index = torch.tensor([agent.getActionIndex(a)], device=self.device).unsqueeze(0)
+                #             one_hot_action = agent.getActionOnehotTorch(action_index)
+                #             state = torch.from_numpy(s).unsqueeze(0)
+                #             predicted_next_state_var = agent._model['heter']['network'](state, one_hot_action)[1].float().detach()
+                #             predicted_next_state = agent._model['heter']['network'](state, one_hot_action)[0].float().detach()
+                #             predicted_next_state_var_trace = torch.sum(predicted_next_state_var, dim=1)
+                #             true_next_state = env.transitionFunction(s, a)
+                #             predicted_next_state_round = torch.clamp(predicted_next_state, 0, 8)
+                #             predicted_next_state_round = torch.round(predicted_next_state_round)
+
+                #             true_var = torch.sum((predicted_next_state - true_next_state) ** 2, dim=1)
+                #             var_err = torch.mean((true_var - predicted_next_state_var_trace)**2)
+                #             mu_err = torch.mean(true_var) 
+                #             if not np.array_equal(true_next_state, predicted_next_state_round[0]):
+                #                 counter+=1
+                #             print(s, a, true_next_state, predicted_next_state_round, np.array_equal(true_next_state, predicted_next_state_round[0]), true_var.item(), predicted_next_state_var_trace.item())
+                # print(counter)
+                # print("random input****")
+                # for i in range(100):
+                #     state = torch.FloatTensor(1, 2).uniform_(0, 20)
+                #     one_hot_action = torch.tensor([[1, 0, 0, 0]])
+                #     predicted_next_state_var = agent._model['heter']['network'](state, one_hot_action)[1].detach().trace()
+                #     print(state, predicted_next_state_var)
+                # exit(0)
+                #**********************
 
                 #initialize experiment
                 experiment = GridWorldExperiment(agent, env, self.device)
@@ -183,6 +263,8 @@ class RunExperiment():
                         print("starting episode ", e + 1)
                     experiment.runEpisode(max_step_each_episode)
                     self.num_steps_run_list[i, r, e] = experiment.num_steps
+                    # self.het_mu_error[i, r, e], self.het_var_error[i, r, e], self.het_error[i, r, e] = experiment.het_model_error(dataset)
+
                     # model_err = self.model_error(agent, env)
                     # self.num_steps_run_list[i, r, e] = model_err
                     # print(self.model_error(agent, env))
@@ -197,6 +279,7 @@ class RunExperiment():
                     #                                                                 env.start(), env.getAllActions())
                     #     self.consistency[i, r, e] = agent.action_consistency / experiment.num_steps
 
+                agent.saveModelFile("LearnedModel/HeteroscedasticLearnedModel/r"+str(r)+ "_stepsize"+str(obj.model_step_size)+"_network"+"16x4")
                 # vf_error = self.calculate_dqn_vf_error(agent, env)
                 # print('DQN VF ERROR:', vf_error)
                     # if e % 100 == 0:
@@ -222,8 +305,8 @@ class RunExperiment():
                 # agent.saveValueFunction("Results_EmptyRoom/DQNVF_16x8/dqn_vf_" + str(r) + ".p")
                     # if e == 999:
                     #     agent.saveModelFile("LearnedModel/" + "M64x32_r" + str(r) + "e" + str(e) + ".p")
-                    # if e % 499 == 0:
-                    #     agent.saveModelFile("M64x32_r1e" + str(e) + "s100_ensemble5.p")
+                    # if e % 10 == 0 :
+                    #     agent.saveModelFile("an/M32x16_r1e" + str(e) + ".p")
 
                 # *********
                 # model_type = list(agent.model.keys())[0]
@@ -243,13 +326,43 @@ class RunExperiment():
         with open("Results/" + result_file_name + '.p', 'wb') as f:
             result = {'num_steps': self.num_steps_run_list,
                       'experiment_objs': experiment_object_list,
-                      'detail': detail}
+                      'detail': detail,
+                      'het_error':self.het_error, 
+                      'mu_error':self.het_mu_error, 
+                      'var_error':self.het_var_error}
             pickle.dump(result, f)
+
             # np.save(f, self.num_steps_run_list)
         # with open('model_error_run.npy', 'wb') as f:
         #     np.save(f, self.model_error_list)
         #     np.save(f, self.model_error_samples)
+        
         self.show_num_steps_plot()
+        self.show_het_error()
+
+
+    def show_het_error (self):
+        writer = SummaryWriter()
+        mu_avg = np.mean(self.het_mu_error, axis=1)
+        var_avg = np.mean(self.het_var_error, axis=1)
+        het_avg = np.mean(self.het_error, axis=1)
+        
+        for i in range(mu_avg.shape[0]):
+            for j in range(mu_avg.shape[1]):
+                writer.add_scalar('MuLoss/step_size'+str(i), mu_avg[i, j], j)
+                writer.add_scalar('VarLoss/step_size'+str(i), var_avg[i, j], j)
+                writer.add_scalar('HetLoss/step_size'+str(i), het_avg[i, j], j)
+        writer.close()
+
+    def one_hot_encoder(self, action, action_list):
+        action_index = None
+        for i, a in enumerate(action_list):
+                if np.array_equal(a, action):
+                    action_index = i
+                    break
+        res = np.zeros([len(action_list)])
+        res[action_index] = 1
+        return res
 
     def calculate_dqn_vf_error(self, agent, env):
         states = env.getAllStates()

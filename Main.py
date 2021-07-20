@@ -13,7 +13,9 @@ import Utils as utils, Config as config
 
 from Experiments.ExperimentObject import ExperimentObject
 from Experiments.GridWorldExperiment import RunExperiment as GridWorld_RunExperiment
-from Environments.GridWorldRooms import GridWorldRooms
+from Experiments.CartpoleExperiment import RunExperiment as Cartpole_RunExperiment
+from Experiments.AcrobotExperiment import RunExperiment as Acrobot_RunExperiment
+
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.RealBaseDynaAgent import RealBaseDynaAgent
 from Agents.ImperfectDQNMCTSAgent import *
@@ -24,7 +26,6 @@ from Agents.ImperfectDQNMCTSAgent import *
 
 
 if __name__ == '__main__':
-
     # agent_class_list = [BaseDynaAgent]
     # agent_class_list = [DQNMCTSAgent_MCTSPolicy]
     # agent_class_list = [DQNMCTSAgent_InitialValue]
@@ -40,8 +41,9 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_InitialValue_offline]
     # agent_class_list = [DQNMCTSAgent_ReduceBreadth]
     # agent_class_list = [RealBaseDynaAgent]
-    # agent_class_list = [ImperfectMCTSAgent]
-    agent_class_list = [ImperfectMCTSAgentUncertainty]
+    agent_class_list = [ImperfectMCTSAgent]
+    # agent_class_list = [ImperfectMCTSAgentIdeas]
+    # agent_class_list = [ImperfectMCTSAgentUncertainty]
 
     # show_pre_trained_error_grid = [False, False],
     # show_values_grid = [False, False],
@@ -50,17 +52,17 @@ if __name__ == '__main__':
     # s_vf_list = [2 ** -5, 2 ** -7, 2 ** -9, 2 ** -11]
     s_vf_list = [2 ** -7]
 
-    # s_md_list = [2 ** -2, 2 ** -4, 2 ** -6, 2 ** -8, 2 ** -10, 2 ** -12, 2 ** -14, 2 ** -16]
+    # s_md_list = [2 ** -4, 2 ** -6, 2 ** -8, 2 ** -10, 2 ** -12, 2 ** -14, 2 ** -16]
     
-    s_md_list = [2 ** -6]
+    s_md_list = [0.1, 0.01, 0.001, 0.0001, 0.00001]
 
 
 
     # c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
     c_list = [2 ** 0.5]
 
-    num_iteration_list = [100]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [75]
+    num_iteration_list = [5]#[i for i in range(30, 40, 10)]
+    simulation_depth_list = [10]
     # simulation_depth_list = [5, 10, 75]
     # num_simulation_list = [10]
     num_simulation_list = [1]
@@ -70,17 +72,17 @@ if __name__ == '__main__':
     #               {'type': 'forward', 'num_networks': 4, 'layers_type': ['fc'], 'layers_features': [32]}
     #               ]
 
-    model_list = [{'type': 'ensemble', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 32], 'action_layer_num': 4}]
+    model_list = [{'type': 'heter', 'layers_type': ['fc'], 'layers_features': [6], 'action_layer_num': 2}]
     vf_list = [
-        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
+        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 32], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 16], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [16, 8], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [8, 8], 'action_layer_num': 3},
-        {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [4, 4], 'action_layer_num': 3}
+        # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [4, 4], 'action_layer_num': 3}
                ]
 
-    experiment = GridWorld_RunExperiment()
+    experiment = Cartpole_RunExperiment()
 
     experiment_object_list = []
     for agent_class in agent_class_list:
@@ -114,7 +116,8 @@ if __name__ == '__main__':
     # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="ddd", detail=detail)
     detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
-    experiment.run_experiment(experiment_object_list, result_file_name="ImperfectMCTSAgentUncertainty_Rollout_PretrainedModel_Ensemble5M64x32E998", detail=detail)
+    # experiment.run_experiment(experiment_object_list, result_file_name="RealBaseDynaAgent_M16x4_HetModelParameterStudy", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="test", detail=detail)
 
     # detail = "Env = Empty Room; _n = 20; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="MCTS_BestParameter", detail=detail)

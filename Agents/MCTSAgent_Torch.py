@@ -13,7 +13,7 @@ from Networks.RepresentationNN.StateRepresentation import StateRepresentation
 
 
 #Warning: for other environments check the true model
-is_gridWorld = True
+is_gridWorld = False
 class MCTSAgent_Torch(BaseAgent):
     name = "MCTSAgent_Torch"
 
@@ -59,12 +59,12 @@ class MCTSAgent_Torch(BaseAgent):
                         batch_counter=None,
                         training=False)
     
-    def start(self, observation):
-        
+    def start(self, observation, info=None):
         if self._sr['network'] is None:
             self.init_s_representation_network(observation)
         
         state = self.getStateRepresentation(observation)
+        
 
         if self.keep_tree and self.root is None:
             self.root = Node(None, state)
@@ -83,6 +83,7 @@ class MCTSAgent_Torch(BaseAgent):
         return action
 
     def step(self, reward, observation):
+
         state = self.getStateRepresentation(observation)
         if not self.keep_subtree:
             self.subtree_node = Node(None, state)
@@ -155,7 +156,7 @@ class MCTSAgent_Torch(BaseAgent):
     def expansion(self, node):
         for a in range(self.num_actions):
             action_index = torch.tensor([a]).unsqueeze(0)
-            next_state, is_terminal, reward, _ = self.model(node.get_state(),
+            next_state, is_terminal, reward = self.model(node.get_state(),
                                                               action_index)  # with the assumption of deterministic model
             # if np.array_equal(next_state, node.get_state()):
             #     continue
@@ -175,10 +176,11 @@ class MCTSAgent_Torch(BaseAgent):
             while not is_terminal and depth < self.rollout_depth:
                 action_index = torch.randint(0, self.num_actions, (1, 1))
                 # action_index = torch.randint(0, self.num_actions, (1, 1), device=self.device)
-                next_state, is_terminal, reward, _ = self.model(state, action_index)
+                next_state, is_terminal, reward = self.model(state, action_index)
                 single_return += reward
                 depth += 1
                 state = next_state
+
             sum_returns += single_return
         return sum_returns / self.num_rollouts
 
@@ -192,6 +194,7 @@ class MCTSAgent_Torch(BaseAgent):
             node = node.parent
 
     def true_model(self, state, action_index):
+        print("true model")
         transition = self.transition_dynamics[int(state[0]), int(state[1]), action_index]
         next_state, is_terminal, reward = transition[0:2], transition[2], transition[3]
         if self.is_model_imperfect:
@@ -207,9 +210,9 @@ class MCTSAgent_Torch(BaseAgent):
     def model(self, state, action_index):
         state_np = state.cpu().numpy()
         action_index = action_index.cpu().numpy()
-        next_state_np, is_terminal, reward = self.true_model(state_np, action_index)
-        next_state = torch.from_numpy(next_state_np).to(self.device)
-        return next_state, is_terminal, reward, 0
+        next_state_np, is_terminal, reward = self.true_model(state_np[0], action_index.item())
+        next_state = torch.from_numpy(next_state_np).unsqueeze(0).to(self.device)
+        return next_state, is_terminal, reward
 
     def getActionIndex(self, action):
         if is_gridWorld:

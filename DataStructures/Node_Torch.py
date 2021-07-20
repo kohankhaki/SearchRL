@@ -3,8 +3,9 @@ import torch
 
 
 class Node_Torch:
-    def __init__(self, parent, state, value=0, is_terminal=False, action_from_par=None, reward_from_par=0, uncertainty=0):
+    def __init__(self, parent, state, env_state=None, value=0, is_terminal=False, action_from_par=None, reward_from_par=0, uncertainty=0):
         self.state = state
+        self.env_state = env_state
         self.sum_values = value
         self.num_visits = 0
         self.childs_list = []
@@ -39,7 +40,9 @@ class Node_Torch:
         self.num_visits += 1
 
     def get_state(self):
-        return self.state.detach().clone()
+        if self.env_state is not None:
+            return self.env_state
+        return self.state
     
     def get_uncertainty(self):
         return self.uncertainty

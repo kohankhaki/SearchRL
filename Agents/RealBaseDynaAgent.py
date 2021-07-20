@@ -93,8 +93,7 @@ class RealBaseDynaAgent(BaseAgent):
 
         self.is_pretrained = False
 
-
-    def start(self, observation):
+    def start(self, observation, info=None):
         '''
         :param observation: numpy array -> (observation shape)
         :return: action : numpy array
@@ -118,9 +117,8 @@ class RealBaseDynaAgent(BaseAgent):
 
         return self.action_list[self.prev_action.item()]
 
-    def step(self, reward, observation):
+    def step(self, reward, observation, info=None):
         self.time_step += 1
-
 
         self.state = self.getStateRepresentation(observation)
 
@@ -571,7 +569,7 @@ class RealBaseDynaAgent(BaseAgent):
                 predicted_next_state_var_trace = torch.sum(predicted_next_state_var, dim=1)
                 predicted_next_state_mu = self._model['heter']['network'](state, one_hot_action)[0].float().detach()
                 return predicted_next_state_mu, predicted_next_state_var_trace
-                
+
         else:
             raise NotImplementedError("model not implemented")
 

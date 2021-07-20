@@ -94,6 +94,7 @@ class CartPoleEnv(gym.Env):
         self.state = None
 
         self.steps_beyond_done = None
+        
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -216,3 +217,9 @@ class CartPoleEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
+    def transition_dynamics(self, state, action):
+        cloned_env = CartPoleEnv()
+        cloned_env.state = state
+        next_state, reward, is_terminal, info = cloned_env.step(action)
+        return next_state, is_terminal, reward

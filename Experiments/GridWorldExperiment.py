@@ -268,8 +268,8 @@ class RunExperiment():
                     # model_err = self.model_error(agent, env)
                     # self.num_steps_run_list[i, r, e] = model_err
                     # print(self.model_error(agent, env))
-                    # if e == 0:
-                    #     self.test_model(env, agent, "rounded.txt")
+                    # if e == 1:
+                    #     self.test_model(env, agent, "heter.txt")
 
                         # self.test_model(env, agent, "LearnedModel/" + str(i) + "ImperfectMCTS_8x4_run=" + str(r) + ".txt")
 
@@ -303,10 +303,17 @@ class RunExperiment():
                     #     self.model_error_samples[i, r, e] = experiment.num_samples
 
                 # agent.saveValueFunction("Results_EmptyRoom/DQNVF_16x8/dqn_vf_" + str(r) + ".p")
+<<<<<<< HEAD
                     # if e == 999:
                     #     agent.saveModelFile("LearnedModel/" + "M64x32_r" + str(r) + "e" + str(e) + ".p")
                     # if e % 10 == 0 :
                     #     agent.saveModelFile("an/M32x16_r1e" + str(e) + ".p")
+=======
+                    # if e % 500 == 499:
+                    #     agent.saveModelFile("M16x8_r1e" + str(e) + "s100_heter.p")
+                    # if e % 499 == 0:
+                    #     agent.saveModelFile("M64x32_r1e" + str(e) + "s100_ensemble5.p")
+>>>>>>> 348d5149764a6b88526ebcdf83d3beb601717437
 
                 # *********
                 # model_type = list(agent.model.keys())[0]
@@ -318,12 +325,15 @@ class RunExperiment():
                 #                 all_actions=env.getAllActions(),
                 #                 obstacles_pos=env.get_obstacles_pos())
                 # *********
-
+                    # if e % 100 == 0:
+                    #     plt.plot(agent.model_loss)
+                    #     plt.savefig("model_error" + str(e))
+                    #     plt.show()
         # self.show_model_error_plot()
         # self.show_agent_model_error_plot()
         # with open('sim_num_steps_run_list.npy', 'wb') as f:
         #     np.save(f, self.simulation_steps_run_list)
-        with open("Results/" + result_file_name + '.p', 'wb') as f:
+        with open("Results_GivenModelPerfectUncertainty/" + result_file_name + '.p', 'wb') as f:
             result = {'num_steps': self.num_steps_run_list,
                       'experiment_objs': experiment_object_list,
                       'detail': detail,
@@ -571,11 +581,12 @@ class RunExperiment():
                 true_next_state = torch.tensor([env.transitionFunction(s, a)], device=self.device)
                 pred_next_state, model_error = agent.modelRollout(state, action_index)
                 # print(true_next_state, pred_next_state, model_error, torch.dist(pred_next_state, true_next_state))
-                pred_next_state_np_round = np.rint(pred_next_state.cpu().numpy())
+                pred_next_state_np = pred_next_state.cpu().numpy()
+                pred_next_state_np_round = np.rint(pred_next_state_np)
                 true_next_state_np = true_next_state.cpu().numpy()
                 is_equal = np.array_equal(pred_next_state_np_round, true_next_state_np)
                 with open(file_name, "a") as file:
-                    file.write(str(s)+ str(a) + str(true_next_state_np) + str(pred_next_state_np_round) + str(is_equal) + "\n")
+                    file.write(str(true_next_state_np) + str(pred_next_state_np) + str(pred_next_state_np_round) + str(is_equal) + " " + str(model_error) + "\n")
 
 
 

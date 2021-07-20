@@ -19,6 +19,8 @@ from Experiments.AcrobotExperiment import RunExperiment as Acrobot_RunExperiment
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.RealBaseDynaAgent import RealBaseDynaAgent
 from Agents.ImperfectDQNMCTSAgent import *
+from Agents.MCTSAgent_Torch import *
+
 
 # from Agents.MCTSAgent import MCTSAgent
 # from Agents.DQNMCTSAgent import *
@@ -41,16 +43,17 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_InitialValue_offline]
     # agent_class_list = [DQNMCTSAgent_ReduceBreadth]
     # agent_class_list = [RealBaseDynaAgent]
-    agent_class_list = [ImperfectMCTSAgent]
+    # agent_class_list = [ImperfectMCTSAgent]
     # agent_class_list = [ImperfectMCTSAgentIdeas]
     # agent_class_list = [ImperfectMCTSAgentUncertainty]
+
 
     # show_pre_trained_error_grid = [False, False],
     # show_values_grid = [False, False],
     # show_model_error_grid = [False, False]
 
     # s_vf_list = [2 ** -5, 2 ** -7, 2 ** -9, 2 ** -11]
-    s_vf_list = [2 ** -7]
+    s_vf_list = [2 ** -12]
 
     # s_md_list = [2 ** -4, 2 ** -6, 2 ** -8, 2 ** -10, 2 ** -12, 2 ** -14, 2 ** -16]
     
@@ -118,6 +121,7 @@ if __name__ == '__main__':
     detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="RealBaseDynaAgent_M16x4_HetModelParameterStudy", detail=detail)
     experiment.run_experiment(experiment_object_list, result_file_name="test", detail=detail)
+    # experiment.run_experiment(experiment_object_list, result_file_name="ImperfectMCTSAgentIdeas_S7P25_SelectionDivLinear2m4_2", detail=detail)
 
     # detail = "Env = Empty Room; _n = 20; max_episode = 100"
     # experiment.run_experiment(experiment_object_list, result_file_name="MCTS_BestParameter", detail=detail)

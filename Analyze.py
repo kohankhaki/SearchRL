@@ -184,28 +184,148 @@ def plot_alternate_agents_single_episode(steps_run_list, label_name1, label_name
 
 fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
-file_name = 'Results/MCTS_ParameterStudy_keep_subtree=F_keep_tree=F.p'
+
+
+
+
+
+file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25.p'
 with open(file_name, "rb") as f:
     res = pickle.load(f)
 steps_run_list = res['num_steps']
 
-print (steps_run_list.shape)
-odd_ind = list(range(1, 8, 2))
-even_ind = list(range(0, 8, 2))
-mcts1 = steps_run_list[even_ind, :, :]
-mcts5 = steps_run_list[odd_ind, :, :]
+label_name = 'Imperfect MCTS'
 
-print(mcts1.shape)
-print(even_ind)
-
-label_name = 'MCTS 1'
-
-plot_simple_agent_single_episode(mcts5, label_name, axs, is_imperfect = True)
+plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
 
 
 
 
-axs.title.set_text("Imperfect MCTS M8x4")
+file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionDivLinear2m2_2.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name = 'Selection Linear 1'
+plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionDivLinear2m3_2.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name = 'Selection Linear 2'
+plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionDivLinear2m4_2.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name = 'Selection Linear 3'
+plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionDivLinear2p2_2.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name = 'Selection Linear 4'
+plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionDivRoot_2.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name = 'Selection Root 1'
+plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionDivRoot2m2.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name = 'Selection Root 2'
+plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+
+file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionDivRoot2m2_2.p'
+with open(file_name, "rb") as f:
+    res = pickle.load(f)
+steps_run_list = res['num_steps']
+label_name = 'Selection Root 3'
+plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+# file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionDivRoot2p2_2.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name = 'Selection Root 2'
+# plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+
+# file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionLinear2p0.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name = 'Selection_Linear2p0'
+# plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+
+
+# file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionLinear2p1.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name = 'Selection_Linear2p1'
+# plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+
+# file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionRoot2p0.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name = 'Selection_Root2p0'
+# plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+
+
+
+
+# file_name = 'Results_GivenModelPerfectUncertainty/ImperfectMCTSAgentIdeas_S7P25_SelectionRoot2p1.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+# label_name = 'Selection_Root2p1'
+# plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+
+
+# file_name = 'Results/ImperfectMCTSAgentIdeas_S3P25_UseUncertaintySelection_Root2p1.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+
+# label_name = 'Root 3'
+
+# plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+
+# file_name = 'Results/ImperfectMCTSAgentIdeas_S3P25_UseUncertaintySelection_Root2pm1.p'
+# with open(file_name, "rb") as f:
+#     res = pickle.load(f)
+# steps_run_list = res['num_steps']
+
+# label_name = 'Root 1'
+
+# plot_simple_agent_single_episode(steps_run_list, label_name, axs, is_imperfect = True)
+
+
+# axs.title.set_text("Imperfect MCTS Using Given Uncertainty")
 axs.legend()
-fig.savefig("Results/Plots/mcts1")
+fig.savefig("Imperfect_MCTS_Ideas_Selection_Div_Coefficient")
 fig.show()

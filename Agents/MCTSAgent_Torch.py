@@ -156,7 +156,7 @@ class MCTSAgent_Torch(BaseAgent):
     def expansion(self, node):
         for a in range(self.num_actions):
             action_index = torch.tensor([a]).unsqueeze(0)
-            next_state, is_terminal, reward = self.model(node.get_state(),
+            next_state, is_terminal, reward, _ = self.model(node.get_state(),
                                                               action_index)  # with the assumption of deterministic model
             # if np.array_equal(next_state, node.get_state()):
             #     continue
@@ -176,7 +176,7 @@ class MCTSAgent_Torch(BaseAgent):
             while not is_terminal and depth < self.rollout_depth:
                 action_index = torch.randint(0, self.num_actions, (1, 1))
                 # action_index = torch.randint(0, self.num_actions, (1, 1), device=self.device)
-                next_state, is_terminal, reward = self.model(state, action_index)
+                next_state, is_terminal, reward, _ = self.model(state, action_index)
                 single_return += reward
                 depth += 1
                 state = next_state
@@ -212,7 +212,7 @@ class MCTSAgent_Torch(BaseAgent):
         action_index = action_index.cpu().numpy()
         next_state_np, is_terminal, reward = self.true_model(state_np[0], action_index.item())
         next_state = torch.from_numpy(next_state_np).unsqueeze(0).to(self.device)
-        return next_state, is_terminal, reward
+        return next_state, is_terminal, reward, 0
 
     def getActionIndex(self, action):
         if is_gridWorld:

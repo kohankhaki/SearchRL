@@ -45,7 +45,7 @@ if __name__ == '__main__':
     # agent_class_list = [RealBaseDynaAgent]
     # agent_class_list = [ImperfectMCTSAgent]
     # agent_class_list = [ImperfectMCTSAgentIdeas]
-    # agent_class_list = [ImperfectMCTSAgentUncertainty]
+    agent_class_list = [ImperfectMCTSAgentUncertainty]
 
 
     # show_pre_trained_error_grid = [False, False],
@@ -57,8 +57,8 @@ if __name__ == '__main__':
 
     # s_md_list = [2 ** -4, 2 ** -6, 2 ** -8, 2 ** -10, 2 ** -12, 2 ** -14, 2 ** -16]
     
-    s_md_list = [0.1, 0.01, 0.001, 0.0001, 0.00001]
-
+    # s_md_list = [0.1, 0.01, 0.001, 0.0001, 0.00001]
+    s_md_list = [0.1]
 
 
     # c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     #               {'type': 'forward', 'num_networks': 4, 'layers_type': ['fc'], 'layers_features': [32]}
     #               ]
 
-    model_list = [{'type': 'heter', 'layers_type': ['fc'], 'layers_features': [6], 'action_layer_num': 2}]
+    model_list = [{'type': 'heter', 'layers_type': ['fc'], 'layers_features': [2], 'action_layer_num': 2}]
     vf_list = [
         {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [64, 64], 'action_layer_num': 3},
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [32, 32], 'action_layer_num': 3},

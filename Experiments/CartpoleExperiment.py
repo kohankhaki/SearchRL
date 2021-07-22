@@ -105,7 +105,6 @@ class RunExperiment():
             for r in range(num_runs):
                 print("starting runtime ", r+1)
                 env = CartPoleEnv()
-                cloned_env = CartPoleEnv
                 # initializing the agent
                 agent = obj.agent_class({'action_list': np.arange(env.action_space.n),
                                        'gamma': 0.99, 'epsilon': 0.01,
@@ -135,7 +134,7 @@ class RunExperiment():
                     self.num_steps_run_list[i, r, e] = experiment.num_steps
 
                 # agent.saveModelFile("LearnedModel/HeteroscedasticLearnedModel/r"+str(r)+ "_stepsize"+str(obj.model_step_size)+"_network"+"16x4")
-                agent.saveModelFile("LearnedModel/HeteroscedasticLearnedModel/TestCartpole"+"_stepsize"+str(obj.model_step_size)+"_network"+"6")
+                # agent.saveModelFile("LearnedModel/HeteroscedasticLearnedModel/TestCartpole"+"_stepsize"+str(obj.model_step_size)+"_network"+"6")
 
                 #**********************
                 # agent.loadModelFile("LearnedModel/HeteroscedasticLearnedModel/r0_stepsize0.0009765625_network64x32")
@@ -178,10 +177,21 @@ class RunExperiment():
                       'mu_error':self.het_mu_error, 
                       'var_error':self.het_var_error}
             pickle.dump(result, f)
+        # show_num_steps_plot(self.num_steps_run_list, ["Uncertain_MCTS"])
 
 
 
+def show_num_steps_plot (num_steps, agent_names):
+        num_steps_avg = np.mean(num_steps, axis=1)
+        writer = SummaryWriter()
+        counter = 0
 
+        for agent in range(num_steps_avg.shape[0]):
+            name = agent_names[agent] 
+            for i in range(num_steps_avg.shape[1]):
+                writer.add_scalar(name, num_steps_avg[agent, i], counter)
+                counter += 1
+        writer.close()
 
 
 

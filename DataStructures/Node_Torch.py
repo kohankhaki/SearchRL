@@ -3,7 +3,7 @@ import torch
 
 
 class Node_Torch:
-    def __init__(self, parent, state, env_state=None, value=0, is_terminal=False, action_from_par=None, reward_from_par=0, uncertainty=0):
+    def __init__(self, parent, state, env_state=None, value=0, is_terminal=False, action_from_par=None, reward_from_par=0, uncertainty=0.0):
         self.state = state
         self.env_state = env_state
         self.sum_values = value

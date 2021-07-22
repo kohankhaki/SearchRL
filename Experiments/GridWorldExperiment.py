@@ -303,17 +303,11 @@ class RunExperiment():
                     #     self.model_error_samples[i, r, e] = experiment.num_samples
 
                 # agent.saveValueFunction("Results_EmptyRoom/DQNVF_16x8/dqn_vf_" + str(r) + ".p")
-<<<<<<< HEAD
                     # if e == 999:
                     #     agent.saveModelFile("LearnedModel/" + "M64x32_r" + str(r) + "e" + str(e) + ".p")
                     # if e % 10 == 0 :
                     #     agent.saveModelFile("an/M32x16_r1e" + str(e) + ".p")
-=======
-                    # if e % 500 == 499:
-                    #     agent.saveModelFile("M16x8_r1e" + str(e) + "s100_heter.p")
-                    # if e % 499 == 0:
-                    #     agent.saveModelFile("M64x32_r1e" + str(e) + "s100_ensemble5.p")
->>>>>>> 348d5149764a6b88526ebcdf83d3beb601717437
+
 
                 # *********
                 # model_type = list(agent.model.keys())[0]

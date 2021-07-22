@@ -450,7 +450,10 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
 
 class ImperfectMCTSAgentUncertainty(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgent"
-    idea = 1
+    rollout_idea = None # None, 1
+    selection_idea = None # None, 1
+    assert rollout_idea in [None, 1] and selection_idea in [None, 1] # add the idea to assertion list too
+
     def __init__(self, params={}):
         self.model_loss = []
         self.time_step = 0
@@ -627,7 +630,7 @@ class ImperfectMCTSAgentUncertainty(RealBaseDynaAgent, MCTSAgent):
         return next_state, is_terminal, reward, true_uncertainty
 
     def rollout(self, node):
-        if ImperfectMCTSAgentUncertainty.idea == 1:
+        if ImperfectMCTSAgentUncertainty.rollout_idea == 1:
             sum_returns = 0
             for _ in range(self.num_rollouts):
                 depth = 0
@@ -665,7 +668,7 @@ class ImperfectMCTSAgentUncertainty(RealBaseDynaAgent, MCTSAgent):
             return MCTSAgent.rollout(self, node)
 
     def selection(self):
-        if ImperfectMCTSAgentUncertainty.idea == 2:
+        if ImperfectMCTSAgentUncertainty.selection_idea == 1:
             selected_node = self.subtree_node
             while len(selected_node.get_childs()) > 0:
                 max_uct_value = -np.inf
@@ -718,67 +721,6 @@ class ImperfectMCTSAgentUncertainty(RealBaseDynaAgent, MCTSAgent):
         RealBaseDynaAgent.initModel(self, state, action)
         if self.is_model_pretrained:
             RealBaseDynaAgent.loadModelFile(self, "LearnedModel/HeteroscedasticLearnedModel/TestCartpole_stepsize0.001_network2")
-
-
-class ImperfectMCTSAgentUncertainty2(ImperfectMCTSAgent):
-    name = "ImperfectMCTSAgentUncertainty"
-
-    def __init__(self, params={}):
-        ImperfectMCTSAgent.__init__(self, params)
-
-    def start(self, observation):
-        return ImperfectMCTSAgent.start(self, observation)
-
-    def step(self, reward, observation):
-        return ImperfectMCTSAgent.step(self, reward, observation)
-
-    def end(self, reward):
-        ImperfectMCTSAgent.end(self, reward)
-
-    def expansion(self, node):
-        expected_children = []
-        max_uncertainty = -np.inf
-        max_child_uncertainty_index = -1
-        for a in range(self.num_actions):
-            action_index = torch.tensor([a]).unsqueeze(0)
-            next_state, is_terminal, reward, uncertainty = self.model(node.get_state(),
-                                                              action_index)  # with the assumption of deterministic model
-            value = self.get_initial_value(next_state)
-            child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
-                         value=value, uncertainty=uncertainty)
-            expected_children.append(child)
-            if uncertainty > max_uncertainty:
-                max_child_uncertainty_index = a
-                max_uncertainty = uncertainty
-        if random.random() < 0.0:
-            expected_children.pop(max_child_uncertainty_index)
-        for i in range(len(expected_children)):
-            node.add_child(expected_children[i])
-
-
-    def rollout(self, node):
-        sum_returns = 0
-        for i in range(self.num_rollouts):
-            depth = 0
-            single_return = 0
-            is_terminal = node.is_terminal
-            state = node.get_state().cpu().numpy()
-            while not is_terminal and depth < self.rollout_depth:
-                uncertainty_list = []
-                action_index_list = []
-                sum = 0.0
-                for a_index in range(self.num_actions):
-                    next_state, is_terminal, reward, uncertainry = self.model_np(state, a_index)
-                    uncertainty_list.append(1 - uncertainry)
-                    sum += 1 - uncertainry
-                uncertainty_list /= sum
-                action_index = np.random.choice(4, 1, p = uncertainty_list)[0]
-                next_state, is_terminal, reward, uncertainry = self.model_np(state, action_index)
-                single_return += reward
-                depth += 1
-                state = next_state
-            sum_returns += single_return
-        return sum_returns / self.num_rollouts
 
 class ImperfectMCTSAgentIdeas(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgentIdeas"

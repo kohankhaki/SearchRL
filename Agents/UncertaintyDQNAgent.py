@@ -177,7 +177,7 @@ class HetDQN(BaseAgent):
         with torch.no_grad():
             v = []
             if self.policy_values == 'q':
-                mu = self._vf['q']['network'](state)
+                mu = self._vf['q']['network'][0](state)
                 # var = self._vf['q']['network'](state)[1]
                 # sample = torch.normal(mu, var)
                 ind = mu.max(1)[1].view(1, 1)
@@ -215,12 +215,13 @@ class HetDQN(BaseAgent):
 
         nn_state_shape = state.shape
         self._vf['q']['network'] = []
-        for i in range(self._vf['q']['num_ensmbles']):
+        self.optimizer = []
+        for i in range(self._vf['q']['num_ensembles']):
             self._vf['q']['network'].append(StateActionVFNN(nn_state_shape, self.num_actions,
                                                    self._vf['q']['layers_type'],
                                                    self._vf['q']['layers_features'],
                                                    self._vf['q']['action_layer_num']).to(self.device))
-            self.optimizer = optim.Adam(self._vf['q']['network'][i].parameters(), lr=self._vf['q']['step_size'])
+            self.optimizer.append(optim.Adam(self._vf['q']['network'][i].parameters(), lr=self._vf['q']['step_size']))
 
 
         self.het_vf = StateActionVFNN_het(nn_state_shape, self.num_actions,
@@ -270,17 +271,15 @@ class HetDQN(BaseAgent):
         #BEGIN DQN
         next_state_values = torch.zeros(self._vf['q']['batch_size'], device=self.device)
         next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).max(1)[0].detach()
-
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
         for i in range(self._vf['q']['num_ensembles']):
             state_action_values = self._vf['q']['network'][i](prev_state_batch).gather(1, prev_action_batch)
 
-        
-        loss = torch.mean( (state_action_values - expected_state_action_values.unsqueeze(1)) ** 2             
-                        )
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+            loss = torch.mean( (state_action_values - expected_state_action_values.unsqueeze(1)) ** 2             
+                            )
+            self.optimizer[i].zero_grad()
+            loss.backward()
+            self.optimizer[i].step()
         #END DQN
 
         #BEGIN SARSA
@@ -391,8 +390,8 @@ class HetDQN(BaseAgent):
                 vf['layers_type'],
                 vf['layers_features'],
                 vf['action_layer_num']).to(self.device)
-
-        self._target_vf['network'].load_state_dict(vf['network'].state_dict())  # copy weights and stuff
+        random_ensemble = np.random.randint(0, vf['num_ensembles'])
+        self._target_vf['network'].load_state_dict(vf['network'][random_ensemble].state_dict())  # copy weights and stuff
         if type != 's':
             self._target_vf['action_layer_num'] = vf['action_layer_num']
         self._target_vf['layers_num'] = len(vf['layers_type'])
@@ -518,3 +517,15 @@ class HetDQN(BaseAgent):
         self.rnd_optimizer.zero_grad()
         loss.backward()
         self.rnd_optimizer.step()
+
+    def getEnsembleError(self, state_batch, action_batch):
+        state_action_values = torch.zeros([self._vf['q']['num_ensembles'], len(state_batch)])
+        with torch.no_grad():
+            for i in range(self._vf['q']['num_ensembles']):
+                value = self._vf['q']['network'][i](state_batch).gather(1, action_batch)     
+                state_action_values[i] = value[:, 0]
+        return torch.mean(state_action_values, axis=0), torch.std(state_action_values, axis=0)
+    
+    def getStateActionValueUncertainty(self, state, action):
+        value, uncertainty = self.getEnsembleError(state, action) 
+        return value, uncertainty

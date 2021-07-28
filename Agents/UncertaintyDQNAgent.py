@@ -526,6 +526,14 @@ class HetDQN(BaseAgent):
                 state_action_values[i] = value[:, 0]
         return torch.mean(state_action_values, axis=0), torch.std(state_action_values, axis=0)
     
-    def getStateActionValueUncertainty(self, state, action):
-        value, uncertainty = self.getEnsembleError(state, action) 
+    def getStateActionValueUncertainty(self, state_batch):
+        values = torch.zeros([self.num_actions, len(state_batch)])
+        uncertainties = torch.zeros([self.num_actions, len(state_batch)])
+        for i, a in enumerate(self.action_list):
+            action_batch = torch.tensor([a]*len(state_batch)).unsqueeze(1)
+            value, uncertainty = self.getEnsembleError(state_batch, action_batch)
+            values[i] = value
+            uncertainties[i] = uncertainty
+        value = torch.mean(values, axis=0)
+        uncertainty = torch.mean(uncertainties, axis=0) 
         return value, uncertainty

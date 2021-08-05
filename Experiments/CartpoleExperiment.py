@@ -82,6 +82,7 @@ class RunExperiment():
         print(self.device)
 
     def run_experiment(self, experiment_object_list, result_file_name, detail=None):
+        writer = SummaryWriter()
         num_runs = config.num_runs
         num_episode = config.num_episode
         max_step_each_episode = config.max_step_each_episode
@@ -107,7 +108,8 @@ class RunExperiment():
                 env = CartPoleEnv()
                 # initializing the agent
                 agent = obj.agent_class({'action_list': np.arange(env.action_space.n),
-                                       'gamma': 0.99, 'epsilon': 0.01,
+                                       'gamma': 0.99, 'epsilon_max': 0.9, 'epsilon_min': 0.05, 'epsilon_decay': 200,
+                                       'model_corruption':obj.model_corruption,
                                        'max_stepsize': obj.vf_step_size,
                                        'model_stepsize': obj.model_step_size,
                                        'reward_function': None,
@@ -131,8 +133,19 @@ class RunExperiment():
                     if debug:
                         print("starting episode ", e + 1)
                     experiment.runEpisode(max_step_each_episode)
-                    self.num_steps_run_list[i, r, e] = experiment.num_steps
+                    
+                    # transition_batch = agent.getTransitionFromBuffer(agent.transition_buffer_size)
+                    # batch = utils.transition(*zip(*transition_batch))
+                    # prev_state_batch = torch.cat(batch.prev_state)
+                    # prev_action_batch = torch.cat(batch.prev_action)
+                    # rnd_error = agent.getRndError(prev_state_batch, prev_action_batch)
+                    # ensemble_error = agent.getEnsembleError(prev_state_batch, prev_action_batch)
+                    # v, u = agent.getStateValueUncertainty(prev_state_batch, type="rnd")
+                    # print(torch.mean(rnd_error), torch.mean(ensemble_error), len(prev_state_batch))
+                    # agent.checkHetValues(transition_batch)
 
+                    self.num_steps_run_list[i, r, e] = experiment.num_steps
+                    # writer.add_scalar("num_steps"+str(obj.vf_step_size), experiment.num_steps, e)
                 # agent.saveModelFile("LearnedModel/HeteroscedasticLearnedModel/r"+str(r)+ "_stepsize"+str(obj.model_step_size)+"_network"+"16x4")
                 # agent.saveModelFile("LearnedModel/HeteroscedasticLearnedModel/TestCartpole"+"_stepsize"+str(obj.model_step_size)+"_network"+"6")
 
@@ -169,7 +182,7 @@ class RunExperiment():
                 # exit(0)
                 #**********************
 
-        with open("Results/" + result_file_name + '.p', 'wb') as f:
+        with open("CartpoleResults/" + result_file_name + '.p', 'wb') as f:
             result = {'num_steps': self.num_steps_run_list,
                       'experiment_objs': experiment_object_list,
                       'detail': detail,
@@ -178,29 +191,126 @@ class RunExperiment():
                       'var_error':self.het_var_error}
             pickle.dump(result, f)
         # show_num_steps_plot(self.num_steps_run_list, ["Uncertain_MCTS"])
+        save_num_steps_plot(self.num_steps_run_list, experiment_object_list)
+
+
+def show_num_steps_plot(num_steps, agent_names):
+    num_steps_avg = np.mean(num_steps, axis=1)
+    writer = SummaryWriter()#(comment="TuneModelwithDQN_LR{2**-4to-16}_BATCH{16}")
+    counter = 0
+
+    for agent in range(num_steps_avg.shape[0]):
+        name = agent_names[agent] 
+        for i in range(num_steps_avg.shape[1]):
+            writer.add_scalar(name, num_steps_avg[agent, i], counter)
+            counter += 1
+    writer.close()
+
+def save_num_steps_plot(num_steps, experiment_objs):
+    names = experiment_obj_to_name(experiment_objs)
+    fig, axs = plt.subplots(1, 1, constrained_layout=False)
+
+    for i, name in enumerate(names):
+        num_steps_avg = np.mean(num_steps[i], axis=0)
+        num_steps_std = np.mean(num_steps[i], axis=0)
+        x = range(len(num_steps_avg))
+        if len(num_steps_avg) == 1:
+            color = generate_hex_color()
+            axs.axhline(num_steps_avg, label=name, color=color)
+            # axs.axhspan(num_steps_avg - 0.1 * num_steps_std,
+            #             num_steps_avg + 0.1 * num_steps_std, 
+            #             alpha=0.4, color=color)
+
+        else:
+            axs.plot(x, num_steps_avg, label=name)
+            axs.fill_between(x,
+                            num_steps_avg - 0.1 * num_steps_std, 
+                            num_steps_avg + 0.1 * num_steps_std, 
+                            alpha=.4, edgecolor='none')
+        axs.legend()
+        fig.savefig("test.png")
+
+def experiment_obj_to_name(experiment_objs):
+    def all_elements_equal(List):
+        result = all(element == List[0] for element in List)
+        if (result):
+            return True
+        else:
+            return False
+
+    names = [""] * len(experiment_objs)
+    print(names)
+    agent_class = [i.agent_class for i in experiment_objs]
+    if not all_elements_equal(agent_class):
+        for i in range(len(experiment_objs)):
+            names[i] += "agent:" + agent_class[i].name
+
+    pre_trained = [i.pre_trained for i in experiment_objs]
+    if not all_elements_equal(pre_trained):
+        for i in range(len(experiment_objs)):
+            names[i] += "pre_trained:" + str(pre_trained[i])
+
+    model = [i.model for i in experiment_objs]
+    if not all_elements_equal(model):
+        for i in range(len(experiment_objs)):
+            names[i] += "model:" + str(model[i])
+
+    model_step_size = [i.model_step_size for i in experiment_objs]
+    if not all_elements_equal(model_step_size):
+        for i in range(len(experiment_objs)):
+            names[i] += "m_stepsize:" + str(model_step_size[i])
+    
+    #dqn params
+    vf_network = [i.vf_network for i in experiment_objs]
+    if not all_elements_equal(vf_network):
+        for i in range(len(experiment_objs)):
+            names[i] += "vf:" + str(vf_network[i])
+
+    vf_step_size = [i.vf_step_size for i in experiment_objs]
+    if not all_elements_equal(vf_step_size):
+        for i in range(len(experiment_objs)):
+            names[i] += "vf_stepsize:" + str(vf_step_size[i])
+
+    #mcts params
+    c = [i.c for i in experiment_objs]
+    if not all_elements_equal(c):
+        for i in range(len(experiment_objs)):
+            names[i] += "c:" + str(c[i])
+    
+    num_iteration = [i.num_iteration for i in experiment_objs]
+    if not all_elements_equal(num_iteration):
+        for i in range(len(experiment_objs)):
+            names[i] += "N_I:" + str(num_iteration[i])
+    
+    simulation_depth = [i.simulation_depth for i in experiment_objs]
+    if not all_elements_equal(simulation_depth):
+        for i in range(len(experiment_objs)):
+            names[i] += "S_D:" + str(simulation_depth[i])
+    
+    num_simulation = [i.num_simulation for i in experiment_objs]
+    if not all_elements_equal(num_simulation):
+        for i in range(len(experiment_objs)):
+            names[i] += "N_S:" + str(num_simulation[i])
+    
+    model_corruption = [i.model_corruption for i in experiment_objs]
+    if not all_elements_equal(model_corruption):
+        for i in range(len(experiment_objs)):
+            names[i] += "M_C:" + str(model_corruption[i])
+    print(names)
+    return names
 
 
 
-def show_num_steps_plot (num_steps, agent_names):
-        num_steps_avg = np.mean(num_steps, axis=1)
-        writer = SummaryWriter()
-        counter = 0
-
-        for agent in range(num_steps_avg.shape[0]):
-            name = agent_names[agent] 
-            for i in range(num_steps_avg.shape[1]):
-                writer.add_scalar(name, num_steps_avg[agent, i], counter)
-                counter += 1
-        writer.close()
 
 
 
 
 
-
-
-
-
-
-
-
+def generate_hex_color():
+    import random
+    r = random.randint(0, 255)
+    g = random.randint(0, 255)
+    b = random.randint(0, 255)
+    c = (r, g, b)
+    hex_c = '#%02x%02x%02x' % c
+    return hex_c

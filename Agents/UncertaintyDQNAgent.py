@@ -31,7 +31,10 @@ class HetDQN(BaseAgent):
         self.actions_shape = self.action_list.shape[1:]
 
         self.gamma = params['gamma']
-        self.epsilon = params['epsilon']
+        self.epsilon_max = params['epsilon_max']
+        self.epsilon_min = params['epsilon_min']
+        self.epsilon_decay = params['epsilon_decay']
+        self.epsilon = self.epsilon_max
 
         self.transition_buffer = []
         self.transition_buffer_size = 4096
@@ -87,6 +90,7 @@ class HetDQN(BaseAgent):
         :return: action : numpy array
         '''
         # print(self.num_terminal_steps, ' - ', self.num_steps)
+        print(self.epsilon)
         if self._sr['network'] is None:
             self.init_s_representation_network(observation)
 
@@ -101,6 +105,10 @@ class HetDQN(BaseAgent):
 
         self.setTargetValueFunction(self._vf['q'], 'q')
         self.prev_action = self.policy(self.prev_state)
+        # if self.epsilon > self.epsilon_min:
+        #     self.epsilon_max *=  self.epsilon_decay
+        #     self.epsilon = self.epsilon_max
+
         return self.action_list[self.prev_action.item()]
 
     def step(self, reward, observation):
@@ -169,7 +177,8 @@ class HetDQN(BaseAgent):
         :param state: torch -> (1, state_shape)
         :return: action: index torch
         '''
-
+        self.num_steps += 1
+        self.epsilon = self.epsilon_min + (self.epsilon_max - self.epsilon_min) * np.exp(-1 * self.num_steps / self.epsilon_decay)
         if random.random() < self.epsilon:
             ind = torch.tensor([[random.randrange(self.num_actions)]],
                                device=self.device, dtype=torch.long)
@@ -177,7 +186,7 @@ class HetDQN(BaseAgent):
         with torch.no_grad():
             v = []
             if self.policy_values == 'q':
-                mu = self._vf['q']['network'][0](state)
+                mu, var = self._vf['q']['network'][0](state)
                 # var = self._vf['q']['network'](state)[1]
                 # sample = torch.normal(mu, var)
                 ind = mu.max(1)[1].view(1, 1)
@@ -217,18 +226,18 @@ class HetDQN(BaseAgent):
         self._vf['q']['network'] = []
         self.optimizer = []
         for i in range(self._vf['q']['num_ensembles']):
-            self._vf['q']['network'].append(StateActionVFNN(nn_state_shape, self.num_actions,
+            self._vf['q']['network'].append(StateActionVFNN_het(nn_state_shape, self.num_actions,
                                                    self._vf['q']['layers_type'],
                                                    self._vf['q']['layers_features'],
                                                    self._vf['q']['action_layer_num']).to(self.device))
             self.optimizer.append(optim.Adam(self._vf['q']['network'][i].parameters(), lr=self._vf['q']['step_size']))
 
 
-        self.het_vf = StateActionVFNN_het(nn_state_shape, self.num_actions,
-                                                   self._vf['q']['layers_type'],
-                                                   self._vf['q']['layers_features'],
-                                                   self._vf['q']['action_layer_num']).to(self.device)
-        self.het_optimizer = optim.Adam(self.het_vf.parameters(), lr=self._vf['q']['step_size'])
+        # self.het_vf = StateActionVFNN_het(nn_state_shape, self.num_actions,
+        #                                            self._vf['q']['layers_type'],
+        #                                            self._vf['q']['layers_features'],
+        #                                            self._vf['q']['action_layer_num']).to(self.device)
+        # self.het_optimizer = optim.Adam(self.het_vf.parameters(), lr=self._vf['q']['step_size'])
 
     def init_s_value_function_network(self, state):
         '''
@@ -270,13 +279,16 @@ class HetDQN(BaseAgent):
 
         #BEGIN DQN
         next_state_values = torch.zeros(self._vf['q']['batch_size'], device=self.device)
-        next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).max(1)[0].detach()
+        next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states)[0].max(1)[0].detach()
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
         for i in range(self._vf['q']['num_ensembles']):
-            state_action_values = self._vf['q']['network'][i](prev_state_batch).gather(1, prev_action_batch)
-
-            loss = torch.mean( (state_action_values - expected_state_action_values.unsqueeze(1)) ** 2             
-                            )
+            # state_action_values = self._vf['q']['network'][i](prev_state_batch).gather(1, prev_action_batch)
+            state_action_values = self._vf['q']['network'][i](prev_state_batch)[0].gather(1, prev_action_batch)
+            state_action_values_var = self._vf['q']['network'][i](prev_state_batch)[1].gather(1, prev_action_batch)
+            loss = torch.mean( (state_action_values - expected_state_action_values.unsqueeze(1)) ** 2
+                            / (2 * state_action_values_var) 
+                            + 0.5 * torch.log(state_action_values_var)  
+                        )
             self.optimizer[i].zero_grad()
             loss.backward()
             self.optimizer[i].step()
@@ -290,15 +302,15 @@ class HetDQN(BaseAgent):
         # next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).gather(1, non_final_next_actions).detach()[:, 0]
         #END SARSA
 
-        state_action_values = self.het_vf(prev_state_batch)[0].gather(1, prev_action_batch)
-        state_action_values_var = self.het_vf(prev_state_batch)[1].gather(1, prev_action_batch)
-        loss = torch.mean( (state_action_values - expected_state_action_values.unsqueeze(1)) ** 2
-                            / (2 * state_action_values_var) 
-                            + 0.5 * torch.log(state_action_values_var)  
-                        )
-        self.het_optimizer.zero_grad()
-        loss.backward()
-        self.het_optimizer.step()
+        # state_action_values = self.het_vf(prev_state_batch)[0].gather(1, prev_action_batch)
+        # state_action_values_var = self.het_vf(prev_state_batch)[1].gather(1, prev_action_batch)
+        # loss = torch.mean( (state_action_values - expected_state_action_values.unsqueeze(1)) ** 2
+        #                     / (2 * state_action_values_var) 
+        #                     + 0.5 * torch.log(state_action_values_var)  
+        #                 )
+        # self.het_optimizer.zero_grad()
+        # loss.backward()
+        # self.het_optimizer.step()
         self._target_vf['counter'] += 1
 
     def getStateActionValue(self, state, action=None, vf_type='q', gradient=False):
@@ -378,12 +390,12 @@ class HetDQN(BaseAgent):
         if self._sr['batch_counter'] == self._sr['batch_size'] and self._sr['training']:
             self.updateNetworkWeights(self._sr['network'], self._sr['step_size'] / self._sr['batch_size'])
             self._sr['batch_counter'] = 0
-
+ 
     # ***
     def setTargetValueFunction(self, vf, type):
         if self._target_vf['network'] is None:
             nn_state_shape = self.prev_state.shape
-            self._target_vf['network'] = StateActionVFNN(
+            self._target_vf['network'] = StateActionVFNN_het(
                 nn_state_shape,
                 self.num_actions,
                 vf['layers_type'],
@@ -452,15 +464,15 @@ class HetDQN(BaseAgent):
         return random.sample(self.transition_buffer, k=n)
 
     def updateTransitionBuffer(self, transition):
-        self.num_steps += 1
-        if transition.is_terminal:
-            self.num_terminal_steps += 1
+        # self.num_steps += 1
+        # if transition.is_terminal:
+        #     self.num_terminal_steps += 1
         self.transition_buffer.append(transition)
         if len(self.transition_buffer) > self.transition_buffer_size:
             self.removeFromTransitionBuffer()
 
     def removeFromTransitionBuffer(self):
-        self.num_steps -= 1
+        # self.num_steps -= 1
         transition = self.transition_buffer.pop(0)
         if transition.is_terminal:
             self.num_terminal_steps -= 1

@@ -23,7 +23,7 @@ class RealBaseDynaAgent(BaseAgent):
     def __init__(self, params={}):
         self.model_loss = []
         self.time_step = 0
-        # self.writer = SummaryWriter()
+        self.writer = SummaryWriter()
         self.writer_iterations = 0
         self.prev_state = None
         self.state = None
@@ -455,14 +455,20 @@ class RealBaseDynaAgent(BaseAgent):
             loss_element2 = torch.log(torch.prod(predicted_next_state_var, dim=1))
             loss = torch.mean(loss_element1 + loss_element2)
 
-            # self.model_optimizer[0].zero_grad()
-            # self.model_optimizer[1].zero_grad()
+
             self.model_optimizer.zero_grad()
             loss.backward()
             self.model_loss.append(loss)
             self.model_optimizer.step()
-            # self.model_optimizer[0].step()
-            # self.model_optimizer[1].step()
+          
+            true_var = torch.sum((predicted_next_state_mu - non_final_next_states_batch) ** 2, dim=1)
+            predicted_next_state_var_trace = torch.sum(predicted_next_state_var, dim=1)
+            var_err = torch.mean((true_var - predicted_next_state_var_trace)**2)
+            mu_err = torch.mean(true_var) 
+            self.writer.add_scalar('VarLoss/step_size'+str(self._model['heter']['step_size']), var_err, self.writer_iterations)
+            self.writer.add_scalar('MuLoss/step_size'+str(self._model['heter']['step_size']), mu_err, self.writer_iterations)
+            self.writer.add_scalar('HetLoss/step_size'+str(self._model['heter']['step_size']), loss, self.writer_iterations)
+            self.writer_iterations += 1
         
         else:
             raise NotImplementedError("train model not implemented")

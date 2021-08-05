@@ -4,6 +4,7 @@ class ExperimentObject:
         self.pre_trained = params['pre_trained']
         self.model = params['model']
         self.model_step_size = params['model_step_size']
+        self.model_corruption = params['model_corruption']
 
         #dqn params
         self.vf_network = params['vf']

@@ -273,7 +273,9 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
     def __init__(self, params={}):
         self.model_loss = []
         self.time_step = 0
-        # self.writer = SummaryWriter()
+        self.writer = SummaryWriter()
+        self.writer_iterations = 0
+
 
         self.prev_state = None
         self.state = None
@@ -283,7 +285,7 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         self.actions_shape = self.action_list.shape[1:]
 
         self.gamma = params['gamma']
-        self.epsilon = params['epsilon']
+        self.epsilon = params['epsilon_min']
 
         self.transition_buffer = []
         self.transition_buffer_size = 2**12
@@ -320,7 +322,7 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
         self.num_steps = 0
         self.num_terminal_steps = 0
 
-        self.is_model_pretrained = True
+        self.is_model_pretrained = False
 
         # MCTS parameters
         self.C = params['c']
@@ -449,10 +451,12 @@ class ImperfectMCTSAgent(RealBaseDynaAgent, MCTSAgent):
             RealBaseDynaAgent.loadModelFile(self, "LearnedModel/HeteroscedasticLearnedModel/TestCartpole_stepsize0.001_network2")
 
 class ImperfectMCTSAgentUncertainty(RealBaseDynaAgent, MCTSAgent):
-    name = "ImperfectMCTSAgent"
+    name = "ImperfectMCTSAgentUncertainty"
     rollout_idea = None # None, 1
     selection_idea = None # None, 1
-    assert rollout_idea in [None, 1] and selection_idea in [None, 1] # add the idea to assertion list too
+    backpropagate_idea = None # None, 1
+
+    assert rollout_idea in [None, 1] and selection_idea in [None, 1] and backpropagate_idea in [None, 1]# add the idea to assertion list too
 
     def __init__(self, params={}):
         self.model_loss = []
@@ -668,11 +672,11 @@ class ImperfectMCTSAgentUncertainty(RealBaseDynaAgent, MCTSAgent):
             return MCTSAgent.rollout(self, node)
 
     def selection(self):
-        if ImperfectMCTSAgentUncertainty.selection_idea == 1:
+        if ImperfectMCTSAgentUncertainty.backpropagate_idea == 1:
             selected_node = self.subtree_node
             while len(selected_node.get_childs()) > 0:
                 max_uct_value = -np.inf
-                child_values = list(map(lambda n: n.get_avg_value()+n.reward_from_par, selected_node.get_childs()))
+                child_values = list(map(lambda n: n.get_weighted_avg_value()+n.reward_from_par, selected_node.get_childs()))
                 child_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, selected_node.get_childs())))
                 max_child_value = max(child_values)
                 min_child_value = min(child_values)
@@ -697,6 +701,35 @@ class ImperfectMCTSAgentUncertainty(RealBaseDynaAgent, MCTSAgent):
                         max_uct_value = uct_value
                         selected_node = child
             return selected_node
+        elif ImperfectMCTSAgentUncertainty.selection_idea == 1:
+            selected_node = self.subtree_node
+            while len(selected_node.get_childs()) > 0:
+                max_uct_value = -np.inf
+                child_values = list(map(lambda n: n.get_avg_value()+n.reward_from_par, selected_node.get_childs()))
+                child_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, selected_node.get_childs())))
+                max_child_value = max(child_values)
+                min_child_value = min(child_values)
+                softmax_denominator = np.sum(np.exp(child_uncertainties))
+                for ind, child in enumerate(selected_node.get_childs()):
+                    if child.num_visits == 0:
+                        selected_node = child
+                        break
+                    else:
+                        child_value = child_values[ind]
+                        child_uncertainty = child_uncertainties[ind]
+                        if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
+                            child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
+
+                        child_uncertainty = np.exp(child_uncertainty) / softmax_denominator
+
+                        uct_value = child_value + \
+                                    self.C * ((child.parent.num_visits / child.num_visits) ** 0.5) - child_uncertainty
+                        # print("old:", uct_value - child_uncertainty, "  new:",uct_value, "  unc:", child_uncertainty)
+
+                    if max_uct_value < uct_value:
+                        max_uct_value = uct_value
+                        selected_node = child
+            return selected_node
         else:
             return MCTSAgent.selection(self)
     
@@ -712,6 +745,27 @@ class ImperfectMCTSAgentUncertainty(RealBaseDynaAgent, MCTSAgent):
                         value=value, uncertainty=uncertainty.item())
             node.add_child(child)
 
+    def backpropagate(self, node, value):
+        if ImperfectMCTSAgentUncertainty.backpropagate_idea == 1:
+            while node is not None:
+                node.add_to_values(value)
+                node.inc_visits()
+                
+                siblings = node.parent.get_childs()
+                siblings_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, siblings)))
+                softmax_denominator = np.sum(np.exp(-siblings_uncertainties))
+                value *= self.gamma 
+                value += node.reward_from_par
+                value *= np.exp(-node.uncertainty) / softmax_denominator
+                node = node.parent
+        else:
+            while node is not None:
+                node.add_to_values(value)
+                node.inc_visits()
+                value *= self.gamma
+                value += node.reward_from_par
+                node = node.parent
+
     def trainModel(self):
         if self.is_model_pretrained:
             return
@@ -720,7 +774,303 @@ class ImperfectMCTSAgentUncertainty(RealBaseDynaAgent, MCTSAgent):
     def initModel(self, state, action): 
         RealBaseDynaAgent.initModel(self, state, action)
         if self.is_model_pretrained:
-            RealBaseDynaAgent.loadModelFile(self, "LearnedModel/HeteroscedasticLearnedModel/TestCartpole_stepsize0.001_network2")
+            RealBaseDynaAgent.loadModelFile(self, "LearnedModel/HeteroscedasticLearnedModel/TestCartpole_stepsize0.01_network4")
+
+class ImperfectMCTSAgentUncertaintyHandDesignedModel(RealBaseDynaAgent, MCTSAgent):
+    name = "ImperfectMCTSAgentUncertaintyHandDesignedModel"
+    rollout_idea = 1 # None, 1
+    selection_idea = 1 # None, 1
+    backpropagate_idea = None # None, 1
+
+    assert rollout_idea in [None, 1] and selection_idea in [None, 1] and backpropagate_idea in [None, 1]# add the idea to assertion list too
+
+    def __init__(self, params={}):
+        self.model_corruption = params['model_corruption']
+        self.model_loss = []
+        self.time_step = 0
+
+        self.prev_state = None
+        self.state = None
+
+        self.action_list = params['action_list']
+        self.num_actions = self.action_list.shape[0]
+        self.actions_shape = self.action_list.shape[1:]
+
+        self.gamma = params['gamma']
+        self.epsilon = params['epsilon_min']
+
+        self.transition_buffer = []
+        self.transition_buffer_size = 2**12
+
+
+        self.num_ensembles = 5
+
+
+        self._sr = dict(network=None,
+                        layers_type=[],
+                        layers_features=[],
+                        batch_size=None,
+                        step_size=None,
+                        batch_counter=None,
+                        training=False)
+
+        self.device = params['device']
+        self.true_model = params['true_fw_model']
+
+        self.num_steps = 0
+        self.num_terminal_steps = 0
+
+        self.is_model_pretrained = True
+
+        # MCTS parameters
+        self.C = params['c']
+        self.num_iterations = params['num_iteration']
+        self.num_rollouts = params['num_simulation']
+        self.rollout_depth = params['simulation_depth']
+        self.keep_subtree = False
+        self.keep_tree = False
+        self.root = None    
+
+
+    def start(self, observation):
+        '''
+        :param observation: numpy array -> (observation shape)
+        :return: action : numpy array
+        '''
+        if self._sr['network'] is None:
+            self.init_s_representation_network(observation)
+
+        self.prev_state = self.getStateRepresentation(observation)
+
+        temp_prev_action = torch.tensor([[0]], device=self.device, dtype=torch.long)
+
+        if self.keep_tree and self.root is None:
+            self.root = Node(None, self.prev_state)
+            self.expansion(self.root)
+
+        if self.keep_tree:
+            self.subtree_node = self.root
+        else:
+            self.subtree_node = Node(None, self.prev_state)
+            self.expansion(self.subtree_node)
+
+        for i in range(self.num_iterations):
+            self.MCTS_iteration()
+        action, sub_tree = self.choose_action()
+        self.subtree_node = sub_tree
+
+        self.prev_action = torch.tensor([[action]], device=self.device)
+        return self.action_list[action]
+
+    def step(self, reward, observation):
+        self.time_step += 1
+
+        self.state = self.getStateRepresentation(observation)
+        if not self.keep_subtree:
+            self.subtree_node = Node(None, self.state)
+            self.expansion(self.subtree_node)
+
+        for i in range(self.num_iterations):
+            self.MCTS_iteration()
+        action, sub_tree = self.choose_action()
+        self.subtree_node = sub_tree
+
+        self.action = torch.tensor([[action]], device=self.device, dtype=torch.long)
+        
+        reward = torch.tensor([reward], device=self.device)
+
+        # store the new transition in buffer
+        self.updateTransitionBuffer(utils.transition(self.prev_state,
+                                                     self.prev_action,
+                                                     reward,
+                                                     self.state,
+                                                     self.action, False, self.time_step, 0))
+
+        self.updateStateRepresentation()
+
+        self.prev_state = self.getStateRepresentation(observation)
+        self.prev_action = self.action  # another option:** we can again call self.policy function **
+
+        return self.action_list[action]
+
+
+    def end(self, reward):
+        reward = torch.tensor([reward], device=self.device)
+
+        self.updateTransitionBuffer(utils.transition(self.prev_state,
+                                                     self.prev_action,
+                                                     reward,
+                                                     None,
+                                                     None, True, self.time_step, 0))
+              
+        self.updateStateRepresentation()
+
+    def model(self, state, action_index):
+        with torch.no_grad():
+            true_next_state, is_terminal, reward = self.true_model(state[0], action_index.item())
+            true_next_state = torch.from_numpy(true_next_state).to(self.device)
+            if self.model_corruption == 0:
+                corrupted_next_state = true_next_state.unsqueeze(0)
+            else:
+                corrupted_next_state = torch.normal(mean=true_next_state, std=self.model_corruption).unsqueeze(0)
+
+            #if want not rounded next_state, replace next_state with _  
+            true_uncertainty = torch.mean(torch.pow(true_next_state - corrupted_next_state[0], 2))
+
+            # uncertainty_err = (true_uncertainty - uncertainty)**2
+            # self.writer.add_scalar('Uncertainty_err', uncertainty_err, self.writer_iterations)
+            # self.writer_iterations += 1
+
+            if is_cartpole:
+                x, x_dot, theta, theta_dot = corrupted_next_state[0]
+                theta_threshold_radians = 12 * 2 * math.pi / 360
+                x_threshold = 2.4
+                is_terminal = bool(
+                    x < -x_threshold
+                    or x > x_threshold
+                    or theta < -theta_threshold_radians
+                    or theta > theta_threshold_radians
+                )
+                if not is_terminal:
+                    reward = 1.0
+                else:
+                    reward = 0.0
+        return corrupted_next_state, is_terminal, reward, true_uncertainty
+
+    def rollout(self, node):
+        if ImperfectMCTSAgentUncertainty.rollout_idea == 1:
+            sum_returns = 0
+            for _ in range(self.num_rollouts):
+                depth = 0
+                is_terminal = node.is_terminal
+                state = node.get_state()
+
+                gamma_prod = 1
+                single_return = 0
+                sum_uncertainty = 0
+                return_list = []
+                weight_list = []
+                while not is_terminal and depth < self.rollout_depth:
+                    action_index = torch.randint(0, self.num_actions, (1, 1))
+                    next_state, is_terminal, reward, uncertainty = self.model(state, action_index)
+                    uncertainty = uncertainty.item()
+                    single_return += reward * gamma_prod
+                    gamma_prod *= self.gamma
+                    sum_uncertainty += uncertainty
+
+                    return_list.append(single_return)
+                    weight_list.append(sum_uncertainty)
+                    depth += 1
+                    state = next_state
+                return_list = np.asarray(return_list)
+                weight_list = np.asarray(weight_list)
+
+                weights = np.exp(-weight_list) / np.sum(np.exp(-weight_list))
+                if len(weights) > 0:
+                    uncertain_return = np.average(return_list, weights=weights)
+                else: # the starting node is a terminal state
+                    uncertain_return = 0
+                sum_returns += uncertain_return
+            return sum_returns / self.num_rollouts
+        else:
+            return MCTSAgent.rollout(self, node)
+
+    def selection(self):
+        if ImperfectMCTSAgentUncertainty.backpropagate_idea == 1:
+            selected_node = self.subtree_node
+            while len(selected_node.get_childs()) > 0:
+                max_uct_value = -np.inf
+                child_values = list(map(lambda n: n.get_weighted_avg_value()+n.reward_from_par, selected_node.get_childs()))
+                child_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, selected_node.get_childs())))
+                max_child_value = max(child_values)
+                min_child_value = min(child_values)
+                softmax_denominator = np.sum(np.exp(child_uncertainties))
+                for ind, child in enumerate(selected_node.get_childs()):
+                    if child.num_visits == 0:
+                        selected_node = child
+                        break
+                    else:
+                        child_value = child_values[ind]
+                        child_uncertainty = child_uncertainties[ind]
+                        if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
+                            child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
+
+                        child_uncertainty = np.exp(child_uncertainty) / softmax_denominator
+
+                        uct_value = child_value + \
+                                    self.C * ((child.parent.num_visits / child.num_visits) ** 0.5) - child_uncertainty
+                        # print("old:", uct_value - child_uncertainty, "  new:",uct_value, "  unc:", child_uncertainty)
+
+                    if max_uct_value < uct_value:
+                        max_uct_value = uct_value
+                        selected_node = child
+            return selected_node
+        
+        elif ImperfectMCTSAgentUncertainty.selection_idea == 1:
+            selected_node = self.subtree_node
+            while len(selected_node.get_childs()) > 0:
+                max_uct_value = -np.inf
+                child_values = list(map(lambda n: n.get_avg_value()+n.reward_from_par, selected_node.get_childs()))
+                child_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, selected_node.get_childs())))
+                max_child_value = max(child_values)
+                min_child_value = min(child_values)
+                softmax_denominator = np.sum(np.exp(child_uncertainties))
+                for ind, child in enumerate(selected_node.get_childs()):
+                    if child.num_visits == 0:
+                        selected_node = child
+                        break
+                    else:
+                        child_value = child_values[ind]
+                        child_uncertainty = child_uncertainties[ind]
+                        if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
+                            child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
+
+                        child_uncertainty = np.exp(child_uncertainty) / softmax_denominator
+
+                        uct_value = child_value + \
+                                    self.C * ((child.parent.num_visits / child.num_visits) ** 0.5) - child_uncertainty
+                        # print("old:", uct_value - child_uncertainty, "  new:",uct_value, "  unc:", child_uncertainty)
+
+                    if max_uct_value < uct_value:
+                        max_uct_value = uct_value
+                        selected_node = child
+            return selected_node
+        else:
+            return MCTSAgent.selection(self)
+    
+    def expansion(self, node):
+        for a in range(self.num_actions):
+            action_index = torch.tensor([a]).unsqueeze(0)
+            next_state, is_terminal, reward, uncertainty = self.model(node.get_state(),
+                                                            action_index)  # with the assumption of deterministic model
+            # if np.array_equal(next_state, node.get_state()):
+            #     continue
+            value = self.get_initial_value(next_state)
+            child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
+                        value=value, uncertainty=uncertainty.item())
+            node.add_child(child)
+
+    def backpropagate(self, node, value):
+        if ImperfectMCTSAgentUncertainty.backpropagate_idea == 1:
+            while node is not None:
+                node.add_to_values(value)
+                node.inc_visits()
+                
+                siblings = node.parent.get_childs()
+                siblings_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, siblings)))
+                softmax_denominator = np.sum(np.exp(-siblings_uncertainties))
+                value *= self.gamma 
+                value += node.reward_from_par
+                value *= np.exp(-node.uncertainty) / softmax_denominator
+                node = node.parent
+        else:
+            while node is not None:
+                node.add_to_values(value)
+                node.inc_visits()
+                value *= self.gamma
+                value += node.reward_from_par
+                node = node.parent
+
 
 class ImperfectMCTSAgentIdeas(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgentIdeas"

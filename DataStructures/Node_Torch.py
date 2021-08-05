@@ -36,6 +36,20 @@ class Node_Torch:
             avg_value = self.sum_values
         return avg_value
 
+    def get_weighted_avg_value(self):
+        if self.is_terminal:
+            return 0.0
+
+        if self.num_visits > 1:
+            children_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, self.childs_list)))
+            softmax_denominator = np.sum(np.exp(-children_uncertainties))
+            weights = np.exp(-children_uncertainties) / softmax_denominator
+            children_visit = np.asarray(list(map(lambda n: n.num_visits, self.childs_list)))
+            avg_value = self.sum_values / np.dot(weights, children_visit)
+        else:
+            avg_value = self.sum_values
+        return avg_value
+
     def inc_visits(self):
         self.num_visits += 1
 

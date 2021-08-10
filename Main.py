@@ -15,6 +15,7 @@ from Experiments.ExperimentObject import ExperimentObject
 from Experiments.GridWorldExperiment import RunExperiment as GridWorld_RunExperiment
 from Experiments.CartpoleExperiment import RunExperiment as Cartpole_RunExperiment
 from Experiments.AcrobotExperiment import RunExperiment as Acrobot_RunExperiment
+from Experiments.TwoWayGridExperiment import RunExperiment as TwoWayGrid_RunExperiment
 
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.RealBaseDynaAgent import RealBaseDynaAgent
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_ReduceBreadth]
     # agent_class_list = [RealBaseDynaAgent]
     # agent_class_list = [ImperfectMCTSAgent]
-    agent_class_list = [ImperfectMCTSAgentUncertaintyHandDesignedModel]
+    agent_class_list = [ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld]
     # agent_class_list = [ImperfectMCTSAgentIdeas]
     # agent_class_list = [ImperfectMCTSAgentUncertainty]
     # agent_class_list = [HetDQN]
@@ -61,16 +62,16 @@ if __name__ == '__main__':
     
     # s_md_list = [0.1, 0.01, 0.001, 0.0001, 0.00001]
     s_md_list = [0.1]
-    model_corruption_list = [0, 0.01, 0.03, 0.05, 0.08, 0.1]
+    model_corruption_list = [0]
 
     # c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
     c_list = [2 ** 0.5]
     
-    num_iteration_list = [5]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [10]
+    num_iteration_list = [30]#[i for i in range(30, 40, 10)]
+    simulation_depth_list = [50]
     # simulation_depth_list = [5, 10, 75]
     # num_simulation_list = [10]
-    num_simulation_list = [1]
+    num_simulation_list = [5]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
     #               {'type': 'forward', 'num_networks': 2, 'layers_type': ['fc'], 'layers_features': [64]},
@@ -88,7 +89,7 @@ if __name__ == '__main__':
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [4, 4], 'action_layer_num': 3}
                ]
 
-    experiment = Cartpole_RunExperiment()
+    experiment = TwoWayGrid_RunExperiment()
 
     experiment_object_list = []
     for agent_class in agent_class_list:

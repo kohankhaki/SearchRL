@@ -1,22 +1,18 @@
-from Agents.RealBaseDynaAgent import RealBaseDynaAgent
+import math
+import random
+
 import numpy as np
 import torch
-import math 
-import random
-import gc
-import Utils as utils
-from torch.utils.tensorboard import SummaryWriter
 from ete3 import Tree, TreeStyle, TextFace, add_face_to_node
+from torch.utils.tensorboard import SummaryWriter
 
-from Agents.BaseAgent import BaseAgent
-from Agents.RealBaseDynaAgent import RealBaseDynaAgent
+import Utils as utils
 from Agents.MCTSAgent_Torch import MCTSAgent_Torch as MCTSAgent
+from Agents.RealBaseDynaAgent import RealBaseDynaAgent
 from DataStructures.Node_Torch import Node_Torch as Node
 
-from profilehooks import timecall, profile, coverage
-
 is_gridWorld = False
-is_cartpole = True
+is_cartpole = False
 class ImperfectMCTSAgent_gridworld(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgent"
 
@@ -776,7 +772,7 @@ class ImperfectMCTSAgentUncertainty(RealBaseDynaAgent, MCTSAgent):
         if self.is_model_pretrained:
             RealBaseDynaAgent.loadModelFile(self, "LearnedModel/HeteroscedasticLearnedModel/TestCartpole_stepsize0.01_network4")
 
-class ImperfectMCTSAgentUncertaintyHandDesignedModel(RealBaseDynaAgent, MCTSAgent):
+class ImperfectMCTSAgentUncertaintyHandDesignedModel_cartpole(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgentUncertaintyHandDesignedModel"
     rollout_idea = 1 # None, 1
     selection_idea = 1 # None, 1
@@ -892,7 +888,6 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel(RealBaseDynaAgent, MCTSAgen
         self.prev_action = self.action  # another option:** we can again call self.policy function **
 
         return self.action_list[action]
-
 
     def end(self, reward):
         reward = torch.tensor([reward], device=self.device)
@@ -1070,6 +1065,361 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel(RealBaseDynaAgent, MCTSAgen
                 value *= self.gamma
                 value += node.reward_from_par
                 node = node.parent
+
+
+class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent, MCTSAgent):
+    name = "ImperfectMCTSAgentUncertaintyHandDesignedModel"
+    rollout_idea = None # None, 1
+    selection_idea = None  # None, 1
+    backpropagate_idea = None  # None, 1
+
+    assert rollout_idea in [None, 1] and selection_idea in [None, 1] and backpropagate_idea in [None,
+                                                                                                1]  # add the idea to assertion list too
+
+    def __init__(self, params={}):
+        self.model_corruption = params['model_corruption']
+        self.model_loss = []
+        self.time_step = 0
+
+        self.prev_state = None
+        self.state = None
+
+        self.action_list = params['action_list']
+        self.num_actions = self.action_list.shape[0]
+        self.actions_shape = self.action_list.shape[1:]
+
+        self.gamma = params['gamma']
+        self.epsilon = params['epsilon_min']
+
+        self.transition_buffer = []
+        self.transition_buffer_size = 2 ** 12
+
+        self.num_ensembles = 5
+
+        self._sr = dict(network=None,
+                        layers_type=[],
+                        layers_features=[],
+                        batch_size=None,
+                        step_size=None,
+                        batch_counter=None,
+                        training=False)
+
+        self.device = params['device']
+        self.true_model = params['true_fw_model']
+        self.corrupt_model = params['corrupted_fw_model']
+
+        self.num_steps = 0
+        self.num_terminal_steps = 0
+
+        self.is_model_pretrained = True
+
+        # MCTS parameters
+        self.C = params['c']
+        self.num_iterations = params['num_iteration']
+        self.num_rollouts = params['num_simulation']
+        self.rollout_depth = params['simulation_depth']
+        self.keep_subtree = False
+        self.keep_tree = False
+        self.root = None
+
+    def start(self, observation, info=None):
+        '''
+        :param observation: numpy array -> (observation shape)
+        :return: action : numpy array
+        '''
+        if self._sr['network'] is None:
+            self.init_s_representation_network(observation)
+
+        self.prev_state = self.getStateRepresentation(observation)
+
+        temp_prev_action = torch.tensor([[0]], device=self.device, dtype=torch.long)
+
+        if self.keep_tree and self.root is None:
+            self.root = Node(None, self.prev_state)
+            self.expansion(self.root)
+
+        if self.keep_tree:
+            self.subtree_node = self.root
+        else:
+            self.subtree_node = Node(None, self.prev_state)
+            self.expansion(self.subtree_node)
+
+        for i in range(self.num_iterations):
+            self.MCTS_iteration()
+
+        action, sub_tree = self.choose_action()
+        self.subtree_node = sub_tree
+
+        self.prev_action = torch.tensor([[action]], device=self.device)
+
+        return action
+
+    def step(self, reward, observation, info=None):
+        self.time_step += 1
+        self.state = self.getStateRepresentation(observation)
+        if not self.keep_subtree:
+            self.subtree_node = Node(None, self.state)
+            self.expansion(self.subtree_node)
+
+        for i in range(self.num_iterations):
+            self.MCTS_iteration()
+        action, sub_tree = self.choose_action()
+        self.subtree_node = sub_tree
+        self.action = torch.tensor([[action]], device=self.device, dtype=torch.long)
+
+        reward = torch.tensor([reward], device=self.device)
+
+        # store the new transition in buffer
+        self.updateTransitionBuffer(utils.transition(self.prev_state,
+                                                     self.prev_action,
+                                                     reward,
+                                                     self.state,
+                                                     self.action, False, self.time_step, 0))
+
+        self.updateStateRepresentation()
+
+        self.prev_state = self.getStateRepresentation(observation)
+        self.prev_action = self.action  # another option:** we can again call self.policy function **
+        return action
+
+    def end(self, reward):
+        reward = torch.tensor([reward], device=self.device)
+
+        self.updateTransitionBuffer(utils.transition(self.prev_state,
+                                                     self.prev_action,
+                                                     reward,
+                                                     None,
+                                                     None, True, self.time_step, 0))
+
+        self.updateStateRepresentation()
+
+    def model(self, state, action):
+        with torch.no_grad():
+            true_next_state, is_terminal, reward = self.true_model(state[0], action[0])
+            true_next_state = torch.from_numpy(true_next_state).to(self.device)
+            corrupted_next_state, _, _ = self.corrupt_model(state[0], action[0])
+            corrupted_next_state = torch.from_numpy(corrupted_next_state).unsqueeze(0)
+
+            # if want not rounded next_state, replace next_state with _
+            true_uncertainty = torch.mean(torch.pow(true_next_state - corrupted_next_state[0], 2).float())
+            # uncertainty_err = (true_uncertainty - uncertainty)**2
+            # self.writer.add_scalar('Uncertainty_err', uncertainty_err, self.writer_iterations)
+            # self.writer_iterations += 1
+
+        return corrupted_next_state, is_terminal, reward, true_uncertainty
+
+    def rollout(self, node):
+        if ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld.rollout_idea == 1:
+            sum_returns = 0
+            for _ in range(self.num_rollouts):
+                depth = 0
+                is_terminal = node.is_terminal
+                state = node.get_state()
+
+                gamma_prod = 1
+                single_return = 0
+                sum_uncertainty = 0
+                return_list = []
+                weight_list = []
+                while not is_terminal and depth < self.rollout_depth:
+                    action_index = torch.randint(0, self.num_actions, (1, 1))
+                    action = torch.tensor(self.action_list[action_index]).unsqueeze(0)
+                    next_state, is_terminal, reward, uncertainty = self.model(state, action)
+                    uncertainty = uncertainty.item()
+                    single_return += reward * gamma_prod
+                    gamma_prod *= self.gamma
+                    sum_uncertainty += uncertainty
+
+                    return_list.append(single_return)
+                    weight_list.append(sum_uncertainty)
+                    depth += 1
+                    state = next_state
+                return_list = np.asarray(return_list)
+                weight_list = np.asarray(weight_list)
+
+                weights = np.exp(weight_list) / np.sum(np.exp(weight_list))
+                # print(return_list)
+                # print(weight_list)
+                # print(weights)
+                # print(np.average(return_list, weights=weights), np.average(return_list))
+                if len(weights) > 0:
+                    uncertain_return = np.average(return_list, weights=weights)
+                else:  # the starting node is a terminal state
+                    uncertain_return = 0
+                sum_returns += uncertain_return
+            return sum_returns / self.num_rollouts
+        else:
+            sum_returns = 0
+            for i in range(self.num_rollouts):
+                depth = 0
+                single_return = 0
+                is_terminal = node.is_terminal
+                state = node.get_state()
+                while not is_terminal and depth < self.rollout_depth:
+                    action_index = torch.randint(0, self.num_actions, (1, 1))
+                    action = torch.tensor(self.action_list[action_index]).unsqueeze(0)
+                    next_state, is_terminal, reward, _ = self.model(state, action)
+                    single_return += reward
+                    depth += 1
+                    state = next_state
+
+                sum_returns += single_return
+            return sum_returns / self.num_rollouts
+
+    def selection(self):
+        if ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld.backpropagate_idea == 1:
+            selected_node = self.subtree_node
+            while len(selected_node.get_childs()) > 0:
+                max_uct_value = -np.inf
+                child_values = list(
+                    map(lambda n: n.get_weighted_avg_value() + n.reward_from_par, selected_node.get_childs()))
+                child_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, selected_node.get_childs())))
+                max_child_value = max(child_values)
+                min_child_value = min(child_values)
+                softmax_denominator = np.sum(np.exp(child_uncertainties))
+                for ind, child in enumerate(selected_node.get_childs()):
+                    if child.num_visits == 0:
+                        selected_node = child
+                        break
+                    else:
+                        child_value = child_values[ind]
+                        child_uncertainty = child_uncertainties[ind]
+                        if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
+                            child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
+
+                        child_uncertainty = np.exp(child_uncertainty) / softmax_denominator
+
+                        uct_value = child_value + \
+                                    self.C * ((child.parent.num_visits / child.num_visits) ** 0.5) - child_uncertainty
+                        # print("old:", uct_value - child_uncertainty, "  new:",uct_value, "  unc:", child_uncertainty)
+
+                    if max_uct_value < uct_value:
+                        max_uct_value = uct_value
+                        selected_node = child
+            return selected_node
+
+        elif ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld.selection_idea == 1:
+            selected_node = self.subtree_node
+            while len(selected_node.get_childs()) > 0:
+                max_uct_value = -np.inf
+                child_values = list(map(lambda n: n.get_avg_value() + n.reward_from_par, selected_node.get_childs()))
+                max_child_value = max(child_values)
+                min_child_value = min(child_values)
+
+                child_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, selected_node.get_childs())))
+                softmax_denominator = np.sum(np.exp(child_uncertainties))
+                softmax_uncertainties = np.exp(child_uncertainties)/softmax_denominator
+
+                for ind, child in enumerate(selected_node.get_childs()):
+                    if child.num_visits == 0:
+                        selected_node = child
+                        break
+                    else:
+
+                        child_value = child_values[ind]
+                        child_value = child.get_avg_value() + child.reward_from_par
+                        child_uncertainty = child_uncertainties[ind]
+                        softmax_uncertainty = softmax_uncertainties[ind]
+
+                        if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
+                            child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
+                        elif min_child_value == max_child_value:
+                            child_value = 0.5
+
+                        uct_value = (child_value + \
+                                     self.C * ((np.log(child.parent.num_visits) / child.num_visits) ** 0.5)) * (1 - softmax_uncertainty)
+                        # print("old:", uct_value - child_uncertainty, "  new:",uct_value, "  unc:", child_uncertainty)
+                    if max_uct_value < uct_value:
+                        max_uct_value = uct_value
+                        selected_node = child
+            return selected_node
+        else:
+            return MCTSAgent.selection(self)
+
+    def expansion(self, node):
+        for a in self.action_list:
+            action = torch.tensor(a).unsqueeze(0)
+            next_state, is_terminal, reward, uncertainty = self.model(node.get_state(),
+                                                                      action)  # with the assumption of deterministic model
+            # if np.array_equal(next_state, node.get_state()):
+            #     continue
+            value = self.get_initial_value(next_state)
+            child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
+                         value=value, uncertainty=uncertainty.item())
+            node.add_child(child)
+
+    def backpropagate(self, node, value):
+        if ImperfectMCTSAgentUncertainty.backpropagate_idea == 1:
+            while node is not None:
+                node.add_to_values(value)
+                node.inc_visits()
+
+                siblings = node.parent.get_childs()
+                siblings_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, siblings)))
+                softmax_denominator = np.sum(np.exp(-siblings_uncertainties))
+                value *= self.gamma
+                value += node.reward_from_par
+                value *= np.exp(-node.uncertainty) / softmax_denominator
+                node = node.parent
+        else:
+            while node is not None:
+                node.add_to_values(value)
+                node.inc_visits()
+                value *= self.gamma
+                value += node.reward_from_par
+                node = node.parent
+
+    def render_tree(self):
+        def my_layout(node):
+            F = TextFace(node.name, tight_text=True)
+            add_face_to_node(F, node, column=0, position="branch-right")
+
+        t = Tree()
+        ts = TreeStyle()
+        ts.show_leaf_name = False
+        queue = [(self.subtree_node, None)]
+        while queue:
+            node, parent = queue.pop(0)
+            uct_value = 0
+            child_value = None
+            if node.parent is not None:
+                child_values = list(map(lambda n: n.get_avg_value() + n.reward_from_par, node.parent.get_childs()))
+                child_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, node.parent.get_childs())))
+                softmax_denominator = np.sum(np.exp(child_uncertainties))
+                max_child_value = max(child_values)
+                min_child_value = min(child_values)
+
+                child_value = node.get_avg_value() + node.reward_from_par
+                child_uncertainty = np.exp(node.uncertainty) / softmax_denominator
+                if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
+                    child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
+                elif min_child_value == max_child_value:
+                    child_value = 0.5
+
+                if node.num_visits == 0:
+                    uct_value = np.inf
+                else:
+                    uct_value = (child_value + \
+                                self.C * ((np.log(node.parent.num_visits) / node.num_visits) ** 0.5) ) #/ child_uncertainty
+
+
+
+
+            # node_face = str(node.get_state()) + "," + str(node.num_visits) + "," + str(node.get_avg_value()) \
+            #             + "," + str(node.is_terminal) + "," + str(uct_value) + "," + str(node.uncertainty)
+            node_face = str(node.get_state()) + "," + str(node.num_visits) + "," + str(node.get_avg_value()) \
+                        + "," + str(round(uct_value, 3)) + "," + str(node.uncertainty)
+            if parent is None:
+                p = t.add_child(name=node_face)
+            else:
+                p = parent.add_child(name=node_face)
+            for child in node.get_childs():
+                queue.append((child, p))
+
+        ts.layout_fn = my_layout
+        # t.render('t.png', tree_style=ts)
+        # print(t.get_ascii(show_internal=Tree))
+        t.show(tree_style=ts)
 
 
 class ImperfectMCTSAgentIdeas(RealBaseDynaAgent, MCTSAgent):

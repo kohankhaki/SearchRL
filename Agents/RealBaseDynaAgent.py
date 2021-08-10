@@ -16,7 +16,8 @@ from Networks.ModelNN.StateTransitionModel import StateTransitionModel
 from Networks.ModelNN.StateTransitionModel import StateTransitionModelHeter
 import pickle
 
-#this is an DQN agent.
+
+# this is an DQN agent.
 class RealBaseDynaAgent(BaseAgent):
     name = 'RealBaseDynaAgent'
 
@@ -38,7 +39,7 @@ class RealBaseDynaAgent(BaseAgent):
         self.epsilon = params['epsilon']
 
         self.transition_buffer = []
-        self.transition_buffer_size = 2**12
+        self.transition_buffer_size = 2 ** 12
 
         self.policy_values = 'q'  # 'q' or 's' or 'qs'
         self.policy_values = params['vf']['type']  # 'q' or 's' or 'qs'
@@ -58,14 +59,14 @@ class RealBaseDynaAgent(BaseAgent):
                               step_size=0.01,
                               training=False)}
         self.model_type = params['model']['type']
-        self._model = {self.model_type:dict(network=None,
-                                            layers_type=params['model']['layers_type'],
-                                            layers_features=params['model']['layers_features'],
-                                            action_layer_num=params['model']['action_layer_num'],
-                                            # if one more than layer numbers => we will have num of actions output
-                                            batch_size=16,
-                                            step_size=params['model_stepsize'],
-                                            training=True)}
+        self._model = {self.model_type: dict(network=None,
+                                             layers_type=params['model']['layers_type'],
+                                             layers_features=params['model']['layers_features'],
+                                             action_layer_num=params['model']['action_layer_num'],
+                                             # if one more than layer numbers => we will have num of actions output
+                                             batch_size=16,
+                                             step_size=params['model_stepsize'],
+                                             training=True)}
         self.num_ensembles = 5
 
         self._sr = dict(network=None,
@@ -179,7 +180,7 @@ class RealBaseDynaAgent(BaseAgent):
 
         if self._model[self.model_type]['training']:
             if len(self.transition_buffer) >= self._model[self.model_type]['batch_size']:
-                self.trainModel()      
+                self.trainModel()
         self.updateStateRepresentation()
 
     def policy(self, state):
@@ -211,7 +212,7 @@ class RealBaseDynaAgent(BaseAgent):
                                                    self._vf['q']['layers_type'],
                                                    self._vf['q']['layers_features'],
                                                    self._vf['q']['action_layer_num']).to(self.device)
-        #remove later
+        # remove later
         if self.is_pretrained:
             value_function_file = "Results_EmptyRoom/DQNVF_16x8/dqn_vf_7.p"
             print("loading ", value_function_file)
@@ -256,19 +257,19 @@ class RealBaseDynaAgent(BaseAgent):
         prev_action_batch = torch.cat(batch.prev_action)
         reward_batch = torch.cat(batch.reward)
 
-        #BEGIN DQN
+        # BEGIN DQN
         state_action_values = self._vf['q']['network'](prev_state_batch).gather(1, prev_action_batch)
         next_state_values = torch.zeros(self._vf['q']['batch_size'], device=self.device)
         next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).max(1)[0].detach()
-        #END DQN
+        # END DQN
 
-        #BEGIN SARSA
+        # BEGIN SARSA
         # non_final_next_actions = torch.cat([a for a in batch.action
         #                                    if a is not None])
         # state_action_values = self._vf['q']['network'](prev_state_batch).gather(1, prev_action_batch)
         # next_state_values = torch.zeros(self._vf['q']['batch_size'], device=self.device)
         # next_state_values[non_final_mask] = self._target_vf['network'](non_final_next_states).gather(1, non_final_next_actions).detach()[:, 0]
-        #END SARSA
+        # END SARSA
 
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
         loss = F.mse_loss(state_action_values,
@@ -278,7 +279,6 @@ class RealBaseDynaAgent(BaseAgent):
         self.optimizer.step()
 
         self._target_vf['counter'] += 1
-
 
     # ***
     def getStateRepresentation(self, observation, gradient=False):
@@ -324,8 +324,6 @@ class RealBaseDynaAgent(BaseAgent):
         self._target_vf['counter'] = 0
         self._target_vf['type'] = type
 
-
-
     # ***
     def getTransitionFromBuffer(self, n):
 
@@ -367,7 +365,7 @@ class RealBaseDynaAgent(BaseAgent):
         '''
         batch_size = action.shape[0]
         num_actions = len(self.action_list)
-        onehot = torch.zeros([batch_size, num_actions], device = self.device)
+        onehot = torch.zeros([batch_size, num_actions], device=self.device)
         # onehot.zero_()
         onehot.scatter_(1, action, 1)
         return onehot
@@ -375,7 +373,7 @@ class RealBaseDynaAgent(BaseAgent):
     def saveValueFunction(self, name):
         with open(name, "wb") as file:
             pickle.dump(self._vf, file)
-    
+
     def loadValueFunction(self, name):
         with open(name, "rb") as file:
             self._vf = pickle.load(file)
@@ -383,11 +381,10 @@ class RealBaseDynaAgent(BaseAgent):
     def saveModelFile(self, name):
         with open(name, "wb") as file:
             pickle.dump(self._model, file)
-    
+
     def loadModelFile(self, name):
         with open(name, "rb") as file:
             self._model = pickle.load(file)
-
 
     # ***
     @abstractmethod
@@ -397,16 +394,17 @@ class RealBaseDynaAgent(BaseAgent):
             batch = utils.transition(*zip(*transition_batch))
 
             non_final_next_states_batch = torch.cat([s for s in batch.state
-                                            if s is not None])
+                                                     if s is not None])
             non_final_prev_states_batch = torch.cat([s for s, t in zip(batch.prev_state, transition_batch)
-                                            if t.state is not None])
+                                                     if t.state is not None])
             non_final_prev_action_batch = torch.cat([a for a, t in zip(batch.prev_action, transition_batch)
-                                            if t.state is not None])
-            non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch)  
-            predicted_next_state = self._model['general']['network'](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
+                                                     if t.state is not None])
+            non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch)
+            predicted_next_state = self._model['general']['network'](non_final_prev_states_batch,
+                                                                     non_final_prev_action_onehot_batch)
 
             loss = F.mse_loss(predicted_next_state.float(),
-                            non_final_next_states_batch.float())
+                              non_final_next_states_batch.float())
             self.model_optimizer.zero_grad()
             loss.backward()
             self.model_loss.append(loss)
@@ -417,15 +415,16 @@ class RealBaseDynaAgent(BaseAgent):
                 transition_batch = self.getTransitionFromBuffer(n=self._model['ensemble']['batch_size'])
                 batch = utils.transition(*zip(*transition_batch))
                 non_final_next_states_batch = torch.cat([s for s in batch.state
-                                                if s is not None])
+                                                         if s is not None])
                 non_final_prev_states_batch = torch.cat([s for s, t in zip(batch.prev_state, transition_batch)
-                                                if t.state is not None])
+                                                         if t.state is not None])
                 non_final_prev_action_batch = torch.cat([a for a, t in zip(batch.prev_action, transition_batch)
-                                                if t.state is not None])
-                non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch)                        
-                predicted_next_state = self._model['ensemble']['network'][i](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
+                                                         if t.state is not None])
+                non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch)
+                predicted_next_state = self._model['ensemble']['network'][i](non_final_prev_states_batch,
+                                                                             non_final_prev_action_onehot_batch)
                 loss = F.mse_loss(predicted_next_state.float(),
-                                non_final_next_states_batch.float())
+                                  non_final_next_states_batch.float())
                 self.model_optimizer[i].zero_grad()
                 loss.backward()
                 self.model_loss.append(loss)
@@ -435,19 +434,21 @@ class RealBaseDynaAgent(BaseAgent):
             transition_batch = self.getTransitionFromBuffer(n=self._model['heter']['batch_size'])
             batch = utils.transition(*zip(*transition_batch))
             non_final_next_states_batch = torch.cat([s for s in batch.state
-                                            if s is not None])
+                                                     if s is not None])
             non_final_prev_states_batch = torch.cat([s for s, t in zip(batch.prev_state, transition_batch)
-                                            if t.state is not None])
+                                                     if t.state is not None])
             non_final_prev_action_batch = torch.cat([a for a, t in zip(batch.prev_action, transition_batch)
-                                            if t.state is not None])
-            non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch)                        
-            
+                                                     if t.state is not None])
+            non_final_prev_action_onehot_batch = self.getActionOnehotTorch(non_final_prev_action_batch)
+
             # predicted_next_state_mu = self._model['heter']['network'][0](non_final_prev_states_batch, non_final_prev_action_onehot_batch)
             # predicted_next_state_var = F.softplus(self._model['heter']['network'][1](non_final_prev_states_batch, non_final_prev_action_onehot_batch)) + 10**-6
             # predicted_next_state_var = torch.diag_embed(predicted_next_state_var)
 
-            predicted_next_state_mu = self._model['heter']['network'](non_final_prev_states_batch, non_final_prev_action_onehot_batch)[0]
-            predicted_next_state_var = self._model['heter']['network'](non_final_prev_states_batch, non_final_prev_action_onehot_batch)[1]
+            predicted_next_state_mu = \
+            self._model['heter']['network'](non_final_prev_states_batch, non_final_prev_action_onehot_batch)[0]
+            predicted_next_state_var = \
+            self._model['heter']['network'](non_final_prev_states_batch, non_final_prev_action_onehot_batch)[1]
 
             A = (predicted_next_state_mu - non_final_next_states_batch) ** 2
             inv_var = 1 / predicted_next_state_var
@@ -455,36 +456,38 @@ class RealBaseDynaAgent(BaseAgent):
             loss_element2 = torch.log(torch.prod(predicted_next_state_var, dim=1))
             loss = torch.mean(loss_element1 + loss_element2)
 
-
             self.model_optimizer.zero_grad()
             loss.backward()
             self.model_loss.append(loss)
             self.model_optimizer.step()
-          
+
             true_var = torch.sum((predicted_next_state_mu - non_final_next_states_batch) ** 2, dim=1)
             predicted_next_state_var_trace = torch.sum(predicted_next_state_var, dim=1)
-            var_err = torch.mean((true_var - predicted_next_state_var_trace)**2)
-            mu_err = torch.mean(true_var) 
-            self.writer.add_scalar('VarLoss/step_size'+str(self._model['heter']['step_size']), var_err, self.writer_iterations)
-            self.writer.add_scalar('MuLoss/step_size'+str(self._model['heter']['step_size']), mu_err, self.writer_iterations)
-            self.writer.add_scalar('HetLoss/step_size'+str(self._model['heter']['step_size']), loss, self.writer_iterations)
+            var_err = torch.mean((true_var - predicted_next_state_var_trace) ** 2)
+            mu_err = torch.mean(true_var)
+            self.writer.add_scalar('VarLoss/step_size' + str(self._model['heter']['step_size']), var_err,
+                                   self.writer_iterations)
+            self.writer.add_scalar('MuLoss/step_size' + str(self._model['heter']['step_size']), mu_err,
+                                   self.writer_iterations)
+            self.writer.add_scalar('HetLoss/step_size' + str(self._model['heter']['step_size']), loss,
+                                   self.writer_iterations)
             self.writer_iterations += 1
-        
+
         else:
             raise NotImplementedError("train model not implemented")
-    
+
     @abstractmethod
-    def plan(self):        
+    def plan(self):
         pass
         # with torch.no_grad():
         #     states = torch.from_numpy(self.dataset[:, 0:2])
         #     actions = torch.from_numpy(self.dataset[:, 2:6])
         #     next_states = torch.from_numpy(self.dataset[:, 6:8])
-            
+
         #     predicted_next_state_var = self._model['heter']['network'](states, actions)[1].float().detach()
         #     predicted_next_state_var_trace = torch.sum(predicted_next_state_var, dim=1)
         #     predicted_next_state = self._model['heter']['network'](states, actions)[0].float().detach()
-            
+
         #     true_var = torch.sum((predicted_next_state - next_states) ** 2, dim=1)
         #     var_err = torch.mean((true_var - predicted_next_state_var_trace)**2)
         #     mu_err = torch.mean(true_var) 
@@ -514,30 +517,35 @@ class RealBaseDynaAgent(BaseAgent):
         action_onehot = self.getActionOnehotTorch(action)
         nn_action_onehot_shape = action_onehot.shape
         if self.model_type == 'general':
-            self._model['general']['network'] = StateTransitionModel(nn_state_shape, nn_action_onehot_shape, 
-                                                                           self._model['general']['layers_type'],
-                                                                           self._model['general']['layers_features']).to(self.device)
-            self.model_optimizer = optim.Adam(self._model[self.model_type]['network'].parameters(), lr=self._model[self.model_type]['step_size'])
+            self._model['general']['network'] = StateTransitionModel(nn_state_shape, nn_action_onehot_shape,
+                                                                     self._model['general']['layers_type'],
+                                                                     self._model['general']['layers_features']).to(
+                self.device)
+            self.model_optimizer = optim.Adam(self._model[self.model_type]['network'].parameters(),
+                                              lr=self._model[self.model_type]['step_size'])
 
         elif self.model_type == 'ensemble':
             self._model['ensemble']['network'] = []
             self.model_optimizer = []
             for i in range(self.num_ensembles):
-                self._model['ensemble']['network'].append(StateTransitionModel(nn_state_shape, nn_action_onehot_shape, 
-                                                                           self._model['ensemble']['layers_type'],
-                                                                           self._model['ensemble']['layers_features']).to(self.device))
-                self.model_optimizer.append(optim.Adam(self._model['ensemble']['network'][i].parameters(), lr=self._model['ensemble']['step_size']))
-        
+                self._model['ensemble']['network'].append(StateTransitionModel(nn_state_shape, nn_action_onehot_shape,
+                                                                               self._model['ensemble']['layers_type'],
+                                                                               self._model['ensemble'][
+                                                                                   'layers_features']).to(self.device))
+                self.model_optimizer.append(optim.Adam(self._model['ensemble']['network'][i].parameters(),
+                                                       lr=self._model['ensemble']['step_size']))
+
         elif self.model_type == 'heter':
-            self._model['heter']['network'] = StateTransitionModelHeter(nn_state_shape, nn_action_onehot_shape, 
+            self._model['heter']['network'] = StateTransitionModelHeter(nn_state_shape, nn_action_onehot_shape,
                                                                         self._model['heter']['layers_type'],
-                                                                        self._model['heter']['layers_features']).to(self.device)
-            self.model_optimizer = optim.Adam(self._model['heter']['network'].parameters(), lr=self._model['heter']['step_size'])
-            
+                                                                        self._model['heter']['layers_features']).to(
+                self.device)
+            self.model_optimizer = optim.Adam(self._model['heter']['network'].parameters(),
+                                              lr=self._model['heter']['step_size'])
+
 
         else:
             raise NotImplementedError("model not implemented")
-
 
     @timecall(immediate=False)
     def modelRollout(self, state, action_index):
@@ -546,16 +554,16 @@ class RealBaseDynaAgent(BaseAgent):
         :return: next state
         '''
         if self.model_type == "general":
-            with torch.no_grad():  
+            with torch.no_grad():
                 one_hot_action = self.getActionOnehotTorch(action_index)
                 predicted_next_state = self._model['general']['network'](state, one_hot_action).detach()
                 return predicted_next_state, 0
-        
+
         elif self.model_type == "ensemble":
             with torch.no_grad():
                 one_hot_action = self.getActionOnehotTorch(action_index)
                 predicted_next_state_ensembles = torch.zeros_like(self.prev_state)
-                next_state_list = torch.tensor([], device = self.device)
+                next_state_list = torch.tensor([], device=self.device)
                 for i in range(self.num_ensembles):
                     predicted_next_state = self._model['ensemble']['network'][i](state, one_hot_action).detach()
                     predicted_next_state_ensembles = torch.add(predicted_next_state_ensembles, predicted_next_state)
@@ -578,4 +586,3 @@ class RealBaseDynaAgent(BaseAgent):
 
         else:
             raise NotImplementedError("model not implemented")
-

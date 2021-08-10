@@ -146,7 +146,7 @@ class MCTSAgent_Torch(BaseAgent):
                     if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
                         child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
                     uct_value = child_value + \
-                                self.C * ((child.parent.num_visits / child.num_visits) ** 0.5)
+                                self.C * ((np.log(child.parent.num_visits) / child.num_visits) ** 0.5)
                 if max_uct_value < uct_value:
                     max_uct_value = uct_value
                     selected_node = child
@@ -213,6 +213,48 @@ class MCTSAgent_Torch(BaseAgent):
         next_state_np, is_terminal, reward = self.true_model(state_np[0], action_index.item())
         next_state = torch.from_numpy(next_state_np).unsqueeze(0).to(self.device)
         return next_state, is_terminal, reward, 0
+
+    def render_tree(self):
+        def my_layout(node):
+            F = TextFace(node.name, tight_text=True)
+            add_face_to_node(F, node, column=0, position="branch-right")
+
+        t = Tree()
+        ts = TreeStyle()
+        ts.show_leaf_name = False
+        queue = [(self.subtree_node, None)]
+        while queue:
+            node, parent = queue.pop(0)
+            uct_value = 0
+            if node.parent is not None:
+                child_values = list(map(lambda n: n.get_avg_value() + n.reward_from_par, node.parent.get_childs()))
+                max_child_value = max(child_values)
+                min_child_value = min(child_values)
+                child_value = node.get_avg_value()
+                if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
+                    child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
+                if node.num_visits == 0:
+                    uct_value = np.inf
+                else:
+                    uct_value = child_value + \
+                                self.C * ((node.parent.num_visits / node.num_visits) ** 0.5)
+
+
+
+            # node_face = str(node.get_state()) + "," + str(node.num_visits) + "," + str(node.get_avg_value()) \
+            #             + "," + str(node.is_terminal) + "," + str(uct_value)
+            node_face = str(node.get_avg_value())
+            if parent is None:
+                p = t.add_child(name=node_face)
+            else:
+                p = parent.add_child(name=node_face)
+            for child in node.get_childs():
+                queue.append((child, p))
+
+        ts.layout_fn = my_layout
+        # t.render('t.png', tree_style=ts)
+        # print(t.get_ascii(show_internal=Tree))
+        t.show(tree_style=ts)
 
     def getActionIndex(self, action):
         if is_gridWorld:

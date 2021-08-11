@@ -68,7 +68,7 @@ if __name__ == '__main__':
     c_list = [2 ** 0.5]
     
     num_iteration_list = [30]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [50]
+    simulation_depth_list = [30]
     # simulation_depth_list = [5, 10, 75]
     # num_simulation_list = [10]
     num_simulation_list = [5]
@@ -126,7 +126,10 @@ if __name__ == '__main__':
     # experiment.run_experiment(experiment_object_list, result_file_name="ddd", detail=detail)
     detail = "Env = Cartpole, model is perfect different mcts settings"
     # experiment.run_experiment(experiment_object_list, result_file_name="RealBaseDynaAgent_M16x4_HetModelParameterStudy", detail=detail)
-    experiment.run_experiment(experiment_object_list, result_file_name="test", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="mcts_I30D30S5_random_obstacle_close", detail=detail)
+    # experiment.show_experiment_result(result_file_name="mcts_selection1_random_obstacle_close")
+
+
     # experiment.run_experiment(experiment_object_list, result_file_name="ImperfectMCTSAgentIdeas_S7P25_SelectionDivLinear2m4_2", detail=detail)
 
     # detail = "Env = Empty Room; _n = 20; max_episode = 100"

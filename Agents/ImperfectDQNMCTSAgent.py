@@ -1069,7 +1069,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_cartpole(RealBaseDynaAgent,
 
 class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgentUncertaintyHandDesignedModel"
-    rollout_idea = None # None, 1
+    rollout_idea = None  # None, 1
     selection_idea = None  # None, 1
     backpropagate_idea = None  # None, 1
 

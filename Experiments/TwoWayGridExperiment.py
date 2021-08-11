@@ -92,7 +92,7 @@ class RunExperiment():
             for r in range(num_runs):
                 print("starting runtime ", r + 1)
                 random_obstacle_x = 0#np.random.randint(0, 8)
-                random_obstacle_y = 2#np.random.choice([0, 2])
+                random_obstacle_y = np.random.choice([0, 2])
                 env = GridWorld(params={'size': (3, 8), 'init_state': (1, 0), 'state_mode': 'coord',
                                       'obstacles_pos': [(1, 1),(1, 2), (1, 3), (1, 4), (1, 5), (1, 6),
                                                         (random_obstacle_y, random_obstacle_x)],
@@ -151,9 +151,16 @@ class RunExperiment():
                       'experiment_objs': experiment_object_list,
                       'detail': detail,}
             pickle.dump(result, f)
+        f.close()
         # show_num_steps_plot(self.num_steps_run_list, ["Uncertain_MCTS"])
         # save_num_steps_plot(self.num_steps_run_list, experiment_object_list)
 
+    def show_experiment_result(self, result_file_name):
+        with open("TwoWayGridResult/" + result_file_name + '.p', 'rb') as f:
+            result = pickle.load(f)
+        f.close()
+        show_num_steps_plot(result['num_steps'], ["Uncertain_MCTS"])
+        save_num_steps_plot(result['num_steps'], result['experiment_objs'])
 
 def show_num_steps_plot(num_steps, agent_names):
     num_steps_avg = np.mean(num_steps, axis=1)

@@ -1146,7 +1146,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
 
         for i in range(self.num_iterations):
             self.MCTS_iteration()
-
+        # self.render_tree()
         action, sub_tree = self.choose_action()
         self.subtree_node = sub_tree
 
@@ -1163,6 +1163,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
 
         for i in range(self.num_iterations):
             self.MCTS_iteration()
+        # self.render_tree()
         action, sub_tree = self.choose_action()
         self.subtree_node = sub_tree
         self.action = torch.tensor([[action]], device=self.device, dtype=torch.long)
@@ -1407,7 +1408,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
 
             # node_face = str(node.get_state()) + "," + str(node.num_visits) + "," + str(node.get_avg_value()) \
             #             + "," + str(node.is_terminal) + "," + str(uct_value) + "," + str(node.uncertainty)
-            node_face = str(node.get_state()) + "," + str(node.num_visits) + "," + str(node.get_avg_value()) \
+            node_face = str(node.get_state()[0].numpy()) + "," + str(node.num_visits) + "," + str(node.get_avg_value()) \
                         + "," + str(round(uct_value, 3)) + "," + str(node.uncertainty)
             if parent is None:
                 p = t.add_child(name=node_face)

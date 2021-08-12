@@ -17,7 +17,7 @@ debug = True
 class TwoWayGridExperiment(BaseExperiment):
     def __init__(self, agent, env, device, params=None):
         if params is None:
-            params = {'render': False}
+            params = {'render': True}
         super().__init__(agent, env)
 
         self._render_on = params['render']
@@ -91,7 +91,7 @@ class RunExperiment():
 
             for r in range(num_runs):
                 print("starting runtime ", r + 1)
-                random_obstacle_x = 0#np.random.randint(0, 8)
+                random_obstacle_x = 4#np.random.randint(0, 8)
                 random_obstacle_y = np.random.choice([0, 2])
                 env = GridWorld(params={'size': (3, 8), 'init_state': (1, 0), 'state_mode': 'coord',
                                       'obstacles_pos': [(1, 1),(1, 2), (1, 3), (1, 4), (1, 5), (1, 6),

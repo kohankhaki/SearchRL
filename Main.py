@@ -72,6 +72,7 @@ if __name__ == '__main__':
     # simulation_depth_list = [5, 10, 75]
     # num_simulation_list = [10]
     num_simulation_list = [1, 5]
+    tau_list = [0.9, 0.5, 0.1]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
     #               {'type': 'forward', 'num_networks': 2, 'layers_type': ['fc'], 'layers_features': [64]},
@@ -102,18 +103,20 @@ if __name__ == '__main__':
                                 for simulation_depth in simulation_depth_list:
                                     for num_simulation in num_simulation_list:
                                         for model_corruption in model_corruption_list:
-                                            params = {'pre_trained': None,
-                                                    'vf_step_size': s_vf,
-                                                    'vf': vf,
-                                                    'model': model,
-                                                    'model_step_size': s_md,
-                                                    'c': c,
-                                                    'num_iteration': num_iteration,
-                                                    'simulation_depth': simulation_depth,
-                                                    'num_simulation': num_simulation,
-                                                    'model_corruption': model_corruption}
-                                            obj = ExperimentObject(agent_class, params)
-                                            experiment_object_list.append(obj)
+                                            for tau in tau_list:
+                                                params = {'pre_trained': None,
+                                                        'vf_step_size': s_vf,
+                                                        'vf': vf,
+                                                        'model': model,
+                                                        'model_step_size': s_md,
+                                                        'c': c,
+                                                        'num_iteration': num_iteration,
+                                                        'simulation_depth': simulation_depth,
+                                                        'num_simulation': num_simulation,
+                                                        'model_corruption': model_corruption,
+                                                        'tau': tau,}
+                                                obj = ExperimentObject(agent_class, params)
+                                                experiment_object_list.append(obj)
     # x = time.time()
     # detail = "Env = 4room - 4x4; Not keep subtree; max_episode = 100; Pretrained DQN - DQN VF: 16x8 dqn_vf_9.p"
     # detail = "Env = Empty Room; _n = 20; max_episode = 100; Pretrained DQN - DQN VF: 16x8 dqn_vf_5.p"
@@ -126,7 +129,7 @@ if __name__ == '__main__':
     # experiment.run_experiment(experiment_object_list, result_file_name="ddd", detail=detail)
     detail = "Env = Cartpole, model is perfect different mcts settings"
     # experiment.run_experiment(experiment_object_list, result_file_name="RealBaseDynaAgent_M16x4_HetModelParameterStudy", detail=detail)
-    experiment.run_experiment(experiment_object_list, result_file_name="MCTS_obstacle_4", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="test", detail=detail)
     # experiment.show_experiment_result(result_file_name="test")
 
 

@@ -15,3 +15,4 @@ class ExperimentObject:
         self.num_iteration = params['num_iteration']
         self.simulation_depth = params['simulation_depth']
         self.num_simulation = params['num_simulation']
+        self.tau = params['tau']

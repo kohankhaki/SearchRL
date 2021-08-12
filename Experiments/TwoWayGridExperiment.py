@@ -91,7 +91,7 @@ class RunExperiment():
 
             for r in range(num_runs):
                 print("starting runtime ", r + 1)
-                random_obstacle_x = 4#np.random.randint(0, 8)
+                random_obstacle_x = 3#np.random.randint(0, 8)
                 random_obstacle_y = np.random.choice([0, 2])
                 env = GridWorld(params={'size': (3, 8), 'init_state': (1, 0), 'state_mode': 'coord',
                                       'obstacles_pos': [(1, 1),(1, 2), (1, 3), (1, 4), (1, 5), (1, 6),
@@ -121,6 +121,7 @@ class RunExperiment():
                 # initializing the agent
                 agent = obj.agent_class({'action_list': env.getAllActions(),
                                          'gamma': 1.0, 'epsilon_max': 0.9, 'epsilon_min': 0.05, 'epsilon_decay': 200,
+                                         'tau':obj.tau,
                                          'model_corruption': obj.model_corruption,
                                          'max_stepsize': obj.vf_step_size,
                                          'model_stepsize': obj.model_step_size,

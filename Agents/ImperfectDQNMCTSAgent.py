@@ -1070,7 +1070,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_cartpole(RealBaseDynaAgent,
 class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgentUncertaintyHandDesignedModel"
     rollout_idea = None  # None, 1
-    selection_idea = None  # None, 1
+    selection_idea = 1  # None, 1
     backpropagate_idea = None  # None, 1
 
     assert rollout_idea in [None, 1] and selection_idea in [None, 1] and backpropagate_idea in [None,
@@ -1121,6 +1121,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
         self.keep_subtree = False
         self.keep_tree = False
         self.root = None
+        self.tau = params['tau']
 
     def start(self, observation, info=None):
         '''
@@ -1146,7 +1147,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
 
         for i in range(self.num_iterations):
             self.MCTS_iteration()
-        # self.render_tree()
+        self.render_tree()
         action, sub_tree = self.choose_action()
         self.subtree_node = sub_tree
 
@@ -1163,7 +1164,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
 
         for i in range(self.num_iterations):
             self.MCTS_iteration()
-        # self.render_tree()
+        self.render_tree()
         action, sub_tree = self.choose_action()
         self.subtree_node = sub_tree
         self.action = torch.tensor([[action]], device=self.device, dtype=torch.long)
@@ -1308,8 +1309,8 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
                 min_child_value = min(child_values)
 
                 child_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, selected_node.get_childs())))
-                softmax_denominator = np.sum(np.exp(child_uncertainties))
-                softmax_uncertainties = np.exp(child_uncertainties)/softmax_denominator
+                softmax_denominator = np.sum(np.exp(child_uncertainties / self.tau))
+                softmax_uncertainties = np.exp(child_uncertainties / self.tau)/softmax_denominator
 
                 for ind, child in enumerate(selected_node.get_childs()):
                     if child.num_visits == 0:
@@ -1328,7 +1329,8 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
                             child_value = 0.5
 
                         uct_value = (child_value + \
-                                     self.C * ((np.log(child.parent.num_visits) / child.num_visits) ** 0.5)) * (1 - softmax_uncertainty)
+                                     self.C * ((np.log(child.parent.num_visits) / child.num_visits) ** 0.5)) *\
+                                    (1 - softmax_uncertainty)
                         # print("old:", uct_value - child_uncertainty, "  new:",uct_value, "  unc:", child_uncertainty)
                     if max_uct_value < uct_value:
                         max_uct_value = uct_value
@@ -1383,15 +1385,16 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
             node, parent = queue.pop(0)
             uct_value = 0
             child_value = None
+            child_uncertainty = 0
             if node.parent is not None:
                 child_values = list(map(lambda n: n.get_avg_value() + n.reward_from_par, node.parent.get_childs()))
                 child_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, node.parent.get_childs())))
-                softmax_denominator = np.sum(np.exp(child_uncertainties))
+                softmax_denominator = np.sum(np.exp(child_uncertainties / self.tau))
                 max_child_value = max(child_values)
                 min_child_value = min(child_values)
 
                 child_value = node.get_avg_value() + node.reward_from_par
-                child_uncertainty = np.exp(node.uncertainty) / softmax_denominator
+                child_uncertainty = np.exp(node.uncertainty / self.tau) / softmax_denominator
                 if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
                     child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
                 elif min_child_value == max_child_value:
@@ -1401,7 +1404,8 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
                     uct_value = np.inf
                 else:
                     uct_value = (child_value + \
-                                self.C * ((np.log(node.parent.num_visits) / node.num_visits) ** 0.5) ) #/ child_uncertainty
+                                self.C * ((np.log(node.parent.num_visits) / node.num_visits) ** 0.5) ) *\
+                                (1 - child_uncertainty)
 
 
 
@@ -1409,7 +1413,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
             # node_face = str(node.get_state()) + "," + str(node.num_visits) + "," + str(node.get_avg_value()) \
             #             + "," + str(node.is_terminal) + "," + str(uct_value) + "," + str(node.uncertainty)
             node_face = str(node.get_state()[0].numpy()) + "," + str(node.num_visits) + "," + str(node.get_avg_value()) \
-                        + "," + str(round(uct_value, 3)) + "," + str(node.uncertainty)
+                        + "," + str(round(uct_value, 3)) + "," + str(child_uncertainty)
             if parent is None:
                 p = t.add_child(name=node_face)
             else:

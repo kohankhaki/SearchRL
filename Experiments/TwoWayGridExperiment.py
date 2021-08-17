@@ -91,7 +91,7 @@ class RunExperiment():
 
             for r in range(num_runs):
                 print("starting runtime ", r + 1)
-                random_obstacle_x = 3#np.random.randint(0, 8)
+                random_obstacle_x = 4#np.random.randint(0, 8)
                 random_obstacle_y = np.random.choice([0, 2])
                 env = GridWorld(params={'size': (3, 8), 'init_state': (1, 0), 'state_mode': 'coord',
                                       'obstacles_pos': [(1, 1),(1, 2), (1, 3), (1, 4), (1, 5), (1, 6),
@@ -147,6 +147,23 @@ class RunExperiment():
                     experiment.runEpisode(max_step_each_episode)
                     self.num_steps_run_list[i, r, e] = experiment.num_steps
 
+                    # with torch.no_grad():
+                    #     # print value function
+                    #     for s in env.getAllStates():
+                    #         s_rep = agent.getStateRepresentation(s)
+                    #         ensemble_values = np.asarray([agent._vf['q']['network'][i](s_rep).numpy() for i in
+                    #                            range(agent._vf['q']['num_ensembles'])])
+                    #         avg_values = np.mean(ensemble_values, axis=0)
+                    #         std_values = np.std(ensemble_values, axis=0)
+                    #         s_value = np.mean(avg_values)
+                    #         s_uncertainty = np.mean(std_values)
+                    #         print(s_rep, s_value, s_uncertainty)
+                    #         for a in env.getAllActions():
+                    #             a_index = env.getActionIndex(a)
+                    #             q_value = value[0][a_index].item()
+                    #             print(s_rep, a_index, q_value)
+
+
         with open("TwoWayGridResult/" + result_file_name + '.p', 'wb') as f:
             result = {'num_steps': self.num_steps_run_list,
                       'experiment_objs': experiment_object_list,
@@ -160,10 +177,11 @@ class RunExperiment():
         with open("TwoWayGridResult/" + result_file_name + '.p', 'rb') as f:
             result = pickle.load(f)
         f.close()
-        show_num_steps_plot(result['num_steps'], ["Uncertain_MCTS"])
-        save_num_steps_plot(result['num_steps'], result['experiment_objs'])
+        # show_num_steps_plot(result['num_steps'], result['experiment_objs'])
+        save_num_steps_plot(result['num_steps'], result['experiment_objs'], result_file_name)
 
 def show_num_steps_plot(num_steps, agent_names):
+
     num_steps_avg = np.mean(num_steps, axis=1)
     writer = SummaryWriter()  # (comment="TuneModelwithDQN_LR{2**-4to-16}_BATCH{16}")
     counter = 0
@@ -176,7 +194,54 @@ def show_num_steps_plot(num_steps, agent_names):
     writer.close()
 
 
-def save_num_steps_plot(num_steps, experiment_objs):
+def save_num_steps_plot(num_steps, experiment_objs, saved_name="test"):
+    def find_best_c(num_steps, experiment_objs):
+        removed_list = []
+        num_steps_avg = np.mean(num_steps, axis=1)
+        for counter1, i in enumerate(experiment_objs):
+            for counter2, j in enumerate(experiment_objs):
+                if i.num_iteration == j.num_iteration and \
+                   i.num_simulation == j.num_simulation and \
+                   i.simulation_depth == j.simulation_depth and \
+                   i.tau == j.tau and \
+                   i.c != j.c:
+                    if num_steps_avg[counter1] > num_steps_avg[counter2]:
+                        removed_list.append(counter1)
+                    else:
+                        removed_list.append(counter2)
+        num_steps = np.delete(num_steps, removed_list, 0)
+        experiment_objs_new = []
+        for i, obj in enumerate(experiment_objs):
+            if i not in removed_list:
+                experiment_objs_new.append(obj)
+
+        return num_steps, experiment_objs_new
+    def find_best_tau(num_steps, experiment_objs):
+        removed_list = []
+        num_steps_avg = np.mean(num_steps, axis=1)
+        for counter1, i in enumerate(experiment_objs):
+            for counter2, j in enumerate(experiment_objs):
+                if i.num_iteration == j.num_iteration and \
+                   i.num_simulation == j.num_simulation and \
+                   i.simulation_depth == j.simulation_depth and \
+                   i.tau != j.tau:
+                    if num_steps_avg[counter1] > num_steps_avg[counter2]:
+                        removed_list.append(counter1)
+                    else:
+                        removed_list.append(counter2)
+        num_steps = np.delete(num_steps, removed_list, 0)
+        experiment_objs_new = []
+        for i, obj in enumerate(experiment_objs):
+            if i not in removed_list:
+                experiment_objs_new.append(obj)
+
+        return num_steps, experiment_objs_new
+
+    num_steps, experiment_objs = find_best_c(num_steps, experiment_objs)
+    print(num_steps.shape)
+    # num_steps, experiment_objs = find_best_tau(num_steps, experiment_objs)
+
+    print(num_steps.shape)
     names = experiment_obj_to_name(experiment_objs)
     fig, axs = plt.subplots(1, 1, constrained_layout=False)
 
@@ -198,7 +263,7 @@ def save_num_steps_plot(num_steps, experiment_objs):
                              num_steps_avg + 0.1 * num_steps_std,
                              alpha=.4, edgecolor='none')
         axs.legend()
-        fig.savefig("test.png")
+        fig.savefig(saved_name+".png")
 
 
 def experiment_obj_to_name(experiment_objs):
@@ -267,6 +332,11 @@ def experiment_obj_to_name(experiment_objs):
     if not all_elements_equal(model_corruption):
         for i in range(len(experiment_objs)):
             names[i] += "M_C:" + str(model_corruption[i])
+
+    tau = [i.tau for i in experiment_objs]
+    if not all_elements_equal(tau):
+        for i in range(len(experiment_objs)):
+            names[i] += "Tau:" + str(tau[i])
     print(names)
     return names
 

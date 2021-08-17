@@ -46,7 +46,8 @@ if __name__ == '__main__':
     # agent_class_list = [DQNMCTSAgent_ReduceBreadth]
     # agent_class_list = [RealBaseDynaAgent]
     # agent_class_list = [ImperfectMCTSAgent]
-    agent_class_list = [ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld]
+    # agent_class_list = [ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld]
+    agent_class_list = [ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld]
     # agent_class_list = [ImperfectMCTSAgentIdeas]
     # agent_class_list = [ImperfectMCTSAgentUncertainty]
     # agent_class_list = [HetDQN]
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     # show_model_error_grid = [False, False]
 
     # s_vf_list = [2 ** -5, 2 ** -7, 2 ** -9, 2 ** -11, 2 ** -13]
-    s_vf_list = [2 ** -10]
+    s_vf_list = [0.001]
 
     # s_md_list = [2 ** -4, 2 ** -6, 2 ** -8, 2 ** -10, 2 ** -12, 2 ** -14, 2 ** -16]
     
@@ -64,15 +65,15 @@ if __name__ == '__main__':
     s_md_list = [0.1]
     model_corruption_list = [0]
 
-    c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
-    # c_list = [2 ** 0.5]
+    # c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
+    c_list = [2 ** 0.5]
     
-    num_iteration_list = [10, 30]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [10, 30]
+    num_iteration_list = [30]#[i for i in range(30, 40, 10)]
+    simulation_depth_list = [30]
     # simulation_depth_list = [5, 10, 75]
     # num_simulation_list = [10]
-    num_simulation_list = [1, 5]
-    tau_list = [0.9, 0.5, 0.1]
+    num_simulation_list = [1]
+    tau_list = [1.0] #[0.9, 0.5, 0.1]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
     #               {'type': 'forward', 'num_networks': 2, 'layers_type': ['fc'], 'layers_features': [64]},
@@ -130,7 +131,7 @@ if __name__ == '__main__':
     detail = "Env = Cartpole, model is perfect different mcts settings"
     # experiment.run_experiment(experiment_object_list, result_file_name="RealBaseDynaAgent_M16x4_HetModelParameterStudy", detail=detail)
     experiment.run_experiment(experiment_object_list, result_file_name="test", detail=detail)
-    # experiment.show_experiment_result(result_file_name="test")
+    # experiment.show_experiment_result(result_file_name="mcts_backpropagation3_obstacle_4")
 
 
     # experiment.run_experiment(experiment_object_list, result_file_name="ImperfectMCTSAgentIdeas_S7P25_SelectionDivLinear2m4_2", detail=detail)

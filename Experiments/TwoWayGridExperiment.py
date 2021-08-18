@@ -17,7 +17,7 @@ debug = True
 class TwoWayGridExperiment(BaseExperiment):
     def __init__(self, agent, env, device, params=None):
         if params is None:
-            params = {'render': True}
+            params = {'render': False}
         super().__init__(agent, env)
 
         self._render_on = params['render']
@@ -120,8 +120,8 @@ class RunExperiment():
                                         })
                 # initializing the agent
                 agent = obj.agent_class({'action_list': env.getAllActions(),
-                                         'gamma': 1.0, 'epsilon_max': 0.9, 'epsilon_min': 0.05, 'epsilon_decay': 200,
-                                         'tau':obj.tau,
+                                         'gamma': 1.0, 'epsilon_max': 0.9, 'epsilon_min': 0.5, 'epsilon_decay': 200,
+                                         'tau': obj.tau,
                                          'model_corruption': obj.model_corruption,
                                          'max_stepsize': obj.vf_step_size,
                                          'model_stepsize': obj.model_step_size,

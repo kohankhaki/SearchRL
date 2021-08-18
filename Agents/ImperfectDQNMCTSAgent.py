@@ -1440,11 +1440,11 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
 
 class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld"
-    rollout_idea = 3  # None, 1
+    rollout_idea = 5  # None, 1
     selection_idea = None  # None, 1
     backpropagate_idea = None  # None, 1
 
-    assert rollout_idea in [None, 1, 2, 3] and selection_idea in [None, 1] and backpropagate_idea in [None,
+    assert rollout_idea in [None, 1, 2, 3, 4] and selection_idea in [None, 1] and backpropagate_idea in [None,
                                                                                                 1]  # add the idea to assertion list too
 
     def __init__(self, params={}):
@@ -1547,8 +1547,6 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
 
         self.subtree_node = sub_tree
         self.prev_action = torch.tensor([action_index]).unsqueeze(0)
-        self.prev_action_dqn = self.policy(self.prev_state)
-        # return self.action_list[self.prev_action.item()]
         return action
 
     def step(self, reward, observation, info=None):
@@ -1566,51 +1564,20 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
         self.subtree_node = sub_tree
         self.action = torch.tensor([action_index]).unsqueeze(0)
 
-        self.action_dqn = self.policy(self.state)
-
         reward = torch.tensor([reward], device=self.device)
 
-        # store the new transition in buffer
-        self.updateTransitionBuffer(utils.transition(self.prev_state,
-                                                     self.prev_action,
-                                                     reward,
-                                                     self.state,
-                                                     self.action, False, self.time_step, 0))
 
         self.updateStateRepresentation()
 
-        # update target
-        if self._target_vf['counter'] >= self._target_vf['update_rate']:
-            self.setTargetValueFunction(self._vf['q'], 'q')
-
-        # update value function with the buffer
-        for i in range(1):
-            if self._vf['q']['training']:
-                if len(self.transition_buffer) >= self._vf['q']['batch_size']:
-                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
-                    self.updateValueFunction(transition_batch, 'q')
 
         self.prev_state = self.getStateRepresentation(observation)
         self.prev_action = self.action
-        self.prev_action_dqn = self.action_dqn
-        # return self.action_list[self.prev_action.item()]
         return action
 
     def end(self, reward):
         reward = torch.tensor([reward], device=self.device)
-
-        self.updateTransitionBuffer(utils.transition(self.prev_state,
-                                                     self.prev_action,
-                                                     reward,
-                                                     None,
-                                                     None, True, self.time_step, 0))
-
         self.updateStateRepresentation()
-        for i in range(1):
-            if self._vf['q']['training']:
-                if len(self.transition_buffer) >= self._vf['q']['batch_size']:
-                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
-                    self.updateValueFunction(transition_batch, 'q')
+
 
     def policy(self, state):
         '''
@@ -1782,15 +1749,57 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
                     sum_uncertainty += uncertainty
                     depth += 1
 
-                    if not is_terminal and depth == self.rollout_depth:
+                    bootstrap_value = 0
+                    if not is_terminal:
                         with torch.no_grad():
                             s_rep = next_state
-                            ensemble_values = np.asarray([self._vf['q']['network'][i](s_rep).numpy() for i in
-                                                          range(self._vf['q']['num_ensembles'])])
-                            avg_values = np.mean(ensemble_values, axis=0)
-                            s_value = np.mean(avg_values)
-                        single_return += gamma_prod * s_value
-                    return_list.append(single_return)
+                            if np.array_equal(next_state, [[0,0]]):
+                                s_value = -8
+                            elif np.array_equal(next_state, [[0,1]]):
+                                s_value = -7
+                            elif np.array_equal(next_state, [[0,2]]):
+                                s_value = -6
+                            elif np.array_equal(next_state, [[0,3]]):
+                                s_value = -5
+                            elif np.array_equal(next_state, [[0,4]]):
+                                s_value = -4
+                            elif np.array_equal(next_state, [[0,5]]):
+                                s_value = -3
+                            elif np.array_equal(next_state, [[0,6]]):
+                                s_value = -2
+                            elif np.array_equal(next_state, [[0,7]]):
+                                s_value = -1
+                            elif np.array_equal(next_state, [[1,0]]):
+                                s_value = -9
+                            elif np.array_equal(next_state, [[1,7]]):
+                                s_value = 0
+                            elif np.array_equal(next_state, [[2,0]]):
+                                s_value = -8
+                            elif np.array_equal(next_state, [[2,1]]):
+                                s_value = -7
+                            elif np.array_equal(next_state, [[2,2]]):
+                                s_value = -6
+                            elif np.array_equal(next_state, [[2,3]]):
+                                s_value = -5
+                            elif np.array_equal(next_state, [[2,4]]):
+                                s_value = -4
+                            elif np.array_equal(next_state, [[2,5]]):
+                                s_value = -3
+                            elif np.array_equal(next_state, [[2,6]]):
+                                s_value = -2
+                            elif np.array_equal(next_state, [[2,7]]):
+                                s_value = -1
+                            else:
+                                print("unknown state", next_state)
+                                exit()
+
+                            # ensemble_values = np.asarray([self._vf['q']['network'][i](s_rep).numpy() for i in
+                            #                               range(self._vf['q']['num_ensembles'])])
+                            # avg_values = np.mean(ensemble_values, axis=0)
+                            # s_value = np.mean(avg_values)
+                        bootstrap_value = gamma_prod * s_value
+
+                    return_list.append(single_return + bootstrap_value)
                     weight_list.append(sum_uncertainty)
                     state = next_state
 
@@ -1800,10 +1809,6 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
                     weights = np.exp(-weight_list) / np.sum(np.exp(-weight_list))
                 else:
                     weights = np.exp(weight_list) / np.sum(np.exp(weight_list))
-                # print(return_list)
-                # print(weight_list)
-                # print(weights)
-                # print(np.average(return_list, weights=weights), np.average(return_list))
                 if len(weights) > 0:
                     uncertain_return = np.average(return_list, weights=weights)
                 else:  # the starting node is a terminal state
@@ -1829,6 +1834,101 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
 
                 sum_returns += single_return
             return sum_returns / self.num_rollouts
+
+        elif ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld.rollout_idea == 4:
+            sum_returns = 0
+            for i in range(self.num_rollouts):
+                depth = 0
+                is_terminal = node.is_terminal
+                state = node.get_state()
+
+                gamma_prod = 1
+                single_return = 0
+                sum_uncertainty = 0
+                return_list = []
+                weight_list = []
+                while not is_terminal and depth < self.rollout_depth:
+                    action_index = self.policy(state)
+                    action = torch.tensor(self.action_list[action_index]).unsqueeze(0)
+                    next_state, is_terminal, reward, uncertainty = self.model(state, action)
+                    uncertainty = uncertainty.item()
+                    single_return += reward * gamma_prod
+                    gamma_prod *= self.gamma
+                    sum_uncertainty += uncertainty
+                    depth += 1
+                    bootstrap_value = 0
+                    if not is_terminal:
+                        with torch.no_grad():
+                            s_rep = next_state
+                            ensemble_values = np.asarray([self._vf['q']['network'][i](s_rep).numpy() for i in
+                                                          range(self._vf['q']['num_ensembles'])])
+                            avg_values = np.mean(ensemble_values, axis=0)
+                            s_value = np.mean(avg_values)
+                        bootstrap_value = gamma_prod * s_value
+                    return_list.append(single_return + bootstrap_value)
+                    weight_list.append(sum_uncertainty)
+
+
+                    reward = torch.tensor([reward], device=self.device)
+                    if not is_terminal:
+                        self.updateTransitionBuffer(utils.transition(state,
+                                                                     action_index,
+                                                                     reward,
+                                                                     next_state,
+                                                                     None, False, self.time_step, 0))
+                    else:
+                        self.updateTransitionBuffer(utils.transition(state,
+                                                                     action_index,
+                                                                     reward,
+                                                                     None,
+                                                                     None, False, self.time_step, 0))
+                    if self._vf['q']['training']:
+                        if len(self.transition_buffer) >= self._vf['q']['batch_size']:
+                                    transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                                    self.updateValueFunction(transition_batch, 'q')
+                    if self._target_vf['counter'] >= self._target_vf['update_rate']:
+                        self.setTargetValueFunction(self._vf['q'], 'q')
+
+                    state = next_state
+
+                return_list = np.asarray(return_list)
+                weight_list = np.asarray(weight_list)
+                weights = np.exp(-weight_list) / np.sum(np.exp(-weight_list))
+
+                if len(weights) > 0:
+                    uncertain_return = np.average(return_list, weights=weights)
+                else:  # the starting node is a terminal state
+                    uncertain_return = 0
+                sum_returns += uncertain_return
+            return sum_returns / self.num_rollouts
+
+        elif ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld.rollout_idea == 5:
+            uncertainty_list = []
+            return_list = []
+            for i in range(self.num_rollouts):
+                depth = 0
+                single_return = 0
+                sum_uncertainty = 0
+                gamma_prod = 1
+                is_terminal = node.is_terminal
+                state = node.get_state()
+                while not is_terminal and depth < self.rollout_depth:
+                    action_index = torch.randint(0, self.num_actions, (1, 1))
+                    action = torch.tensor(self.action_list[action_index]).unsqueeze(0)
+                    next_state, is_terminal, reward, uncertainty = self.model(state, action)
+                    sum_uncertainty += gamma_prod * uncertainty
+                    gamma_prod *= self.gamma
+                    single_return += reward
+                    depth += 1
+                    state = next_state
+                uncertainty_list.append(sum_uncertainty)
+                return_list.append(single_return)
+
+            uncertainty_list = np.asarray(uncertainty_list)
+            softmax_uncertainty_list = np.exp(-uncertainty_list / self.tau) / np.sum(np.exp(-uncertainty_list / self.tau))
+            weighted_avg = np.average(return_list, weights=softmax_uncertainty_list)
+            return weighted_avg
+
         else:
             sum_returns = 0
             for i in range(self.num_rollouts):

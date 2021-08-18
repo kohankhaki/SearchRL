@@ -1,5 +1,5 @@
 # # experiment
-num_runs = 3
+num_runs = 1
 num_episode = 50
 
 max_step_each_episode = 40
@@ -38,6 +38,7 @@ n_room_params = \
     'window_size': (900, 900),
     'aging_reward': -1,
     }
+
 
 
 

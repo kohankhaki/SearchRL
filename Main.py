@@ -65,15 +65,15 @@ if __name__ == '__main__':
     s_md_list = [0.1]
     model_corruption_list = [0]
 
-    # c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
-    c_list = [2 ** 0.5]
+    c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
+    # c_list = [2 ** 0.5]
     
-    num_iteration_list = [30]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [30]
+    num_iteration_list = [10, 30]#[i for i in range(30, 40, 10)]
+    simulation_depth_list = [10, 30]
     # simulation_depth_list = [5, 10, 75]
     # num_simulation_list = [10]
-    num_simulation_list = [1]
-    tau_list = [1.0] #[0.9, 0.5, 0.1]
+    num_simulation_list = [1, 5, 10]
+    tau_list = [0.9, 0.5, 0.1]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
     #               {'type': 'forward', 'num_networks': 2, 'layers_type': ['fc'], 'layers_features': [64]},
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     # experiment.run_experiment(experiment_object_list, result_file_name="ddd", detail=detail)
     detail = "Env = Cartpole, model is perfect different mcts settings"
     # experiment.run_experiment(experiment_object_list, result_file_name="RealBaseDynaAgent_M16x4_HetModelParameterStudy", detail=detail)
-    experiment.run_experiment(experiment_object_list, result_file_name="test", detail=detail)
+    experiment.run_experiment(experiment_object_list, result_file_name="mcts_rollout5_obstacle_4", detail=detail)
     # experiment.show_experiment_result(result_file_name="mcts_backpropagation3_obstacle_4")
 
 

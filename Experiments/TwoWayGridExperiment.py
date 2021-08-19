@@ -239,8 +239,7 @@ def save_num_steps_plot(num_steps, experiment_objs, saved_name="test"):
 
     num_steps, experiment_objs = find_best_c(num_steps, experiment_objs)
     print(num_steps.shape)
-    # num_steps, experiment_objs = find_best_tau(num_steps, experiment_objs)
-
+    num_steps, experiment_objs = find_best_tau(num_steps, experiment_objs)
     print(num_steps.shape)
     names = experiment_obj_to_name(experiment_objs)
     fig, axs = plt.subplots(1, 1, constrained_layout=False)

@@ -1440,12 +1440,14 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld(RealBaseDynaAgent
 
 class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld"
-    rollout_idea = 5  # None, 1
+    rollout_idea = None  # None, 1
     selection_idea = None  # None, 1
-    backpropagate_idea = None  # None, 1
-
-    assert rollout_idea in [None, 1, 2, 3, 4] and selection_idea in [None, 1] and backpropagate_idea in [None,
-                                                                                                1]  # add the idea to assertion list too
+    backpropagate_idea = 1  # None, 1
+    expansion_idea = None
+    assert rollout_idea in [None, 1, 2, 3, 4, 5] and \
+           selection_idea in [None, 1] and \
+           backpropagate_idea in [None, 1]  \
+           and expansion_idea in [None, 1]
 
     def __init__(self, params={}):
         self.episode_counter = 0
@@ -1978,8 +1980,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
                             child_value = 0.5
 
                         uct_value = (child_value + \
-                                     self.C * ((np.log(child.parent.num_visits) / child.num_visits) ** 0.5)) * \
-                                    (1 - softmax_uncertainty)
+                                     self.C * ((np.log(child.parent.num_visits) / child.num_visits) ** 0.5))
                         # print("old:", uct_value - child_uncertainty, "  new:",uct_value, "  unc:", child_uncertainty)
                     if max_uct_value < uct_value:
                         max_uct_value = uct_value
@@ -2026,16 +2027,28 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
             return MCTSAgent.selection(self)
 
     def expansion(self, node):
-        for a in self.action_list:
-            action = torch.tensor(a).unsqueeze(0)
-            next_state, is_terminal, reward, uncertainty = self.model(node.get_state(),
-                                                                      action)  # with the assumption of deterministic model
-            # if np.array_equal(next_state, node.get_state()):
-            #     continue
-            value = self.get_initial_value(next_state)
-            child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
-                         value=value, uncertainty=uncertainty.item())
-            node.add_child(child)
+        if ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld.expansion_idea == 1:
+            for a in self.action_list:
+                action = torch.tensor(a).unsqueeze(0)
+                next_state, is_terminal, reward, uncertainty = self.model(node.get_state(),
+                                                                          action)  # with the assumption of deterministic model
+                # if np.array_equal(next_state, node.get_state()):
+                #     continue
+                value = self.get_initial_value(next_state)
+                child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
+                             value=value, uncertainty=uncertainty.item())
+                node.add_child(child)
+        else:
+            for a in self.action_list:
+                action = torch.tensor(a).unsqueeze(0)
+                next_state, is_terminal, reward, uncertainty = self.model(node.get_state(),
+                                                                          action)  # with the assumption of deterministic model
+                # if np.array_equal(next_state, node.get_state()):
+                #     continue
+                value = self.get_initial_value(next_state)
+                child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
+                             value=value, uncertainty=uncertainty.item())
+                node.add_child(child)
 
     def backpropagate(self, node, value):
         if ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld.backpropagate_idea == 1:

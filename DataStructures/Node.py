@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Node:
-    def __init__(self, parent, state, value=0, is_terminal=False, action_from_par=None, reward_from_par=0):
+    def __init__(self, parent, state, value=0, is_terminal=False, action_from_par=None, reward_from_par=0, cloned_env=None):
         self.state = state
         self.sum_values = value
         self.num_visits = 0
@@ -11,7 +11,7 @@ class Node:
         self.is_terminal = is_terminal
         self.action_from_par = action_from_par
         self.reward_from_par = reward_from_par
-
+        self.cloned_env = cloned_env
     def get_action_from_par(self):
         return np.copy(self.action_from_par)
 

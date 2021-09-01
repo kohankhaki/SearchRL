@@ -1442,10 +1442,10 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
     name = "ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld"
     rollout_idea = None  # None, 1
     selection_idea = None  # None, 1
-    backpropagate_idea = 1  # None, 1
-    expansion_idea = None
+    backpropagate_idea = None  # None, 1
+    expansion_idea = 1
     assert rollout_idea in [None, 1, 2, 3, 4, 5] and \
-           selection_idea in [None, 1] and \
+           selection_idea in [None, 1, 2] and \
            backpropagate_idea in [None, 1]  \
            and expansion_idea in [None, 1]
 
@@ -1473,7 +1473,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
         self.policy_values = params['vf']['type']  # 'q' or 's' or 'qs'
 
         self._vf = {'q': dict(network=None,
-                              num_ensembles=3,
+                              num_ensembles=1,
                               layers_type=params['vf']['layers_type'],
                               layers_features=params['vf']['layers_features'],
                               action_layer_num=params['vf']['action_layer_num'],
@@ -1486,7 +1486,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
                                counter=0,
                                layers_num=None,
                                action_layer_num=None,
-                               update_rate=500,
+                               update_rate=10,
                                type=None)
 
         self._sr = dict(network=None,
@@ -1570,8 +1570,6 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
 
 
         self.updateStateRepresentation()
-
-
         self.prev_state = self.getStateRepresentation(observation)
         self.prev_action = self.action
         return action
@@ -1579,6 +1577,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
     def end(self, reward):
         reward = torch.tensor([reward], device=self.device)
         self.updateStateRepresentation()
+
 
 
     def policy(self, state):
@@ -2023,6 +2022,47 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
                         max_uct_value = uct_value
                         selected_node = child
             return selected_node
+
+        elif ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld.selection_idea == 2:
+            selected_node = self.subtree_node
+            while len(selected_node.get_childs()) > 0:
+                max_uct_value = -np.inf
+                child_values = list(map(lambda n: n.get_avg_value() + n.reward_from_par, selected_node.get_childs()))
+                max_child_value = max(child_values)
+                min_child_value = min(child_values)
+                for ind, child in enumerate(selected_node.get_childs()):
+                    if child.num_visits == 0:
+                        selected_node = child
+                        break
+                    else:
+                        child_value = child_values[ind]
+                        if min_child_value != np.inf and max_child_value != np.inf and min_child_value != max_child_value:
+                            child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
+                        uct_value = child_value + \
+                                    self.C * ((np.log(child.parent.num_visits) / child.num_visits) ** 0.5)
+                    if max_uct_value < uct_value:
+                        max_uct_value = uct_value
+                        selected_node = child
+
+                state = selected_node.parent.get_state()
+                next_state = selected_node.get_state()
+                reward = torch.tensor([selected_node.reward_from_par], device=self.device)
+                is_terminal = selected_node.is_terminal
+                action_index = torch.tensor([self.getActionIndex(selected_node.action_from_par)]).unsqueeze(0)
+                if not is_terminal:
+                    self.updateTransitionBuffer(utils.transition(state,
+                                                                 action_index,
+                                                                 reward,
+                                                                 next_state,
+                                                                 None, False, self.time_step, 0))
+                else:
+                    self.updateTransitionBuffer(utils.transition(state,
+                                                                 action_index,
+                                                                 reward,
+                                                                 None,
+                                                                 None, False, self.time_step, 0))
+
+            return selected_node
         else:
             return MCTSAgent.selection(self)
 
@@ -2038,6 +2078,37 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld(Real
                 child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
                              value=value, uncertainty=uncertainty.item())
                 node.add_child(child)
+
+                state = node.get_state()
+                reward = torch.tensor([reward], device=self.device)
+                action_index = torch.tensor([self.getActionIndex(a)]).unsqueeze(0)
+                if not is_terminal:
+                    transition = utils.transition(state,
+                                                  action_index,
+                                                  reward,
+                                                  next_state,
+                                                  None, False, self.time_step, 0)
+                else:
+                    transition = utils.transition(state,
+                                                  action_index,
+                                                  reward,
+                                                  None,
+                                                  None, False, self.time_step, 0)
+                is_already_there = False
+                # for t in self.transition_buffer:
+                #     if np.array_equal(t.prev_state, transition.state) and \
+                #             np.array_equal(t.prev_action, transition.prev_action):
+                #         is_already_there = True
+                if not is_already_there:
+                    self.updateTransitionBuffer(transition)
+
+                if self._vf['q']['training']:
+                    if len(self.transition_buffer) >= self._vf['q']['batch_size']:
+                        transition_batch = self.getTransitionFromBuffer(n=self._vf['q']['batch_size'])
+                        self.updateValueFunction(transition_batch, 'q')
+                if self._target_vf['counter'] >= self._target_vf['update_rate']:
+                    self.setTargetValueFunction(self._vf['q'], 'q')
+
         else:
             for a in self.action_list:
                 action = torch.tensor(a).unsqueeze(0)

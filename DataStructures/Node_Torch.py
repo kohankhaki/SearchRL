@@ -3,7 +3,7 @@ import torch
 
 
 class Node_Torch:
-    def __init__(self, parent, state, env_state=None, value=0, is_terminal=False, action_from_par=None, reward_from_par=0, uncertainty=0.0):
+    def __init__(self, parent, state, env_state=None, value=0, is_terminal=False, action_from_par=None, reward_from_par=0, uncertainty=0.0, cloned_env=None):
         self.state = state
         self.env_state = env_state
         self.sum_values = value
@@ -14,6 +14,7 @@ class Node_Torch:
         self.action_from_par = action_from_par
         self.reward_from_par = reward_from_par
         self.uncertainty = uncertainty
+        self.cloned_env = cloned_env
 
     def get_action_from_par(self):
         return self.action_from_par

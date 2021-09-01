@@ -16,13 +16,14 @@ from Experiments.GridWorldExperiment import RunExperiment as GridWorld_RunExperi
 from Experiments.CartpoleExperiment import RunExperiment as Cartpole_RunExperiment
 from Experiments.AcrobotExperiment import RunExperiment as Acrobot_RunExperiment
 from Experiments.TwoWayGridExperiment import RunExperiment as TwoWayGrid_RunExperiment
+from Experiments.MiniAtariExperiment import RunExperiment as MiniAtari_RunExperiment
 
 from Agents.BaseDynaAgent import BaseDynaAgent
 from Agents.RealBaseDynaAgent import RealBaseDynaAgent
 from Agents.UncertaintyDQNAgent import *
 from Agents.ImperfectDQNMCTSAgent import *
 from Agents.MCTSAgent_Torch import *
-
+from Agents.ImperfectDQNMCTSAgentMiniAtari import *
 
 # from Agents.MCTSAgent import MCTSAgent
 # from Agents.DQNMCTSAgent import *
@@ -47,7 +48,9 @@ if __name__ == '__main__':
     # agent_class_list = [RealBaseDynaAgent]
     # agent_class_list = [ImperfectMCTSAgent]
     # agent_class_list = [ImperfectMCTSAgentUncertaintyHandDesignedModel_gridworld]
-    agent_class_list = [ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld]
+    # agent_class_list = [ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction_gridworld]
+    agent_class_list = [ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction]
+
     # agent_class_list = [ImperfectMCTSAgentIdeas]
     # agent_class_list = [ImperfectMCTSAgentUncertainty]
     # agent_class_list = [HetDQN]
@@ -65,15 +68,15 @@ if __name__ == '__main__':
     s_md_list = [0.1]
     model_corruption_list = [0]
 
-    c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
-    # c_list = [2 ** -1]
+    # c_list = [2 ** -1, 2 ** 0, 2 ** 0.5, 2 ** 1]
+    c_list = [2 ** 0.5]
     
-    num_iteration_list = [10, 30]#[10, 30]#[i for i in range(30, 40, 10)]
-    simulation_depth_list = [10, 30]#[10, 30]
+    num_iteration_list = [50]#[10, 30]#[i for i in range(30, 40, 10)]
+    simulation_depth_list = [30]#[10, 30]
     # simulation_depth_list = [5, 10, 75]
     # num_simulation_list = [10]
-    num_simulation_list = [1, 5]
-    tau_list = [0.9, 0.5, 0.1]#[0.9, 0.5, 0.1]
+    num_simulation_list = [1]
+    tau_list = [1]#[0.9, 0.5, 0.1]
 
     # model_list = [{'type':'forward', 'num_networks':1, 'layers_type':['fc'], 'layers_features':[128]},
     #               {'type': 'forward', 'num_networks': 2, 'layers_type': ['fc'], 'layers_features': [64]},
@@ -91,7 +94,7 @@ if __name__ == '__main__':
         # {'type': 'q', 'layers_type': ['fc', 'fc'], 'layers_features': [4, 4], 'action_layer_num': 3}
                ]
 
-    experiment = TwoWayGrid_RunExperiment()
+    experiment = MiniAtari_RunExperiment()
 
     experiment_object_list = []
     for agent_class in agent_class_list:
@@ -130,8 +133,8 @@ if __name__ == '__main__':
     # experiment.run_experiment(experiment_object_list, result_file_name="ddd", detail=detail)
     detail = "Env = Cartpole, model is perfect different mcts settings"
     # experiment.run_experiment(experiment_object_list, result_file_name="RealBaseDynaAgent_M16x4_HetModelParameterStudy", detail=detail)
-    experiment.run_experiment(experiment_object_list, result_file_name="mcts_backpropagate_Pos_obstacle_4.p", detail=detail)
-    # experiment.show_experiment_result(result_file_name="mcts_backpropagate4_obstacle_4")
+    experiment.run_experiment(experiment_object_list, result_file_name="test.p", detail=detail)
+    # experiment.show_experiment_result(result_file_name="test")
 
 
     # experiment.run_experiment(experiment_object_list, result_file_name="ImperfectMCTSAgentIdeas_S7P25_SelectionDivLinear2m4_2", detail=detail)

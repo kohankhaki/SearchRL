@@ -36,7 +36,7 @@ class RealBaseDynaAgent(BaseAgent):
         self.actions_shape = self.action_list.shape[1:]
 
         self.gamma = params['gamma']
-        self.epsilon = params['epsilon']
+        self.epsilon = params['epsilon_min']
 
         self.transition_buffer = []
         self.transition_buffer_size = 2 ** 12
@@ -127,6 +127,7 @@ class RealBaseDynaAgent(BaseAgent):
         self.action = self.policy(self.state)
 
         # store the new transition in buffer
+
         self.updateTransitionBuffer(utils.transition(self.prev_state,
                                                      self.prev_action,
                                                      reward,

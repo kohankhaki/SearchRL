@@ -1,4 +1,4 @@
-from Environments.GridWorldBase import GridWorld
+from Environments.MinAtariEnvironment import *
 import numpy as np
 import torch
 import os
@@ -14,28 +14,25 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 debug = True
 
 
-class TwoWayGridExperiment(BaseExperiment):
+class MiniAtariExperiment(BaseExperiment):
     def __init__(self, agent, env, device, params=None):
         if params is None:
             params = {'render': False}
         super().__init__(agent, env)
 
         self._render_on = params['render']
-        self.num_steps_to_goal_list = []
-        self.num_samples = 0
         self.device = device
-        self.visited_states = np.array([[0, 0, 0, 0]])
 
     def start(self):
-        self.num_steps = 0
+        self.total_reward = 0
         s = self.environment.start()
         obs = self.observationChannel(s)
+        self.agent.model([obs], [0])
         self.last_action = self.agent.start(obs)
         return (obs, self.last_action)
 
     def step(self):
-        (reward, s, term) = self.environment.step(self.last_action)
-        self.num_samples += 1
+        (reward, s, term) = self.environment.step(self.last_action[0])
         obs = self.observationChannel(s)
         self.total_reward += reward
 
@@ -56,29 +53,44 @@ class TwoWayGridExperiment(BaseExperiment):
     def runEpisode(self, max_steps=0):
         is_terminal = False
         self.start()
+        self.num_steps = 0
 
         while (not is_terminal) and ((max_steps == 0) or (self.num_steps < max_steps)):
             rl_step_result = self.step()
             is_terminal = rl_step_result[3]
 
-        self.num_episodes += 1
-        self.num_steps_to_goal_list.append(self.num_steps)
         if debug:
-            print("num steps: ", self.num_steps)
+            print("num steps: ", self.num_steps, "total reward: ", self.total_reward)
         return is_terminal
 
     def observationChannel(self, s):
-        return np.asarray(s)
+        return np.append(np.append(np.asarray(s[1]).flatten(), s[0]), s[2])
 
     def recordTrajectory(self, s, a, r, t):
         pass
 
+class TrueModel():
+    def __init__(self, true_model):
+        self.true_model = true_model
+
+    def transitionFunction(self, state, action):
+        cars = state[:-2].reshape((len(state) - 2) // 4, 4)
+        pos = state[-2]
+        move_timer = state[-1]
+        state = int(pos), cars.tolist(), int(move_timer)
+        reward, next_state, is_terminal = self.true_model(state, action)
+        next_state = np.append(np.append(np.asarray(next_state[1]).flatten(), next_state[0]), next_state[2])
+        return next_state, is_terminal, reward
+
+    def corruptTransitionFunction(self, state, action):
+        return self.transitionFunction(state, action)
 
 class RunExperiment():
     def __init__(self):
         self.device = torch.device("cpu")
         # Assuming that we are on a CUDA machine, this should print a CUDA device:
         print(self.device)
+
 
     def run_experiment(self, experiment_object_list, result_file_name, detail=None):
         num_runs = config.num_runs
@@ -93,33 +105,11 @@ class RunExperiment():
                 print("starting runtime ", r + 1)
                 random_obstacle_x = 4#np.random.randint(0, 8)
                 random_obstacle_y = np.random.choice([0, 2])
-                env = GridWorld(params={'size': (3, 8), 'init_state': (1, 0), 'state_mode': 'coord',
-                                      'obstacles_pos': [(1, 1),(1, 2), (1, 3), (1, 4), (1, 5), (1, 6),
-                                                        (random_obstacle_y, random_obstacle_x)],
-                                      'rewards_pos': [(1, 7)], 'rewards_value': [1],
-                                      'terminals_pos': [(1, 7)], 'termination_probs': [1],
-                                      'actions': [(0, 1), (1, 0), (0, -1), (-1, 0)],
-                                      'neighbour_distance': 0,
-                                      'agent_color': [0, 1, 0], 'ground_color': [0, 0, 0], 'obstacle_color': [1, 1, 1],
-                                      'transition_randomness': 0.0,
-                                      'window_size': (255, 255),
-                                      'aging_reward': -1
-                                      })
-
-                corrupt_env = GridWorld(params={'size': (3, 8), 'init_state': (1, 0), 'state_mode': 'coord',
-                                        'obstacles_pos': [(1, 1),(1, 2), (1, 3), (1, 4), (1, 5), (1, 6)],
-                                        'rewards_pos': [(1, 7)], 'rewards_value': [1],
-                                        'terminals_pos': [(1, 7)], 'termination_probs': [1],
-                                        'actions': [(0, 1), (1, 0), (0, -1), (-1, 0)],
-                                        'neighbour_distance': 0,
-                                        'agent_color': [0, 1, 0], 'ground_color': [0, 0, 0],
-                                        'obstacle_color': [1, 1, 1],
-                                        'transition_randomness': 0.0,
-                                        'window_size': (255, 255),
-                                        'aging_reward': -1
-                                        })
+                env = Freeway()
+                true_model = TrueModel(env.transitionFunction)
+                action_list = np.asarray(env.getAllActions()).reshape(len(env.getAllActions()), 1)
                 # initializing the agent
-                agent = obj.agent_class({'action_list': env.getAllActions(),
+                agent = obj.agent_class({'action_list': action_list,
                                          'gamma': 1.0, 'epsilon_max': 0.9, 'epsilon_min': 0.5, 'epsilon_decay': 200,
                                          'tau': obj.tau,
                                          'model_corruption': obj.model_corruption,
@@ -130,8 +120,8 @@ class RunExperiment():
                                          'device': self.device,
                                          'model': obj.model,
                                          'true_bw_model': None,
-                                         'true_fw_model': env.fullTransitionFunction,
-                                         'corrupted_fw_model':corrupt_env.fullTransitionFunction,
+                                         'true_fw_model': true_model.transitionFunction,
+                                         'corrupted_fw_model': true_model.corruptTransitionFunction,
                                          'transition_dynamics': None,
                                          'c': obj.c,
                                          'num_iteration': obj.num_iteration,
@@ -140,31 +130,31 @@ class RunExperiment():
                                          'vf': obj.vf_network, 'dataset': None})
 
                 # initialize experiment
-                experiment = TwoWayGridExperiment(agent, env, self.device)
+                experiment = MiniAtariExperiment(agent, env, self.device)
                 for e in range(num_episode):
                     if debug:
                         print("starting episode ", e + 1)
                     experiment.runEpisode(max_step_each_episode)
                     self.num_steps_run_list[i, r, e] = experiment.num_steps
 
-                    with torch.no_grad():
-                        # print value function
-                        for s in env.getAllStates():
-                            s_rep = agent.getStateRepresentation(s)
-                            ensemble_values = np.asarray([agent._vf['q']['network'][i](s_rep).numpy() for i in
-                                               range(agent._vf['q']['num_ensembles'])])
-                            avg_values = np.mean(ensemble_values, axis=0)
-                            std_values = np.std(ensemble_values, axis=0)
-                            s_value = np.mean(avg_values)
-                            s_uncertainty = np.mean(std_values)
-                            print(s_rep, s_value, s_uncertainty)
-                            # for a in env.getAllActions():
-                            #     a_index = env.getActionIndex(a)
-                            #     q_value = value[0][a_index].item()
-                            #     print(s_rep, a_index, q_value)
+                    # with torch.no_grad():
+                    #     # print value function
+                    #     for s in env.getAllStates():
+                    #         s_rep = agent.getStateRepresentation(s)
+                    #         ensemble_values = np.asarray([agent._vf['q']['network'][i](s_rep).numpy() for i in
+                    #                            range(agent._vf['q']['num_ensembles'])])
+                    #         avg_values = np.mean(ensemble_values, axis=0)
+                    #         std_values = np.std(ensemble_values, axis=0)
+                    #         s_value = np.mean(avg_values)
+                    #         s_uncertainty = np.mean(std_values)
+                    #         print(s_rep, s_value, s_uncertainty)
+                    #         for a in env.getAllActions():
+                    #             a_index = env.getActionIndex(a)
+                    #             q_value = value[0][a_index].item()
+                    #             print(s_rep, a_index, q_value)
 
 
-        with open("TwoWayGridResult/" + result_file_name + '.p', 'wb') as f:
+        with open("MiniAtariResult/" + result_file_name + '.p', 'wb') as f:
             result = {'num_steps': self.num_steps_run_list,
                       'experiment_objs': experiment_object_list,
                       'detail': detail,}
@@ -174,7 +164,7 @@ class RunExperiment():
         # save_num_steps_plot(self.num_steps_run_list, experiment_object_list)
 
     def show_experiment_result(self, result_file_name):
-        with open("TwoWayGridResult/" + result_file_name + '.p', 'rb') as f:
+        with open("MiniAtariResult/" + result_file_name + '.p', 'rb') as f:
             result = pickle.load(f)
         f.close()
         # show_num_steps_plot(result['num_steps'], result['experiment_objs'])

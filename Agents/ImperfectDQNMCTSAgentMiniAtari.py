@@ -17,7 +17,7 @@ from Networks.ValueFunctionNN.StateActionValueFunction import StateActionVFNN
 class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction"
     rollout_idea = None  # None, 1
-    selection_idea = None  # None, 1
+    selection_idea = 1  # None, 1
     backpropagate_idea = None  # None, 1
     expansion_idea = None
     assert rollout_idea in [None, 1, 2, 3, 4, 5] and \
@@ -261,7 +261,6 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAg
             # uncertainty_err = (true_uncertainty - uncertainty)**2
             # self.writer.add_scalar('Uncertainty_err', uncertainty_err, self.writer_iterations)
             # self.writer_iterations += 1
-
         return corrupted_next_state, is_terminal, reward, true_uncertainty
 
     def rollout(self, node):
@@ -510,6 +509,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAg
         else:
             sum_returns = 0
             for i in range(self.num_rollouts):
+                rollout_path = []
                 depth = 0
                 single_return = 0
                 is_terminal = node.is_terminal
@@ -517,7 +517,17 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAg
                 while not is_terminal and depth < self.rollout_depth:
                     action_index = torch.randint(0, self.num_actions, (1, 1))
                     action = torch.tensor(self.action_list[action_index]).unsqueeze(0)
-                    next_state, is_terminal, reward, _ = self.model(state, action)
+                    try:
+                        next_state, is_terminal, reward, _ = self.model(state, action)
+                        rollout_path.append([state, next_state, is_terminal])
+                    except:
+                        for i in rollout_path:
+                            with open("log.txt", "a") as file:
+                                file.write("rolloutpath_state:"+str(i[0]))
+                                file.write("rolloutpath_nextstate:"+ str(i[1]))
+                                file.write("rolloutpath_terminal:"+str(i[2]))
+                                file.write("____________")
+                        exit(0)
                     single_return += reward
                     depth += 1
                     state = next_state

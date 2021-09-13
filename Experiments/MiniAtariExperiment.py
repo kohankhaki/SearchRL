@@ -15,11 +15,11 @@ debug = True
 
 
 class MiniAtariExperiment(BaseExperiment):
-    def __init__(self, agent, env, device, params=None):
+    def __init__(self, agent, env, device, env_name, params=None):
         if params is None:
             params = {'render': False}
         super().__init__(agent, env)
-
+        self.env_name = env_name
         self._render_on = params['render']
         self.device = device
 
@@ -27,7 +27,6 @@ class MiniAtariExperiment(BaseExperiment):
         self.total_reward = 0
         s = self.environment.start()
         obs = self.observationChannel(s)
-        self.agent.model([obs], [0])
         self.last_action = self.agent.start(obs)
         return (obs, self.last_action)
 
@@ -64,14 +63,24 @@ class MiniAtariExperiment(BaseExperiment):
         return is_terminal
 
     def observationChannel(self, s):
-        return np.append(np.append(np.asarray(s[1]).flatten(), s[0]), s[2])
+        if self.env_name == "freeway":
+            return np.append(np.append(np.asarray(s[1]).flatten(), s[0]), s[2])
+        elif self.env_name == "space_invaders":
+            tmp = np.append(np.append(s[1].flatten(), s[2].flatten()), s[3].flatten())
+            return np.append(np.append(np.append(np.append(np.append(np.append(tmp, s[0]), s[4]), s[5]), s[6]), s[7]), s[8])
+        else:
+            pass
 
     def recordTrajectory(self, s, a, r, t):
         pass
 
-class TrueModel():
+class TrueModel_Freeway():
     def __init__(self, true_model):
         self.true_model = true_model
+        self.corrupt_tau = 0.3
+        self.corrupt_prob = np.zeros([10])
+        for i in range(10):
+            self.corrupt_prob[i] = np.exp(-i / self.corrupt_tau) / sum(np.exp(-np.arange(10) / self.corrupt_tau))
 
     def transitionFunction(self, state, action):
         cars = state[:-2].reshape((len(state) - 2) // 4, 4)
@@ -80,6 +89,49 @@ class TrueModel():
         state = int(pos), cars.tolist(), int(move_timer)
         reward, next_state, is_terminal = self.true_model(state, action)
         next_state = np.append(np.append(np.asarray(next_state[1]).flatten(), next_state[0]), next_state[2])
+        return next_state, is_terminal, reward
+
+    def corruptTransitionFunction(self, state, action):
+        cars = state[:-2].reshape((len(state) - 2) // 4, 4)
+        pos = state[-2]
+        move_timer = state[-1]
+        for car in cars:
+            dif = abs(pos - car[0])
+            prob = self.corrupt_prob[dif]
+            if np.random.rand() < prob:
+                if car[3] > 0:
+                    car[0] == 5
+                else:
+                    car[0] == 3
+        state = int(pos), cars.tolist(), int(move_timer)
+        reward, next_state, is_terminal = self.true_model(state, action)
+        next_state = np.append(np.append(np.asarray(next_state[1]).flatten(), next_state[0]), next_state[2])
+        return next_state, is_terminal, reward
+
+class TrueModel_SpaceInvaders():
+    def __init__(self, true_model):
+        self.true_model = true_model
+        # self.corrupt_tau = 0.3
+        # self.corrupt_prob = np.zeros([10])
+        # for i in range(10):
+        #     self.corrupt_prob[i] = np.exp(-i / self.corrupt_tau) / sum(np.exp(-np.arange(10) / self.corrupt_tau))
+
+    def transitionFunction(self, state, action):
+        pos = state[-6]
+        f_bullet_map = state[0:100].reshape(10, 10)
+        e_bullet_map = state[100:200].reshape(10, 10)
+        alien_map = state[200:300].reshape(10, 10)
+        alien_dir = state[-5]
+        enemy_move_interval = state[-4]
+        alien_move_timer = state[-3]
+        alien_shot_timer = state[-2]
+        shot_timer = state[-1]
+        state = int(pos), f_bullet_map.numpy(), e_bullet_map.numpy(), alien_map.numpy(), \
+                int(alien_dir), int(enemy_move_interval), int(alien_move_timer), int(alien_shot_timer), int(shot_timer)
+        reward, next_state, is_terminal = self.true_model(state, action)
+
+        tmp = np.append(np.append(next_state[1].flatten(), next_state[2].flatten()), next_state[3].flatten())
+        next_state = np.append(np.append(np.append(np.append(np.append(np.append(tmp, next_state[0]), next_state[4]), next_state[5]), next_state[6]), next_state[7]), next_state[8])
         return next_state, is_terminal, reward
 
     def corruptTransitionFunction(self, state, action):
@@ -97,16 +149,16 @@ class RunExperiment():
         num_episode = config.num_episode
         max_step_each_episode = config.max_step_each_episode
         self.num_steps_run_list = np.zeros([len(experiment_object_list), num_runs, num_episode], dtype=np.int)
+        self.rewards_run_list = np.zeros([len(experiment_object_list), num_runs, num_episode], dtype=np.int)
+
         for i, obj in tqdm(enumerate(experiment_object_list)):
             print("---------------------")
             print("This is the case: ", i)
 
             for r in range(num_runs):
                 print("starting runtime ", r + 1)
-                random_obstacle_x = 4#np.random.randint(0, 8)
-                random_obstacle_y = np.random.choice([0, 2])
-                env = Freeway()
-                true_model = TrueModel(env.transitionFunction)
+                env = MinAtar(name="space_invaders")
+                true_model = TrueModel_SpaceInvaders(env.transitionFunction)
                 action_list = np.asarray(env.getAllActions()).reshape(len(env.getAllActions()), 1)
                 # initializing the agent
                 agent = obj.agent_class({'action_list': action_list,
@@ -130,12 +182,13 @@ class RunExperiment():
                                          'vf': obj.vf_network, 'dataset': None})
 
                 # initialize experiment
-                experiment = MiniAtariExperiment(agent, env, self.device)
+                experiment = MiniAtariExperiment(agent, env, self.device, env_name="space_invaders")
                 for e in range(num_episode):
                     if debug:
                         print("starting episode ", e + 1)
                     experiment.runEpisode(max_step_each_episode)
                     self.num_steps_run_list[i, r, e] = experiment.num_steps
+                    self.rewards_run_list[i, r, e] = experiment.total_reward
 
                     # with torch.no_grad():
                     #     # print value function
@@ -156,6 +209,7 @@ class RunExperiment():
 
         with open("MiniAtariResult/" + result_file_name + '.p', 'wb') as f:
             result = {'num_steps': self.num_steps_run_list,
+                      'rewards': self.rewards_run_list, 
                       'experiment_objs': experiment_object_list,
                       'detail': detail,}
             pickle.dump(result, f)
@@ -164,14 +218,36 @@ class RunExperiment():
         # save_num_steps_plot(self.num_steps_run_list, experiment_object_list)
 
     def show_experiment_result(self, result_file_name):
-        with open("MiniAtariResult/" + result_file_name + '.p', 'rb') as f:
-            result = pickle.load(f)
-        f.close()
+        # with open("MiniAtariResult/" + result_file_name + '.p', 'rb') as f:
+        #     result = pickle.load(f)
+        # f.close()
         # show_num_steps_plot(result['num_steps'], result['experiment_objs'])
-        save_num_steps_plot(result['num_steps'], result['experiment_objs'], result_file_name)
+        result = self.combine_experiment_result(result_file_name)
+        save_num_steps_plot(result['rewards'], result['experiment_objs'], result_file_name)
+    
+    def combine_experiment_result(self, result_file_name):
+        res = {'num_steps': None, 'rewards': None, 'experiment_objs': None, 'detail': None}
+        all_files = os.listdir("MiniAtariResult/")
+        for file_name in all_files:
+            if result_file_name in file_name:
+                with open("MiniAtariResult/" + file_name, 'rb') as f:
+                    result = pickle.load(f)
+                f.close()
+                if res['num_steps'] is None:
+                    res['num_steps'] = result['num_steps']
+                else:
+                    res['num_steps'] = np.concatenate([res['num_steps'], result['num_steps']], axis=1)
+                
+                if res['rewards'] is None:
+                    res['rewards'] = result['rewards']
+                else:
+                    res['rewards'] = np.concatenate([res['rewards'], result['rewards']], axis=1)
+                
+                if res['experiment_objs'] is None:
+                    res['experiment_objs'] = result['experiment_objs']
+        return res
 
 def show_num_steps_plot(num_steps, agent_names):
-
     num_steps_avg = np.mean(num_steps, axis=1)
     writer = SummaryWriter()  # (comment="TuneModelwithDQN_LR{2**-4to-16}_BATCH{16}")
     counter = 0
@@ -195,17 +271,17 @@ def save_num_steps_plot(num_steps, experiment_objs, saved_name="test"):
                    i.simulation_depth == j.simulation_depth and \
                    i.tau == j.tau and \
                    i.c != j.c:
-                    if num_steps_avg[counter1] > num_steps_avg[counter2]:
+                    if num_steps_avg[counter1] < num_steps_avg[counter2]:
                         removed_list.append(counter1)
-                    else:
+                    elif num_steps_avg[counter1] > num_steps_avg[counter2]:
                         removed_list.append(counter2)
         num_steps = np.delete(num_steps, removed_list, 0)
         experiment_objs_new = []
         for i, obj in enumerate(experiment_objs):
             if i not in removed_list:
                 experiment_objs_new.append(obj)
-
         return num_steps, experiment_objs_new
+    
     def find_best_tau(num_steps, experiment_objs):
         removed_list = []
         num_steps_avg = np.mean(num_steps, axis=1)
@@ -240,6 +316,7 @@ def save_num_steps_plot(num_steps, experiment_objs, saved_name="test"):
         x = range(len(num_steps_avg))
         if len(num_steps_avg) == 1:
             color = generate_hex_color()
+            print(num_steps_avg, name, "\n")
             axs.axhline(num_steps_avg, label=name, color=color)
             # axs.axhspan(num_steps_avg - 0.1 * num_steps_std,
             #             num_steps_avg + 0.1 * num_steps_std,
@@ -330,11 +407,19 @@ def experiment_obj_to_name(experiment_objs):
     return names
 
 
+
+generate_random_color = False
+color_counter = 0
+color_list = ['#FF2929', '#19A01D', '#F4D03F', '#FF7F50', '#8E44AD', '#34495E', '#95A5A6', '#5DADE2', '#A2FF00', '#003AFF', '#FF008F']
 def generate_hex_color():
-    import random
-    r = random.randint(0, 255)
-    g = random.randint(0, 255)
-    b = random.randint(0, 255)
-    c = (r, g, b)
-    hex_c = '#%02x%02x%02x' % c
+    global color_counter
+    if generate_random_color:
+        r = random.randint(0, 255)
+        g = random.randint(0, 255)
+        b = random.randint(0, 255)
+        c = (r, g, b)
+        hex_c = '#%02x%02x%02x' % c
+    else:
+        hex_c = color_list[color_counter]
+        color_counter = (color_counter + 1) % len(color_list)
     return hex_c

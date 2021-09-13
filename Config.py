@@ -1,8 +1,8 @@
 # # experiment
-num_runs = 1
-num_episode = 10
+num_runs = 5
+num_episode = 1
 
-max_step_each_episode = 40
+max_step_each_episode = 300
 
 episodes_only_dqn = 0
 episodes_only_mcts = 0

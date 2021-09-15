@@ -12,7 +12,7 @@ import copy
 #####################################################################################################################
 shot_cool_down = 5
 enemy_move_interval = 12
-enemy_shot_interval = 10
+enemy_shot_interval = 3 #10
 
 
 #####################################################################################################################
@@ -47,7 +47,8 @@ class Env:
         self.reset()
 
     # Update environment according to agent action
-    def act(self, a):
+    def act(self, a, is_corrupted=False):
+        corrupt_pos = [0]
         r = 0
         if(self.terminal):
             return r, self.terminal
@@ -101,6 +102,11 @@ class Env:
         self.shot_timer -= self.shot_timer>0
         self.alien_move_timer-=1
         self.alien_shot_timer-=1
+
+        # Environment has some tricky states
+        if self.pos in corrupt_pos and not is_corrupted:
+            self.shot_timer = shot_cool_down
+
         if(np.count_nonzero(self.alien_map)==0):
             self.terminal = True
             # if(self.enemy_move_interval>6 and self.ramping):
@@ -176,9 +182,9 @@ class Env:
         self.alien_shot_timer = state[7]
         self.shot_timer = state[8]
 
-    def transition_function(self, state, action):
+    def transition_function(self, state, action, is_corrupted):
         tmp_env = Env()
         tmp_env.reset()
         tmp_env.set_state(state)
-        reward, is_terminal = tmp_env.act(action)
+        reward, is_terminal = tmp_env.act(action, is_corrupted=is_corrupted)
         return reward, tmp_env.game_state(), is_terminal

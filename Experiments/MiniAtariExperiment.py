@@ -128,14 +128,32 @@ class TrueModel_SpaceInvaders():
         shot_timer = state[-1]
         state = int(pos), f_bullet_map.numpy(), e_bullet_map.numpy(), alien_map.numpy(), \
                 int(alien_dir), int(enemy_move_interval), int(alien_move_timer), int(alien_shot_timer), int(shot_timer)
-        reward, next_state, is_terminal = self.true_model(state, action)
-
+        reward, next_state, is_terminal = self.true_model(state, action, is_corrupted=False)
         tmp = np.append(np.append(next_state[1].flatten(), next_state[2].flatten()), next_state[3].flatten())
-        next_state = np.append(np.append(np.append(np.append(np.append(np.append(tmp, next_state[0]), next_state[4]), next_state[5]), next_state[6]), next_state[7]), next_state[8])
+        next_state = np.append(np.append(
+            np.append(np.append(np.append(np.append(tmp, next_state[0]), next_state[4]), next_state[5]), next_state[6]),
+            next_state[7]), next_state[8])
         return next_state, is_terminal, reward
 
     def corruptTransitionFunction(self, state, action):
-        return self.transitionFunction(state, action)
+        pos = state[-6]
+        f_bullet_map = state[0:100].reshape(10, 10)
+        e_bullet_map = state[100:200].reshape(10, 10)
+        alien_map = state[200:300].reshape(10, 10)
+        alien_dir = state[-5]
+        enemy_move_interval = state[-4]
+        alien_move_timer = state[-3]
+        alien_shot_timer = state[-2]
+        shot_timer = state[-1]
+        state = int(pos), f_bullet_map.numpy(), e_bullet_map.numpy(), alien_map.numpy(), \
+                int(alien_dir), int(enemy_move_interval), int(alien_move_timer), int(alien_shot_timer), int(shot_timer)
+        reward, next_state, is_terminal = self.true_model(state, action, is_corrupted=True)
+
+        tmp = np.append(np.append(next_state[1].flatten(), next_state[2].flatten()), next_state[3].flatten())
+        next_state = np.append(np.append(
+            np.append(np.append(np.append(np.append(tmp, next_state[0]), next_state[4]), next_state[5]), next_state[6]),
+            next_state[7]), next_state[8])
+        return next_state, is_terminal, reward
 
 class RunExperiment():
     def __init__(self):

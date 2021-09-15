@@ -17,7 +17,7 @@ from Networks.ValueFunctionNN.StateActionValueFunction import StateActionVFNN
 class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction"
     rollout_idea = None  # None, 1
-    selection_idea = 1  # None, 1
+    selection_idea = None  # None, 1
     backpropagate_idea = None  # None, 1
     expansion_idea = None
     assert rollout_idea in [None, 1, 2, 3, 4, 5] and \

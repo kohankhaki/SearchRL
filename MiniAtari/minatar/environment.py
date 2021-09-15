@@ -41,8 +41,8 @@ class Environment:
     def game_state(self):
         return self.env.game_state()
 
-    def transition_function(self, state, action):
-        return self.env.transition_function(state, action)
+    def transition_function(self, state, action, is_corrupted):
+        return self.env.transition_function(state, action, is_corrupted)
 
     # Wrapper for env.reset
     def reset(self):

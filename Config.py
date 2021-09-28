@@ -1,5 +1,5 @@
 # # experiment
-num_runs = 5
+num_runs = 25
 num_episode = 1
 
 max_step_each_episode = 300

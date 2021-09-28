@@ -3,6 +3,7 @@ import random
 
 import numpy as np
 import torch
+from torch.functional import norm
 import torch.optim as optim
 import torch.nn.functional as F
 from ete3 import Tree, TreeStyle, TextFace, add_face_to_node
@@ -16,14 +17,14 @@ from Networks.ValueFunctionNN.StateActionValueFunction import StateActionVFNN
 
 class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAgent, MCTSAgent):
     name = "ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction"
-    rollout_idea = None  # None, 1
-    selection_idea = None  # None, 1
-    backpropagate_idea = None  # None, 1
+    rollout_idea = 5  # None, 1
+    selection_idea = 1  # None, 1
+    backpropagate_idea = 1  # None, 1
     expansion_idea = None
     assert rollout_idea in [None, 1, 2, 3, 4, 5] and \
            selection_idea in [None, 1, 2] and \
            backpropagate_idea in [None, 1]  \
-           and expansion_idea in [None, 1]
+           and expansion_idea in [None, 1, 2]
 
     def __init__(self, params={}):
         self.episode_counter = 0
@@ -251,9 +252,9 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAg
 
     def model(self, state, action):
         with torch.no_grad():
-            true_next_state, is_terminal, reward = self.true_model(state[0], action[0])
+            true_next_state, _, reward = self.true_model(state[0], action[0])
             true_next_state = torch.from_numpy(true_next_state).to(self.device)
-            corrupted_next_state, _, _ = self.corrupt_model(state[0], action[0])
+            corrupted_next_state, is_terminal, _ = self.corrupt_model(state[0], action[0])
             corrupted_next_state = torch.from_numpy(corrupted_next_state).unsqueeze(0)
 
             # if want not rounded next_state, replace next_state with _
@@ -292,7 +293,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAg
                 return_list = np.asarray(return_list)
                 weight_list = np.asarray(weight_list)
 
-                weights = np.exp(weight_list) / np.sum(np.exp(weight_list))
+                weights = np.exp(-weight_list / self.tau) / np.sum(np.exp(-weight_list / self.tau))
                 # print(return_list)
                 # print(weight_list)
                 # print(weights)
@@ -556,7 +557,7 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAg
                     else:
 
                         child_value = child_values[ind]
-                        child_value = child.get_avg_value() + child.reward_from_par
+                        # child_value = child.get_avg_value() + child.reward_from_par
                         child_uncertainty = child_uncertainties[ind]
                         softmax_uncertainty = softmax_uncertainties[ind]
 
@@ -564,9 +565,13 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAg
                             child_value = (child_value - min_child_value) / (max_child_value - min_child_value)
                         elif min_child_value == max_child_value:
                             child_value = 0.5
-
-                        uct_value = (child_value + \
-                                     self.C * ((np.log(child.parent.num_visits) / child.num_visits) ** 0.5))
+                        if ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction.selection_idea == 1:
+                            uct_value = (child_value + \
+                                     self.C * ((np.log(child.parent.num_visits) / child.num_visits) ** 0.5)) *\
+                                    (1 - softmax_uncertainty)
+                        else:
+                            uct_value = (child_value + \
+                                        self.C * ((np.log(child.parent.num_visits) / child.num_visits) ** 0.5))
                         # print("old:", uct_value - child_uncertainty, "  new:",uct_value, "  unc:", child_uncertainty)
                     if max_uct_value < uct_value:
                         max_uct_value = uct_value
@@ -696,6 +701,29 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAg
                 if self._target_vf['counter'] >= self._target_vf['update_rate']:
                     self.setTargetValueFunction(self._vf['q'], 'q')
 
+        elif ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction.expansion_idea == 2:
+            uncertainty_list = []
+            possible_children = []
+            for a in self.action_list:
+                action = torch.tensor(a).unsqueeze(0)
+                next_state, is_terminal, reward, uncertainty = self.model(node.get_state(),
+                                                                          action)  # with the assumption of deterministic model
+                # if np.array_equal(next_state, node.get_state()):
+                #     continue
+                value = self.get_initial_value(next_state)
+                child = Node(node, next_state, is_terminal=is_terminal, action_from_par=a, reward_from_par=reward,
+                             value=value, uncertainty=uncertainty.item())
+                uncertainty_list.append(uncertainty)
+                possible_children.append(child)
+                node.add_child(child)
+            uncertainty_list = np.asarray(uncertainty_list)
+            norm_uncertainties = uncertainty_list / np.sum(uncertainty_list)
+            excluded_child = None
+            if np.random.rand() < self.tau and np.sum(uncertainty_list) != 0:
+                excluded_child = np.random.choice(len(possible_children), p=norm_uncertainties)
+            for i, child in enumerate(possible_children):
+                if i != excluded_child:
+                    node.add_child(child)
         else:
             for a in self.action_list:
                 action = torch.tensor(a).unsqueeze(0)
@@ -716,10 +744,10 @@ class ImperfectMCTSAgentUncertaintyHandDesignedModelValueFunction(RealBaseDynaAg
                 if node.parent is not None:
                     siblings = node.parent.get_childs()
                     siblings_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, siblings)))
-                    softmax_denominator = np.sum(np.exp(siblings_uncertainties))
+                    softmax_denominator = np.sum(np.exp(-siblings_uncertainties))
                     value *= self.gamma
                     value += node.reward_from_par
-                    value *= np.exp(node.uncertainty) / softmax_denominator
+                    value *= np.exp(-node.uncertainty) / softmax_denominator
                 node = node.parent
         else:
             while node is not None:

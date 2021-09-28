@@ -13,7 +13,7 @@ class MinAtar():
     def step(self, action):
         reward, is_terminal = self.game.act(action)
         observation = self.game.game_state()
-        self.game.display_state(50)
+        # self.game.display_state(50)
         # self.game.close_display()
 
         return reward, observation, is_terminal

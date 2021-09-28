@@ -243,6 +243,97 @@ class RunExperiment():
         result = self.combine_experiment_result(result_file_name)
         save_num_steps_plot(result['rewards'], result['experiment_objs'], result_file_name)
     
+    def show_multiple_experiment_result(self, results_file_name_list, exp_names):
+        def find_best_c(num_steps, experiment_objs):
+            removed_list = []
+            num_steps_avg = np.mean(num_steps, axis=1)
+            for counter1, i in enumerate(experiment_objs):
+                for counter2, j in enumerate(experiment_objs):
+                    if i.num_iteration == j.num_iteration and \
+                    i.num_simulation == j.num_simulation and \
+                    i.simulation_depth == j.simulation_depth and \
+                    i.tau == j.tau and \
+                    i.c != j.c:
+                        if num_steps_avg[counter1] < num_steps_avg[counter2]:
+                            removed_list.append(counter1)
+                        elif num_steps_avg[counter1] > num_steps_avg[counter2]:
+                            removed_list.append(counter2)
+            num_steps = np.delete(num_steps, removed_list, 0)
+            experiment_objs_new = []
+            for i, obj in enumerate(experiment_objs):
+                if i not in removed_list:
+                    experiment_objs_new.append(obj)
+            return num_steps, experiment_objs_new
+        def find_best_tau(num_steps, experiment_objs):
+            removed_list = []
+            num_steps_avg = np.mean(num_steps, axis=1)
+            for counter1, i in enumerate(experiment_objs):
+                for counter2, j in enumerate(experiment_objs):
+                    if i.num_iteration == j.num_iteration and \
+                    i.num_simulation == j.num_simulation and \
+                    i.simulation_depth == j.simulation_depth and \
+                    i.tau != j.tau:
+                        if num_steps_avg[counter1] < num_steps_avg[counter2]:
+                            removed_list.append(counter1)
+                        else:
+                            removed_list.append(counter2)
+            num_steps = np.delete(num_steps, removed_list, 0)
+            experiment_objs_new = []
+            for i, obj in enumerate(experiment_objs):
+                if i not in removed_list:
+                    experiment_objs_new.append(obj)
+
+            return num_steps, experiment_objs_new
+        
+        if len(results_file_name_list) != len(exp_names):
+            print("experiments and names won't match", len(results_file_name_list), len(exp_names))
+            return None
+        
+        fig, axs = plt.subplots(1, 1, constrained_layout=False)
+        for i in range(len(results_file_name_list)):
+            result_file_name = results_file_name_list[i]
+            exp_name = exp_names[i]
+            result = self.combine_experiment_result(result_file_name)
+
+            rewards, experiment_objs = result['rewards'], result['experiment_objs']
+            rewards, experiment_objs = find_best_c(rewards, experiment_objs)
+            print(rewards.shape)
+            rewards, experiment_objs = find_best_tau(rewards, experiment_objs)
+            print(rewards.shape)
+            names = experiment_obj_to_name(experiment_objs)
+            
+            for i, name in enumerate(names):
+                rewards_avg = np.mean(rewards[i], axis=0)
+                rewards_std = np.mean(rewards[i], axis=0)
+                x = range(len(rewards_avg))
+                if len(rewards_avg) == 1:
+                    color = generate_hex_color()
+                    print(rewards_avg, name, "\n")
+                    if "True" in exp_name or "Corrupt" in exp_name:
+                        axs.axhline(rewards_avg, label=exp_name+name, color=color, linestyle="--")
+                    elif exp_name.count("=") == 1:
+                        axs.axhline(rewards_avg, label=exp_name+name, color=color, linestyle=":")
+                    elif exp_name.count("=") == 2:
+                        axs.axhline(rewards_avg, label=exp_name+name, color=color, linestyle="-.")
+                    elif exp_name.count("=") == 3:
+                        axs.axhline(rewards_avg, label=exp_name+name, color=color, linestyle=(0, (5, 5)))
+                    elif exp_name.count("=") == 4:
+                        axs.axhline(rewards_avg, label=exp_name+name, color=color, linestyle=(0, (10, 10)))
+                    else:
+                        axs.axhline(rewards_avg, label=exp_name+name, color=color, linestyle="-")
+                    # axs.axhspan(num_steps_avg - 0.1 * num_steps_std,
+                    #             num_steps_avg + 0.1 * num_steps_std,
+                    #             alpha=0.4, color=color)
+
+                else:
+                    axs.plot(x, rewards_avg, label=exp_name+name)
+                    axs.fill_between(x,
+                                    rewards_avg - 0.1 * rewards_std,
+                                    rewards_avg + 0.1 * rewards_std,
+                                    alpha=.4, edgecolor='none')
+                axs.legend()
+        fig.savefig("test"+".png")
+    
     def combine_experiment_result(self, result_file_name):
         res = {'num_steps': None, 'rewards': None, 'experiment_objs': None, 'detail': None}
         all_files = os.listdir("MiniAtariResult/")
@@ -309,7 +400,7 @@ def save_num_steps_plot(num_steps, experiment_objs, saved_name="test"):
                    i.num_simulation == j.num_simulation and \
                    i.simulation_depth == j.simulation_depth and \
                    i.tau != j.tau:
-                    if num_steps_avg[counter1] > num_steps_avg[counter2]:
+                    if num_steps_avg[counter1] < num_steps_avg[counter2]:
                         removed_list.append(counter1)
                     else:
                         removed_list.append(counter2)

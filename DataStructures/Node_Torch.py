@@ -42,8 +42,8 @@ class Node_Torch:
             return 0.0
         if self.num_visits > 1:
             children_uncertainties = np.asarray(list(map(lambda n: n.uncertainty, self.childs_list)))
-            softmax_denominator = np.sum(np.exp(children_uncertainties))
-            weights = np.exp(children_uncertainties) / softmax_denominator
+            softmax_denominator = np.sum(np.exp(-children_uncertainties))
+            weights = np.exp(-children_uncertainties) / softmax_denominator
             children_visit = np.asarray(list(map(lambda n: n.num_visits, self.childs_list)))
             avg_value = self.sum_values / np.dot(weights, children_visit)
         else:

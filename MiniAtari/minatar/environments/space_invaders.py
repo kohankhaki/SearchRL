@@ -48,7 +48,7 @@ class Env:
 
     # Update environment according to agent action
     def act(self, a, is_corrupted=False):
-        corrupt_pos = [0]
+        corrupt_pos = [2, 3, 4, 5, 6]
         r = 0
         if(self.terminal):
             return r, self.terminal
@@ -56,8 +56,11 @@ class Env:
         
         # Resolve player action
         if(a=='f' and self.shot_timer == 0):
-            self.f_bullet_map[9,self.pos]=1
-            self.shot_timer = shot_cool_down
+            if self.pos in corrupt_pos and not is_corrupted:
+                pass #can't shoot
+            else:
+                self.f_bullet_map[9,self.pos]=1
+                self.shot_timer = shot_cool_down
         elif(a=='l'):
             self.pos = max(0, self.pos-1)
         elif(a=='r'):
@@ -104,8 +107,8 @@ class Env:
         self.alien_shot_timer-=1
 
         # Environment has some tricky states
-        if self.pos in corrupt_pos and not is_corrupted:
-            self.shot_timer = shot_cool_down
+        # if self.pos in corrupt_pos and not is_corrupted:
+        #     self.shot_timer = shot_cool_down
 
         if(np.count_nonzero(self.alien_map)==0):
             self.terminal = True
